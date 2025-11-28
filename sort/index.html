@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorting Algorithms Visualizer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="cube-icon">
+                    <img src="logo.png" alt="Sorting Logo" width="40" height="32">
+                </div>
+                <h1>Sorting Algorithms</h1>
+            </div>
+        </header>
+
+        <!-- Algorithm Selector & Controls -->
+        <div class="controls-panel">
+            <div class="algorithm-tabs">
+                <button class="tab active" data-algorithm="insertion">Insertion Sort</button>
+                <button class="tab" data-algorithm="selection">Selection Sort</button>
+                <button class="tab" data-algorithm="merge">Merge Sort</button>
+                <button class="tab" data-algorithm="quick">Quick Sort</button>
+            </div>
+            <div class="playback-controls">
+                <button class="control-btn" id="playBtn" title="Play">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                </button>
+                <button class="control-btn" id="pauseBtn" title="Pause">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                </button>
+                <button class="control-btn" id="resetBtn" title="Reset">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Visualization Area -->
+        <div class="visualization-panel">
+            <div class="visualization-header-row">
+                <div class="header-left">
+                    <span class="panel-title">Sorting Visualization</span>
+                </div>
+                <div class="header-center">
+                    <span class="step-counter">Comparisons: <span id="comparisonCount">0</span></span>
+                </div>
+                <div class="header-right">
+                    <span class="log-header">Sorting Log</span>
+                </div>
+            </div>
+            <div class="visualization-content">
+                <div class="array-section">
+                    <div class="array-container" id="arrayContainer">
+                        <!-- Array elements will be rendered here -->
+                    </div>
+                </div>
+                <div class="log-section">
+                    <div class="log-container" id="logContainer">
+                        <!-- Log entries will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Panels -->
+        <div class="info-grid">
+            <!-- Algorithm Description -->
+            <div class="info-panel description-panel">
+                <h2 id="algorithmTitle">Insertion Sort</h2>
+                <p id="algorithmDescription">
+                    Insertion sort builds the final sorted array one item at a time, 
+                    iteratively taking the next item and inserting it into its correct position 
+                    among the already sorted items.
+                </p>
+                <div class="complexity-section">
+                    <h3>Complexity</h3>
+                    <div class="complexity-grid">
+                        <div class="complexity-item">
+                            <span class="complexity-label">Best Case</span>
+                            <span class="complexity-value">O(n)</span>
+                        </div>
+                        <div class="complexity-item">
+                            <span class="complexity-label">Average Case</span>
+                            <span class="complexity-value">O(n²)</span>
+                        </div>
+                        <div class="complexity-item">
+                            <span class="complexity-label">Worst Case</span>
+                            <span class="complexity-value">O(n²)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Panel -->
+            <div class="info-panel code-panel">
+                <div class="code-header">
+                    <span>Python Implementation</span>
+                    <button class="copy-btn" id="copyBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <pre class="code-block"><code id="codeContent"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
