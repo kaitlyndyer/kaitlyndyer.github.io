@@ -1,1 +1,111 @@
-color!
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Coloring Book</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+
+        <!-- Top bar -->
+        <header class="topbar">
+            <div class="brand">
+                <span class="brand-mark" aria-hidden="true">🖍️</span>
+                <h1>Math Coloring Book</h1>
+            </div>
+
+            <div class="topbar-right">
+                <div class="grade-switch" role="group" aria-label="Choose grade level">
+                    <button class="grade-btn active" data-grade="k">Kindergarten</button>
+                    <button class="grade-btn" data-grade="1">1st Grade</button>
+                </div>
+
+                <div class="score" title="Stars earned">
+                    <span class="score-icon" aria-hidden="true">⭐</span>
+                    <span id="starCount">0</span>
+                </div>
+
+                <div class="score" title="Areas colored">
+                    <span class="score-icon" aria-hidden="true">🎨</span>
+                    <span id="colorCount">0</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="main">
+
+            <!-- Picture -->
+            <main class="stage">
+                <div class="canvas-card" id="canvasCard">
+                    <div class="canvas-wrap" id="canvasWrap">
+                        <canvas id="paintCanvas"></canvas>
+                        <canvas id="hoverCanvas"></canvas>
+                        <canvas id="lineCanvas"></canvas>
+                        <div class="canvas-lock" id="canvasLock">
+                            <span>Answer the question to unlock your crayon!</span>
+                        </div>
+                    </div>
+                    <div class="loading" id="loading">
+                        <div class="spinner" aria-hidden="true"></div>
+                        <span id="loadingText">Getting your picture ready…</span>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Controls -->
+            <aside class="sidebar">
+
+                <section class="mathcard" id="mathcard" aria-live="polite">
+                    <div class="math-prompt" id="mathPrompt">Let's warm up!</div>
+                    <div class="math-equation" id="mathEquation">&nbsp;</div>
+                    <div class="math-dots" id="mathDots"></div>
+                    <div class="math-answers" id="mathAnswers"></div>
+
+                    <!-- Covers the card once the answer is right -->
+                    <div class="math-reward" id="mathReward" hidden>
+                        <div class="reward-star" aria-hidden="true">⭐</div>
+                        <strong id="rewardTitle">Great job!</strong>
+                        <span>Now click a spot in the picture to color it in.</span>
+                    </div>
+                </section>
+
+                <section class="tray">
+                    <h2 class="tray-title">Color Box</h2>
+                    <div class="crayons" id="crayons" role="group" aria-label="Color box"></div>
+
+                    <div class="progress">
+                        <div class="progress-top">
+                            <span>Picture progress</span>
+                            <span id="progressLabel">0 / 0</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                    </div>
+
+                    <div class="tray-tools">
+                        <button class="tool-btn" id="eraserBtn" title="Eraser — always free to use">
+                            <span aria-hidden="true">🧽</span> Eraser
+                        </button>
+                        <button class="tool-btn" id="saveBtn" title="Save your picture">
+                            <span aria-hidden="true">💾</span> Save
+                        </button>
+                        <button class="tool-btn danger" id="resetBtn" title="Clear the whole picture">
+                            <span aria-hidden="true">🔄</span> Start Over
+                        </button>
+                    </div>
+                </section>
+
+            </aside>
+        </div>
+    </div>
+
+    <!-- Celebration layer -->
+    <div class="confetti" id="confetti" aria-hidden="true"></div>
+
+    <script src="game.js"></script>
+</body>
+</html>
