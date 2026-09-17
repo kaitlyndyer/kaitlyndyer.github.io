@@ -91,7 +91,7 @@ const state = {
     tool: 'crayon',            // 'crayon' | 'eraser'
     color: CRAYONS[0].hex,
     credits: 0,                // areas the child has earned the right to color
-    stars: 0,
+    stars: 0,                  // kept and saved, but not shown - hook for a future reward
     problem: null,
     wrongTries: 0,
     locked: false,             // input freeze during answer feedback
@@ -528,8 +528,6 @@ function showReward() {
 
 function updateHUD() {
     const done = state.ready ? coloredTotal() : 0;
-    $('starCount').textContent = state.stars;
-    $('colorCount').textContent = done;
     $('progressLabel').textContent = done + ' / ' + countableTotal;
     $('progressFill').style.width = countableTotal ? (done / countableTotal * 100) + '%' : '0';
 }
