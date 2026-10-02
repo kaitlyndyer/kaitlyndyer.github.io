@@ -1,0 +1,48 @@
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font: 16px/1.6 "Nunito", system-ui, sans-serif;
+    color: #221d33;
+    background:
+        radial-gradient(circle at 85% 0%, rgba(255, 210, 120, .45), transparent 35%),
+        radial-gradient(circle at 0% 100%, rgba(124, 92, 255, .22), transparent 40%),
+        #fbf7f1;
+    -webkit-font-smoothing: antialiased;
+}
+
+.hub { max-width: 880px; margin: 0 auto; padding: 70px 24px 40px; }
+
+.hub-head { text-align: center; margin-bottom: 44px; }
+.hub-logo {
+    display: inline-grid; place-items: center;
+    width: 84px; height: 84px; font-size: 46px;
+    border-radius: 26px; background: white; transform: rotate(-6deg);
+    box-shadow: 0 10px 30px rgba(124, 92, 255, .25);
+}
+.hub-head h1 { font: 700 64px/1 "Fredoka", sans-serif; color: #7c5cff; margin: 18px 0 8px; letter-spacing: -1px; }
+.hub-head p { font-size: 18px; color: #4b4560; margin: 0; }
+
+.courses { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+
+.course-card {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 26px; border-radius: 22px; text-decoration: none; color: inherit;
+    background: white; border: 2px solid #ebe4d8;
+    box-shadow: 0 6px 20px rgba(34, 29, 51, .06);
+    transition: transform .18s, border-color .18s, box-shadow .18s;
+}
+a.course-card:hover { transform: translateY(-5px) rotate(-.5deg); border-color: var(--c); box-shadow: 0 16px 34px rgba(124, 92, 255, .2); }
+a.course-card:focus-visible { outline: 3px solid var(--c); outline-offset: 3px; }
+.course-emoji { font-size: 38px; }
+.course-title { font: 600 23px/1.2 "Fredoka", sans-serif; }
+.course-desc { color: #4b4560; }
+.course-go { margin-top: 8px; font-weight: 800; color: var(--c); }
+.course-card.placeholder { border-style: dashed; background: transparent; box-shadow: none; color: #7a7490; }
+
+.hub-foot { margin-top: 50px; text-align: center; font-size: 13px; color: #7a7490; }
+
+@media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+}
