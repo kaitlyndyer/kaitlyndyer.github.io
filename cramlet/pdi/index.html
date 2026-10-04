@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Program Design & Implementation · cramlet</title>
+    <meta name="description" content="A concept-by-concept study guide to designing programs in Java, with summaries, code examples, flashcards, and quizzes.">
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../brand.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+
+        <!-- Top bar -->
+        <header class="topbar">
+            <a class="brand" id="brand" href="../" title="All courses">cramlet</a>
+            <span class="topbar-sep" aria-hidden="true">/</span>
+            <a class="course-name" href="#/">Program Design &amp; Implementation</a>
+            <button type="button" class="buddy-chip" id="buddy-chip"></button>
+        </header>
+
+        <div class="layout">
+
+            <!-- Sidebar: search + concept list -->
+            <aside class="sidebar" aria-label="Concepts">
+                <div class="search">
+                    <span class="search-icon" id="search-icon"></span>
+                    <input id="search-input" type="search" placeholder="Search everything…" autocomplete="off"
+                           aria-label="Search notes" aria-controls="search-results">
+                    <kbd class="search-kbd" aria-hidden="true">/</kbd>
+                    <div id="search-results" class="search-results" role="listbox" hidden></div>
+                </div>
+                <nav id="concept-nav" class="concept-nav"></nav>
+            </aside>
+
+            <!-- Main content (rendered by app.js) -->
+            <main id="main" class="main" tabindex="-1"></main>
+        </div>
+
+        <footer class="footer">
+            Student-made study notes. Not official course material.
+            <a href="https://github.com/kaitlyndyer/kaitlyndyer.github.io/issues" target="_blank" rel="noopener">Spotted a mistake?</a>
+        </footer>
+    </div>
+
+    <script src="../critters.js"></script>
+    <script src="../icons.js"></script>
+    <script src="../buddy.js"></script>
+    <script src="data/course.js"></script>
+    <script src="data/concepts/paradigms.js"></script>
+    <script src="data/concepts/design-goals.js"></script>
+    <script src="data/concepts/program-understanding.js"></script>
+    <script src="data/concepts/interfaces.js"></script>
+    <script src="data/concepts/inheritance.js"></script>
+    <script src="data/concepts/polymorphism.js"></script>
+    <script src="data/concepts/types-generics.js"></script>
+    <script src="data/concepts/exceptions.js"></script>
+    <script src="data/concepts/collections.js"></script>
+    <script src="data/concepts/io.js"></script>
+    <script src="data/concepts/specifications.js"></script>
+    <script src="data/concepts/nullness.js"></script>
+    <script src="data/concepts/contracts.js"></script>
+    <script src="data/concepts/tooling.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

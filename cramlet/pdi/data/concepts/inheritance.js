@@ -75,7 +75,7 @@ registerConcept({
           <li>Each subclass keeps only what’s unique to it, and its constructor <b>delegates</b> to the parent with <code>super(name)</code>.</li>
         </ul>
         <p>Result: no duplicated code across device classes.</p>
-        <p class="widget-hint">👇 <b>Try it:</b> click a class to see everything it inherits and where each method comes from.</p>`,
+        <p class="callout try">Click a class to see everything it inherits and where each method comes from.</p>`,
       widget: "hierarchy",
     },
     {

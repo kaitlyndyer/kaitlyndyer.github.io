@@ -12,7 +12,7 @@ registerConcept({
       { lec: [6], html: "<b>Restrictive:</b> rule out unacceptable implementations, for example by saying what happens on <code>null</code>." },
       { lec: [6], html: "<b>General:</b> don’t rule out correct implementations. Describe <i>what</i> it does (behavioral), not <i>how</i> (operational)." },
       { lec: [6], html: "<b>Clear:</b> concise and unambiguous. Redundancy is only OK when it defines domain terms." },
-      { lec: [6], html: "⚠️ <b>Specification debt:</b> ambiguous specs push consequential decisions onto implementers. Fixing it in the spec is far cheaper than fixing deployed code." },
+      { lec: [6], kind: "warn", html: "<b>Specification debt:</b> ambiguous specs push consequential decisions onto implementers. Fixing it in the spec is far cheaper than fixing deployed code." },
     ],
     compare: {
       head: ["Property", "Means", "Fails when…"],
@@ -61,8 +61,8 @@ registerConcept({
       html: `
         <p>Dangerous specs let developers <i>think</i> they understand when they don’t. Aim for concise, but the shortest isn’t always clearest, and long isn’t always complete.</p>
         <ul>
-          <li>❌ “Returns the sum… The sum is computed by adding each element… It is the total of all the elements…” is redundant. Are “sum” and “total” different concepts?</li>
-          <li>✅ Purposeful redundancy is fine when it <b>defines a domain term</b>, like explaining what “present value of an income stream” means.</li>
+          <li><i data-icon="no"></i> “Returns the sum… The sum is computed by adding each element… It is the total of all the elements…” is redundant. Are “sum” and “total” different concepts?</li>
+          <li><i data-icon="yes"></i> Purposeful redundancy is fine when it <b>defines a domain term</b>, like explaining what “present value of an income stream” means.</li>
         </ul>`,
     },
     {

@@ -94,7 +94,7 @@ registerConcept({
           <li><code>settings.gradle</code>: root folder config. Auto-generated and rarely changes.</li>
           <li><code>build.gradle</code>: the main config, with JDK version, dependencies, JUnit version, and entry point. Changes often.</li>
           <li><code>src/main/java</code>: the sources root, for all Java source files.</li>
-          <li>A separate <b>test sources root</b> keeps tests apart from code. The slide lists <code>src/main/test</code>; 💡 Gradle’s standard default is <code>src/test/java</code>, so check your project template.</li>
+          <li>A separate <b>test sources root</b> keeps tests apart from code. The slide lists <code>src/main/test</code>; <i data-icon="tip"></i> Gradle’s standard default is <code>src/test/java</code>, so check your project template.</li>
           <li><code>gradlew</code>: the script that runs Gradle tasks, like <code>./gradlew run</code>.</li>
         </ul>`,
     },

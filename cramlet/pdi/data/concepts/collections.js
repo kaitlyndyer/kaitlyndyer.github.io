@@ -68,7 +68,7 @@ registerConcept({
           <li><code>LinkedHashSet</code>: hash table + linked list. Iterates in <b>insertion order</b>.</li>
           <li><code>TreeSet</code>: a balanced binary search tree. Ordered and navigable, with <b>logarithmic</b> add/remove/search. Ordering comes from <code>Comparable</code> or a <code>Comparator</code>.</li>
         </ul>
-        <p>💡 Hash-based sets depend on <code>equals</code> and <code>hashCode</code> being implemented correctly (see <b>equals, hashCode &amp; compareTo</b>).</p>`,
+        <p class="callout tip">Hash-based sets depend on <code>equals</code> and <code>hashCode</code> being implemented correctly (see <b>equals, hashCode &amp; compareTo</b>).</p>`,
     },
     {
       id: "maps",

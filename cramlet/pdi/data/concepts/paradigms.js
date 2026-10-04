@@ -19,8 +19,8 @@ registerConcept({
       rows: [
         ["Mental model", "“Function, take this device and identify it.”", "“Device, identify yourself.”"],
         ["Call style", "<code>identifyDevice(light)</code>", "<code>light.identify()</code>"],
-        ["Add a new type", "❌ Edit existing functions (new <code>elif</code>)", "✅ Add one new class"],
-        ["Add a new operation", "✅ Add one new function", "❌ Edit every class"],
+        ["Add a new type", "<i data-icon=\"no\"></i> Edit existing functions (new <code>elif</code>)", "<i data-icon=\"yes\"></i> Add one new class"],
+        ["Add a new operation", "<i data-icon=\"yes\"></i> Add one new function", "<i data-icon=\"no\"></i> Edit every class"],
         ["Behavior by type", "Branches on type, one case at a time", "Each class supplies its own version"],
       ],
     },

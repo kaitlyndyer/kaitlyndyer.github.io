@@ -2,6 +2,11 @@
     "use strict";
 
     const S = window.STUDY;
+    const icon = CRAMLET.icon;
+    document.getElementById("search-icon").innerHTML = icon("magnifying-glass");
+    const buddy = CRAMLET.buddy;
+    buddy.mountChip(document.getElementById("buddy-chip"));
+    document.getElementById("brand").innerHTML = CRAMLET.logo();
     const main = document.getElementById("main");
     const nav = document.getElementById("concept-nav");
 
@@ -12,14 +17,15 @@
     const hasContent = id => Boolean(S.content[id]);
 
     const TABS = [
-        { id: "summary", label: "Summary", icon: "📝" },
-        { id: "details", label: "Details", icon: "🔬" },
-        { id: "code", label: "Code", icon: "💻" },
-        { id: "practice", label: "Practice", icon: "🧠" },
+        { id: "summary", label: "Summary", icon: "note" },
+        { id: "details", label: "Details", icon: "microscope" },
+        { id: "code", label: "Code", icon: "code" },
+        { id: "practice", label: "Practice", icon: "brain" },
     ];
 
     // ---------- Saved progress (per browser) ----------
 
+    // Key kept from the old /study address so saved progress carries over to cramlet.
     const STORE_KEY = "study.pdi.v1";
     let saved = { status: {} };
     try {
@@ -54,8 +60,8 @@
 
     function statusBadge(id) {
         const st = saved.status[id];
-        if (st === "got") return `<span class="status got" title="Marked: got it">✓</span>`;
-        if (st === "review") return `<span class="status review" title="Marked: review again">↻</span>`;
+        if (st === "got") return `<span class="status got" title="Marked: got it">${icon("check")}</span>`;
+        if (st === "review") return `<span class="status review" title="Marked: review again">${icon("arrow-clockwise")}</span>`;
         return "";
     }
 
@@ -81,11 +87,12 @@
     function celebrate(el) {
         if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
         const r = el.getBoundingClientRect();
-        const bits = ["✨", "🎉", "⭐", "💜", "✅"];
+        const colors = ["#7c5cff", "#ffc94d", "#ff7aa8", "#2fae6b", "#3f8cff"];
         for (let i = 0; i < 12; i++) {
             const s = document.createElement("span");
             s.className = "burst";
-            s.textContent = bits[i % bits.length];
+            s.innerHTML = icon(i % 3 ? "sparkle" : "star");
+            s.style.color = colors[i % colors.length];
             s.style.left = r.left + r.width / 2 + "px";
             s.style.top = r.top + r.height / 2 + "px";
             const angle = (Math.PI * 2 * i) / 12;
@@ -103,11 +110,11 @@
         const current = nav.dataset.active || "";
         nav.innerHTML = S.groups.map(g => `
             <div class="nav-group">
-                <div class="nav-group-title"><span aria-hidden="true">${g.icon}</span> ${esc(g.title)}</div>
+                <div class="nav-group-title">${icon(g.icon)} ${esc(g.title)}</div>
                 ${g.concepts.map(c => `
                     <a class="nav-item${c.id === current ? " active" : ""}${hasContent(c.id) ? "" : " soon"}"
                        href="#/c/${c.id}" style="--c:${c.color}" ${c.id === current ? 'aria-current="page"' : ""}>
-                        <span class="nav-icon" aria-hidden="true">${c.icon}</span>
+                        <span class="nav-icon">${icon(c.icon)}</span>
                         <span class="nav-label">${esc(c.title)}</span>
                         ${hasContent(c.id) ? statusBadge(c.id) : `<span class="soon-tag">soon</span>`}
                     </a>`).join("")}
@@ -128,7 +135,7 @@
                     <h1>${esc(S.course.title)}</h1>
                     <p>${esc(S.course.tagline)}</p>
                     <p class="hero-meta">${allConcepts.length} concepts · Lectures ${lecs[0]}–${lecs[lecs.length - 1]} · ${ready} ready so far</p>
-                    <button class="btn primary" type="button" data-focus-search>🔍 Search the notes</button>
+                    <button class="btn primary" type="button" data-focus-search>${icon("magnifying-glass")} Search the notes</button>
                 </div>
                 <div class="ring" style="--pct:${pct}" role="img" aria-label="${got} of ${allConcepts.length} concepts marked got it">
                     <div class="ring-inner"><b>${got}</b><span>of ${allConcepts.length}<br>got it</span></div>
@@ -136,11 +143,11 @@
             </section>
             ${S.groups.map(g => `
                 <section class="home-group">
-                    <h2><span aria-hidden="true">${g.icon}</span> ${esc(g.title)}</h2>
+                    <h2>${icon(g.icon)} ${esc(g.title)}</h2>
                     <div class="card-grid">
                         ${g.concepts.map(c => `
                             <a class="concept-card${hasContent(c.id) ? "" : " soon"}" href="#/c/${c.id}" style="--c:${c.color}">
-                                <span class="card-icon" aria-hidden="true">${c.icon}</span>
+                                <span class="card-icon">${icon(c.icon)}</span>
                                 <span class="card-title">${esc(c.title)}</span>
                                 <span class="card-meta">${lectureChips(c.lectures, true)}
                                     ${hasContent(c.id) ? statusBadge(c.id) : `<span class="soon-tag">soon</span>`}</span>
@@ -155,17 +162,17 @@
     function renderSoon(c) {
         main.innerHTML = `
             <div class="concept-head" style="--c:${c.color}">
-                <div class="concept-icon" aria-hidden="true">${c.icon}</div>
+                <div class="concept-icon">${icon(c.icon)}</div>
                 <div>
                     <h1>${esc(c.title)}</h1>
                     <div class="chips">${lectureChips(c.lectures)}</div>
                 </div>
             </div>
             <div class="empty">
-                <div class="empty-emoji" aria-hidden="true">🚧</div>
+                <div class="empty-icon">${icon("hourglass-medium")}</div>
                 <h2>Coming soon</h2>
                 <p>This concept will be built from ${c.lectures.map(n => `Lecture ${n} (${esc(S.lectures[n])})`).join(", ")}.</p>
-                <a class="btn" href="#/c/interfaces">Try a finished concept: 🧩 Interfaces &amp; Abstract Classes</a>
+                <a class="btn" href="#/c/interfaces">Try a finished concept: ${icon("puzzle-piece")} Interfaces &amp; Abstract Classes</a>
             </div>`;
     }
 
@@ -181,9 +188,9 @@
         main.innerHTML = `
             <div class="concept" style="--c:${c.color}">
                 <div class="concept-head">
-                    <div class="concept-icon" aria-hidden="true">${c.icon}</div>
+                    <div class="concept-icon">${icon(c.icon)}</div>
                     <div>
-                        <div class="concept-group"><span aria-hidden="true">${c.group.icon}</span>${esc(c.group.title)}</div>
+                        <div class="concept-group">${icon(c.group.icon)}${esc(c.group.title)}</div>
                         <h1>${esc(c.title)}</h1>
                         <div class="chips">${lectureChips(c.lectures)}</div>
                     </div>
@@ -194,7 +201,7 @@
                 <div class="tabs" role="tablist" aria-label="${esc(c.title)} sections">
                     ${TABS.map(t => `
                         <a class="tab${t.id === tab ? " active" : ""}" role="tab" href="#/c/${id}/${t.id}"
-                           aria-selected="${t.id === tab}"><span aria-hidden="true">${t.icon}</span> ${t.label}</a>`).join("")}
+                           aria-selected="${t.id === tab}">${icon(t.icon)} ${t.label}</a>`).join("")}
                 </div>
 
                 <div class="tab-panel" role="tabpanel" id="tab-panel"></div>
@@ -202,25 +209,26 @@
                 <div class="concept-foot">
                     <div class="feel">
                         <span>How’s this concept feeling?</span>
-                        <button type="button" class="pill got${st === "got" ? " on" : ""}" data-status="got">✓ Got it</button>
-                        <button type="button" class="pill review${st === "review" ? " on" : ""}" data-status="review">↻ Review again</button>
+                        <button type="button" class="pill got${st === "got" ? " on" : ""}" data-status="got">${icon("check")} Got it</button>
+                        <button type="button" class="pill review${st === "review" ? " on" : ""}" data-status="review">${icon("arrow-clockwise")} Review again</button>
                     </div>
                     ${d.related && d.related.length ? `
                     <div class="related">
                         <span>Related:</span>
                         ${d.related.map(r => conceptById[r]).filter(Boolean).map(r =>
-                            `<a class="related-chip" href="#/c/${r.id}" style="--c:${r.color}"><span aria-hidden="true">${r.icon}</span>${esc(r.title)}</a>`).join("")}
+                            `<a class="related-chip" href="#/c/${r.id}" style="--c:${r.color}">${icon(r.icon)}${esc(r.title)}</a>`).join("")}
                     </div>` : ""}
                 </div>
             </div>`;
 
         const panel = document.getElementById("tab-panel");
         ({ summary: renderSummary, details: renderDetails, code: renderCode, practice: renderPractice })[tab](panel, d, c);
+        CRAMLET.decorateIcons(panel);
 
         main.querySelectorAll("[data-status]").forEach(b =>
             b.addEventListener("click", () => {
                 setStatus(id, b.dataset.status);
-                if (saved.status[id] === "got") celebrate(b);
+                if (saved.status[id] === "got") { celebrate(b); buddy.cheerChip(); }
                 renderConcept(id, tab);
             }));
 
@@ -239,7 +247,7 @@
         panel.innerHTML = `
             <h2 class="panel-title">Key ideas</h2>
             <ul class="keypoints">
-                ${s.keyPoints.map(k => `<li><span class="kp-text">${k.html}</span>${lectureChips(k.lec, true)}</li>`).join("")}
+                ${s.keyPoints.map(k => `<li${k.kind ? ` class="kp-${k.kind}"` : ""}>${k.kind ? icon(k.kind, "kp-ic") : ""}<span class="kp-text">${k.html}</span>${lectureChips(k.lec, true)}</li>`).join("")}
             </ul>
             ${s.compare ? `
                 <h2 class="panel-title">At a glance</h2>
@@ -271,7 +279,7 @@
             <section class="code-ex">
                 <h3>${esc(ex.title)} ${lectureChips(ex.lec, true)}</h3>
                 ${codeBlock(ex.code)}
-                ${ex.note ? `<p class="code-note">💡 ${ex.note}</p>` : ""}
+                ${ex.note ? `<p class="code-note callout tip">${ex.note}</p>` : ""}
             </section>`).join("");
     }
 
@@ -281,8 +289,8 @@
         const mode = (saved.practiceMode === "quiz") ? "quiz" : "cards";
         panel.innerHTML = `
             <div class="seg" role="group" aria-label="Practice mode">
-                <button type="button" class="seg-btn${mode === "cards" ? " active" : ""}" data-mode="cards"><span aria-hidden="true">🃏</span> Flashcards <span class="count">${d.flashcards.length}</span></button>
-                <button type="button" class="seg-btn${mode === "quiz" ? " active" : ""}" data-mode="quiz"><span aria-hidden="true">✅</span> Quiz <span class="count">${d.quiz.length}</span></button>
+                <button type="button" class="seg-btn${mode === "cards" ? " active" : ""}" data-mode="cards">${icon("cards")} Flashcards <span class="count">${d.flashcards.length}</span></button>
+                <button type="button" class="seg-btn${mode === "quiz" ? " active" : ""}" data-mode="quiz">${icon("list-checks")} Quiz <span class="count">${d.quiz.length}</span></button>
             </div>
             <div id="practice-area"></div>`;
         panel.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => {
@@ -305,6 +313,8 @@
     function mountFlashcards(area, cards) {
         let order = cards.map((_, i) => i);
         let i = 0, flipped = false;
+        const seen = new Set();
+        let mood = "idle", line = buddy.say("cardsStart"), anim = "", deckDone = false;
 
         function draw() {
             const card = cards[order[i]];
@@ -318,10 +328,16 @@
                         <button type="button" class="btn" data-act="prev" aria-label="Previous card">←</button>
                         <span class="flash-count">${i + 1} / ${cards.length}</span>
                         <button type="button" class="btn" data-act="next" aria-label="Next card">→</button>
-                        <button type="button" class="btn ghost" data-act="shuffle">🔀 Shuffle</button>
+                        <button type="button" class="btn ghost" data-act="shuffle">${icon("shuffle")} Shuffle</button>
                     </div>
                     <div class="dots">${order.map((_, k) => `<span class="dot${k === i ? " on" : ""}"></span>`).join("")}</div>
+                    <div class="flash-buddy">
+                        <span class="fb-av"></span>
+                        <span class="buddy-say" aria-live="polite">${esc(line)}</span>
+                    </div>
                 </div>`;
+            buddy.react(area.querySelector(".fb-av"), mood, anim);
+            anim = "";
             area.querySelector(".flashcard").addEventListener("click", flip);
             area.querySelector('[data-act="prev"]').addEventListener("click", () => go(-1));
             area.querySelector('[data-act="next"]').addEventListener("click", () => go(1));
@@ -333,10 +349,23 @@
         function flip() {
             flipped = !flipped;
             area.querySelector(".flashcard").classList.toggle("flipped", flipped);
+            if (!flipped) return;
+            seen.add(order[i]);
+            if (!deckDone && seen.size === cards.length) {
+                deckDone = true;
+                mood = "cheer"; anim = "party"; line = buddy.say("deck");
+                celebrate(area.querySelector(".fb-av"));
+            } else {
+                mood = "happy"; anim = "bounce"; line = buddy.say("flip");
+            }
+            buddy.react(area.querySelector(".fb-av"), mood, anim);
+            area.querySelector(".flash-buddy .buddy-say").textContent = line;
+            anim = "";
         }
         function go(step) {
             i = (i + step + cards.length) % cards.length;
             flipped = false;
+            if (!deckDone) mood = "idle";
             draw();
         }
         setKeyHandler(e => {
@@ -403,7 +432,9 @@
                 const fb = area.querySelector(".feedback");
                 fb.hidden = false;
                 fb.className = "feedback " + (right ? "good" : "bad");
-                fb.innerHTML = `<b>${right ? "Nice! 🎉" : "Not quite. Here’s why:"}</b> ${q.explain}`;
+                fb.innerHTML = `<span class="fb-av"></span>
+                    <div class="fb-text"><b>${esc(buddy.say(right ? "right" : "wrong"))}</b> ${q.explain}</div>`;
+                buddy.react(fb.querySelector(".fb-av"), right ? "happy" : "oops", right ? "bounce" : "wobble");
                 const next = area.querySelector(".quiz-next");
                 next.hidden = false;
                 next.querySelector("button").focus();
@@ -415,21 +446,24 @@
             const missed = pool.filter(qi => !results[qi]);
             const right = pool.length - missed.length;
             const perfect = missed.length === 0;
+            const good = right / pool.length >= 0.7;
             area.innerHTML = `
                 <div class="quiz-end">
-                    <div class="end-emoji" aria-hidden="true">${perfect ? "🏆" : right / pool.length >= 0.7 ? "🌟" : "💪"}</div>
+                    <div class="end-buddy"></div>
+                    <p class="end-say buddy-say">${esc(buddy.say(perfect ? "perfect" : good ? "good" : "keepGoing"))}</p>
                     <h3>${perfect ? "Perfect round!" : `You got ${right} of ${pool.length}`}</h3>
                     <p>${perfect ? "You really know this one. Consider marking it “Got it” below." : "Missed questions are great to revisit. Try just those again:"}</p>
                     ${missed.length ? `<ul class="missed">${missed.map(qi => `<li>${stripTags(questions[qi].q)}</li>`).join("")}</ul>` : ""}
                     <div class="end-actions">
-                        ${missed.length ? `<button type="button" class="btn primary" data-retry>↻ Retry missed (${missed.length})</button>` : ""}
+                        ${missed.length ? `<button type="button" class="btn primary" data-retry>${icon("arrow-clockwise")} Retry missed (${missed.length})</button>` : ""}
                         <button type="button" class="btn" data-restart>Start over</button>
                     </div>
                 </div>`;
             const retry = area.querySelector("[data-retry]");
             if (retry) retry.addEventListener("click", () => { pool = missed; pos = 0; results = {}; draw(); });
             area.querySelector("[data-restart]").addEventListener("click", () => { pool = questions.map((_, i) => i); pos = 0; results = {}; draw(); });
-            if (perfect) celebrate(area.querySelector(".end-emoji"));
+            buddy.react(area.querySelector(".end-buddy"), perfect ? "cheer" : good ? "happy" : "idle", perfect ? "party" : "bounce");
+            if (perfect) celebrate(area.querySelector(".end-buddy"));
         }
 
         draw();
@@ -517,7 +551,7 @@
                 ${isTypes.length ? `<p><b>${name} is-a:</b> ${isTypes.map(t => `<code>${t}</code>`).join(", ")}</p>` : `<p><b>${name}</b> is the top of the hierarchy.</p>`}
                 <p><b>Methods you can call on it:</b></p>
                 <div class="method-list">${methods.map(x => `<span class="method"><code>${x.m}</code><small>from ${x.from}</small></span>`).join("")}</div>
-                ${node.kind !== "class" ? `<p class="muted">⚠️ ${node.kind === "interface" ? "Interfaces" : "Abstract classes"} can’t be created with <code>new</code>.</p>` : ""}`;
+                ${node.kind !== "class" ? `<p class="muted"><i class="inline-ic ic-warn">${icon("warning")}</i> ${node.kind === "interface" ? "Interfaces" : "Abstract classes"} can’t be created with <code>new</code>.</p>` : ""}`;
         }
 
         stage.querySelectorAll(".hnode").forEach(b => b.addEventListener("click", () => select(b.dataset.node)));
@@ -574,7 +608,7 @@
         searchResults.innerHTML = hits.length
             ? hits.map(({ e }, k) => `
                 <a class="result${k === 0 ? " active" : ""}" role="option" href="${e.href}" style="--c:${e.concept.color}">
-                    <span class="r-top"><span class="r-icon">${e.concept.icon}</span><b>${esc(e.title)}</b><span class="r-where">${e.where}</span></span>
+                    <span class="r-top"><span class="r-icon">${icon(e.concept.icon)}</span><b>${esc(e.title)}</b><span class="r-where">${e.where}</span></span>
                     <span class="r-snip">${e.where === "Concept" ? esc(e.concept.group.title) + (hasContent(e.concept.id) ? "" : " · coming soon") : snippet(e.text, words)}</span>
                 </a>`).join("")
             : `<div class="no-results">No matches for “${esc(q)}”. Try a different word.</div>`;
@@ -630,15 +664,16 @@
             renderNav(parts[1]);
             renderConcept(parts[1], parts[2] || "summary", parts[3]);
             const c = conceptById[parts[1]];
-            document.title = (c ? c.title + " · " : "") + "study";
+            document.title = (c ? c.title + " · " : "") + "cramlet";
         } else {
             renderNav("");
             renderHome();
-            document.title = "Program Design & Implementation · study";
+            document.title = "Program Design & Implementation · cramlet";
         }
         if (!parts[3]) window.scrollTo(0, 0);
     }
 
     window.addEventListener("hashchange", route);
     route();
+    buddy.welcomeIfNew();
 })();

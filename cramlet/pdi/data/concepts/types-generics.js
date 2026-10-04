@@ -9,7 +9,7 @@ registerConcept({
     keyPoints: [
       { lec: [3], html: "Without generics, containers hold <code>Object</code>, so mistakes compile fine and crash at <b>runtime</b> with <code>ClassCastException</code>." },
       { lec: [3], html: "<code>List&lt;Light&gt;</code> uses a <b>type parameter</b>, so adding a <code>Fan</code> won’t compile. Errors move to <b>compile time</b>." },
-      { lec: [3], html: "⚠️ <b>Raw types</b> (<code>new ArrayList()</code>) aren’t type-safe. In this course, <b>unchecked warnings count as errors</b>." },
+      { lec: [3], kind: "warn", html: "<b>Raw types</b> (<code>new ArrayList()</code>) aren’t type-safe. In this course, <b>unchecked warnings count as errors</b>." },
       { lec: [3], html: "<b>Primitive</b> variables hold the value. <b>Reference</b> variables hold an address of an object elsewhere in memory." },
       { lec: [3], html: "Java is <b>always pass-by-value</b>: the variable’s contents are copied. For references, the <i>address</i> is copied, so mutations are visible to the caller but reassignment isn’t." },
       { lec: [3], html: "Type parameters must be reference types, so use <b>wrappers</b> (<code>Integer</code>, <code>Double</code>…). Java <b>autoboxes</b> <code>int ↔ Integer</code>." },
@@ -51,7 +51,7 @@ registerConcept({
         <ul>
           <li>A <b>raw type</b> is a generic type used without its parameter, like <code>List list = new ArrayList();</code>. It exists only for backward compatibility (generics arrived in Java 5).</li>
           <li>An <b>unchecked warning</b> means the compiler couldn’t verify type safety.</li>
-          <li>📌 <b>In this course, unchecked warnings count as errors.</b> Always give the type parameter: <code>new ArrayList&lt;Light&gt;()</code> or <code>new ArrayList&lt;&gt;()</code>.</li>
+          <li><i data-icon="key"></i> <b>In this course, unchecked warnings count as errors.</b> Always give the type parameter: <code>new ArrayList&lt;Light&gt;()</code> or <code>new ArrayList&lt;&gt;()</code>.</li>
         </ul>`,
     },
     {
@@ -64,7 +64,7 @@ registerConcept({
           <li><b>Primitive</b> (8 of them): <code>boolean</code>; whole numbers <code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>; floating-point <code>float</code>, <code>double</code>; and <code>char</code>. The variable is a small chunk of memory holding the value directly.</li>
           <li><b>Reference</b>: classes, interfaces, arrays. The variable stores a <b>reference (address)</b> to the object, not the object itself. Assigning one reference to another makes both point to the <b>same object</b>.</li>
         </ul>
-        <p>⚠️ For references, <code>a == b</code> checks whether they point to the same object, not whether they represent equal values. (For value equality, see <b>equals, hashCode &amp; compareTo</b>.)</p>`,
+        <p class="callout warn">For references, <code>a == b</code> checks whether they point to the same object, not whether they represent equal values. (For value equality, see <b>equals, hashCode &amp; compareTo</b>.)</p>`,
     },
     {
       id: "pass-by-value",

@@ -1,0 +1,91 @@
+/* cramlet logo: the mascot peeks over the wordmark. Sized in em, so set font-size on .peek. */
+.peek { position: relative; display: inline-block; padding-top: 1.04em; line-height: 1; }
+.peek .clip { position: absolute; left: 50%; top: 0; transform: translateX(-48%); width: 1.64em; height: 1.32em; overflow: hidden; }
+.peek .clip svg { width: 1.64em; height: 1.64em; display: block; }
+.peek .paws { position: absolute; left: 50%; top: 1.09em; transform: translateX(-48%); width: 1.64em; height: .36em; z-index: 2; }
+.peek .paws svg { width: 100%; height: 100%; display: block; }
+.peek .word { position: relative; z-index: 1; font: 700 1em/1 "Fredoka", "Nunito", system-ui, sans-serif; color: var(--brand, #7c5cff); letter-spacing: -.03em; }
+
+/* ---------- Study buddy (see buddy.js) ---------- */
+
+/* Button in the top bar: mini buddy + name */
+.buddy-chip {
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    padding: 3px 12px 3px 4px; border-radius: 999px; border: 2px solid #ebe4d8; background: #fff;
+    font: 800 14px "Nunito", system-ui, sans-serif; color: #4b4560;
+    transition: border-color .15s, transform .15s;
+}
+.buddy-chip:hover { border-color: #7c5cff; transform: translateY(-1px); }
+.buddy-chip:focus-visible { outline: 3px solid #7c5cff; outline-offset: 2px; }
+.buddy-chip .chip-av { width: 34px; height: 34px; display: block; }
+.buddy-chip .chip-av svg { width: 100%; height: 100%; display: block; }
+
+/* Reactions */
+.bounce { animation: buddy-bounce .6s ease; }
+.wobble { animation: buddy-wobble .6s ease; }
+.party { animation: buddy-party 1s ease; }
+@keyframes buddy-bounce { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-14px) scaleY(1.04); } 65% { transform: translateY(0) scaleY(.94); } }
+@keyframes buddy-wobble { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-7deg); } 60% { transform: rotate(5deg); } }
+@keyframes buddy-party { 0%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-18px) rotate(-8deg); } 55% { transform: translateY(-18px) rotate(8deg); } 80% { transform: translateY(0); } }
+
+/* Speech bubble that points up at the buddy */
+.buddy-say {
+    position: relative; background: #f1edff; color: #221d33; border-radius: 14px;
+    padding: 8px 12px; font: 700 14px/1.4 "Nunito", system-ui, sans-serif;
+}
+
+/* Welcome / change-buddy picker */
+.buddy-dialog {
+    width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0;
+    border: none; border-radius: 26px; background: #fbf7f1; color: #221d33;
+    box-shadow: 0 30px 80px rgba(34, 29, 51, .35);
+    font: 16px/1.5 "Nunito", system-ui, sans-serif;
+}
+.buddy-dialog::backdrop { background: rgba(34, 29, 51, .45); backdrop-filter: blur(3px); }
+.bd { display: grid; gap: 18px; padding: 28px; }
+.bd-head { text-align: center; display: grid; justify-items: center; gap: 4px; }
+.bd-logo .peek { font-size: 52px; }
+.bd-head h2 { margin: 6px 0 0; font: 700 28px/1.2 "Fredoka", "Nunito", sans-serif; }
+.bd-head p { margin: 0; color: #4b4560; }
+.bd-main { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 22px; align-items: start; }
+.bd-preview { display: grid; justify-items: center; gap: 10px; text-align: center; }
+.bd-big { width: 170px; height: 170px; }
+.bd-big svg { width: 100%; height: 100%; display: block; }
+.bd-bubble { position: relative; background: #f1edff; border-radius: 16px; padding: 10px 14px; font-weight: 700; font-size: 14px; line-height: 1.4; }
+.bd-bubble::before { content: ""; position: absolute; top: -8px; left: 50%; margin-left: -8px; border: 8px solid transparent; border-top: 0; border-bottom-color: #f1edff; }
+.bd-controls { display: grid; gap: 8px; }
+.bd-label { font-weight: 800; font-size: 14px; margin-top: 4px; }
+.bd-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
+.bd-pick {
+    display: grid; justify-items: center; padding: 3px 2px 4px; cursor: pointer;
+    border: 2px solid #ebe4d8; background: #fff; border-radius: 12px;
+    font: 700 11px "Nunito", system-ui, sans-serif; color: #7a7490;
+}
+.bd-pick svg { width: 100%; max-width: 48px; height: auto; }
+.bd-pick:hover { border-color: #c9bcff; }
+.bd-pick[aria-pressed="true"] { border-color: #7c5cff; background: #f1edff; color: #7c5cff; }
+.bd-swatches { display: flex; flex-wrap: wrap; gap: 7px; }
+.bd-swatch { width: 30px; height: 30px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 2px #ebe4d8; cursor: pointer; }
+.bd-swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px #7c5cff; }
+.bd #bd-name {
+    font: 600 16px "Nunito", system-ui, sans-serif; padding: 10px 14px; border-radius: 12px;
+    border: 2px solid #ebe4d8; background: #fff; color: #221d33; width: 100%; max-width: 320px;
+}
+.bd #bd-name:focus { outline: none; border-color: #7c5cff; }
+.bd-note { margin: 0; text-align: center; font-size: 13px; color: #7a7490; }
+.bd-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.bd-btn { font: 800 15px "Nunito", system-ui, sans-serif; padding: 11px 20px; border-radius: 14px; cursor: pointer; border: 2px solid transparent; }
+.bd-btn.primary { background: #7c5cff; color: #fff; box-shadow: 0 4px 0 #5a3fd6; }
+.bd-btn.primary:hover { transform: translateY(-1px); }
+.bd-btn.ghost { background: transparent; color: #4b4560; border-color: #ebe4d8; }
+.buddy-dialog button:focus-visible { outline: 3px solid #7c5cff; outline-offset: 2px; }
+
+@media (max-width: 640px) {
+    .bd { padding: 20px 16px; }
+    .bd-main { grid-template-columns: minmax(0, 1fr); }
+    .bd-big { width: 120px; height: 120px; }
+    .bd-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .bounce, .wobble, .party { animation: none; }
+}

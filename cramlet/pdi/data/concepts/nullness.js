@@ -12,7 +12,7 @@ registerConcept({
       { lec: [6], html: "<code>@NonNull</code> was never standardized, so a coalition (Google, JetBrains, Microsoft, Uber, Oracle…) proposed <b>JSpecify</b>. <b>This class uses JSpecify.</b>" },
       { lec: [6], html: "Setup: mark the package <code>@NullMarked</code> in <code>package-info.java</code>, then annotate only the nullable things with <code>@Nullable</code>." },
       { lec: [6], html: "For values you <i>know</i> are non-null but the checker can’t tell (like <code>List.of()</code>), use <code>Objects.requireNonNull(...)</code>." },
-      { lec: [6], html: "⚠️ Don’t use <code>requireNonNull</code> to silence warnings you don’t understand, or on things that really can be null, like <code>Map.get()</code>." },
+      { lec: [6], kind: "warn", html: "Don’t use <code>requireNonNull</code> to silence warnings you don’t understand, or on things that really can be null, like <code>Map.get()</code>." },
     ],
     compare: {
       head: ["Situation", "What to do"],
@@ -52,7 +52,7 @@ registerConcept({
           <li>Annotate nullable types with <code>@Nullable</code>, which makes nullability visible in the code.</li>
         </ol>
         <p>For new projects, prefer <code>@NullMarked</code>: you only annotate where something is nullable, so there are fewer annotations overall. For legacy code, the alternative is to assume nullable and mark <code>@NonNull</code> incrementally.</p>
-        <p>💡 This is why <code>equals(@Nullable Object obj)</code> needs <code>@Nullable</code>: its contract says <code>x.equals(null)</code> must return false, so <code>null</code> is a valid input.</p>`,
+        <p class="callout tip">This is why <code>equals(@Nullable Object obj)</code> needs <code>@Nullable</code>: its contract says <code>x.equals(null)</code> must return false, so <code>null</code> is a valid input.</p>`,
     },
     {
       id: "libraries",
@@ -66,7 +66,7 @@ registerConcept({
           <li><b>Preferred:</b> <code>Objects.requireNonNull(...)</code>. It tells the checker “this is non-null,” documents your reasoning, and <b>fails fast</b> at runtime if you were wrong.</li>
         </ol>
         <p><b>Use it for:</b> <code>List.of()</code>, <code>Set.of()</code>, <code>Map.of()</code>; library methods whose docs guarantee non-null; values from unannotated third-party libraries.</p>
-        <p><b>⚠️ Don’t use it</b> to silence warnings you don’t understand, or for methods like <code>Map.get()</code> that can legitimately return null. Handle null properly there.</p>`,
+        <p class="callout warn"><b>Don’t use it</b> to silence warnings you don’t understand, or for methods like <code>Map.get()</code> that can legitimately return null. Handle null properly there.</p>`,
     },
   ],
 

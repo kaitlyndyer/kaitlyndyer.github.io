@@ -9,7 +9,7 @@ registerConcept({
     keyPoints: [
       { lec: [2], html: "<b>Dynamic dispatch:</b> the JVM picks the method at <b>runtime</b>, based on the object’s actual type, not the variable’s declared type." },
       { lec: [2], html: "Lookup rule: if the actual type <code>T</code> declares the method, use it. Otherwise check <code>T</code>’s superclass, and keep going up." },
-      { lec: [2], html: "⚠️ A <b>cast doesn’t change</b> the object’s runtime type, so it doesn’t change which method runs." },
+      { lec: [2], kind: "warn", html: "A <b>cast doesn’t change</b> the object’s runtime type, so it doesn’t change which method runs." },
       { lec: [2], html: "This lets you treat a mix of types <b>uniformly</b>, for example looping over an <code>IoTDevice[]</code> of different devices." },
       { lec: [2], html: "<code>static</code> members belong to the <b>class</b>, are shared by all objects, and are bound at <b>compile time</b>, so there’s no dynamic dispatch." },
       { lec: [3], html: "<b>Overloading</b> (same name, different parameters) is resolved at <b>compile time</b> by argument types. Don’t confuse it with overriding." },

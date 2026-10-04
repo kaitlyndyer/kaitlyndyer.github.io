@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cramlet</title>
+    <meta name="description" content="cramlet: bite-size, concept-by-concept study guides with flashcards and quizzes.">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="brand.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="hub">
+        <div class="hub-top"><button type="button" class="buddy-chip" id="buddy-chip"></button></div>
+        <header class="hub-head">
+            <h1 class="hub-logo" id="hub-logo">cramlet</h1>
+            <p>Interactive study guides: concepts, code, flashcards, and quizzes.</p>
+        </header>
+
+        <section class="courses" aria-label="Courses">
+            <a class="course-card" href="pdi/" style="--c:#7c5cff">
+                <span class="course-icon" data-icon="coffee"></span>
+                <span class="course-title">Program Design &amp; Implementation</span>
+                <span class="course-desc">Designing programs in Java: interfaces, inheritance, generics, specs, and more.</span>
+                <span class="course-go">Start studying →</span>
+            </a>
+
+            <div class="course-card placeholder">
+                <span class="course-icon" data-icon="sparkle"></span>
+                <span class="course-title">More courses coming</span>
+                <span class="course-desc">New study guides will show up here.</span>
+            </div>
+        </section>
+
+        <footer class="hub-foot">Student-made study notes. Not official course material.</footer>
+    </main>
+
+    <script src="critters.js"></script>
+    <script src="icons.js"></script>
+    <script src="buddy.js"></script>
+    <script>
+        document.getElementById("hub-logo").innerHTML = CRAMLET.logo();
+        document.querySelectorAll(".course-icon").forEach(el => { el.innerHTML = CRAMLET.icon(el.dataset.icon); });
+        CRAMLET.buddy.mountChip(document.getElementById("buddy-chip"));
+        CRAMLET.buddy.welcomeIfNew();
+    </script>
+</body>
+</html>

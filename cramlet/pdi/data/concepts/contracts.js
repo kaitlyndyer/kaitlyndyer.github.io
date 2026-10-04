@@ -8,18 +8,18 @@ registerConcept({
   summary: {
     keyPoints: [
       { lec: [6], html: "Every class extends <code>java.lang.Object</code>, so every object has <code>toString</code>, <code>equals</code>, and <code>hashCode</code>. The JDK and libraries call them implicitly." },
-      { lec: [6], html: "📌 <b>Always override <code>toString</code>.</b> The default (<code>DimmableLight@abdfd</code>) isn’t helpful." },
+      { lec: [6], kind: "key", html: "<b>Always override <code>toString</code>.</b> The default (<code>DimmableLight@abdfd</code>) isn’t helpful." },
       { lec: [6], html: "<code>equals</code> must be an <b>equivalence relation</b>: reflexive, symmetric, transitive, consistent, and <code>x.equals(null)</code> is false." },
-      { lec: [6], html: "📌 <b>Override <code>equals</code> ⇒ override <code>hashCode</code>.</b> Equal objects must have equal hash codes." },
+      { lec: [6], kind: "key", html: "<b>Override <code>equals</code> ⇒ override <code>hashCode</code>.</b> Equal objects must have equal hash codes." },
       { lec: [6], html: "<code>Comparable.compareTo</code> defines one <b>natural ordering</b> inside the class. <code>Comparator.compare</code> defines extra orderings outside it." },
-      { lec: [6], html: "📌 In this course, <code>compareTo</code> must be <b>consistent with equals</b>: <code>x.equals(y)</code> ⇒ <code>x.compareTo(y) == 0</code>." },
+      { lec: [6], kind: "key", html: "In this course, <code>compareTo</code> must be <b>consistent with equals</b>: <code>x.equals(y)</code> ⇒ <code>x.compareTo(y) == 0</code>." },
     ],
     compare: {
       head: ["Method", "Contract", "Tips"],
       rows: [
-        ["<code>toString</code>", "A concise, informative text version of the object. Not guaranteed stable.", "📌 Always override."],
+        ["<code>toString</code>", "A concise, informative text version of the object. Not guaranteed stable.", "<i data-icon=\"key\"></i> Always override."],
         ["<code>equals</code>", "Reflexive, symmetric, transitive, consistent; <code>equals(null)</code> is false", "<code>==</code> check → <code>instanceof</code> check → compare fields. Parameter is <code>@Nullable Object</code>."],
-        ["<code>hashCode</code>", "Equal objects → same hash; consistent within one run", "📌 Override with <code>equals</code>. <code>Objects.hash(...)</code> works."],
+        ["<code>hashCode</code>", "Equal objects → same hash; consistent within one run", "<i data-icon=\"key\"></i> Override with <code>equals</code>. <code>Objects.hash(...)</code> works."],
         ["<code>compareTo</code>", "Negative / 0 / positive; reversible; transitive; throws on <code>null</code> or wrong type", "One natural order, inside the class. Consistent with <code>equals</code> (required here)."],
         ["<code>compare</code>", "Same return meaning as <code>compareTo</code>", "Many orders, written outside the class."],
       ],
@@ -62,7 +62,7 @@ registerConcept({
           <li><code>x.equals(null)</code> is <b>false</b></li>
         </ul>
         <p><b>Recipe:</b> (1) <code>==</code> check against <code>this</code> → <code>true</code> (an optimization); (2) <code>instanceof</code> check → <code>false</code> if wrong type; (3) cast and compare the fields you care about.</p>
-        <p>⚠️ Don’t make objects of different types equal (e.g., a <code>TunableWhiteLight</code> and a <code>DimmableLight</code>). It generally breaks symmetry or transitivity. And in a <code>@NullMarked</code> package, the parameter must be <code>@Nullable</code> (NullAway reports an error otherwise).</p>`,
+        <p class="callout warn">Don’t make objects of different types equal (e.g., a <code>TunableWhiteLight</code> and a <code>DimmableLight</code>). It generally breaks symmetry or transitivity. And in a <code>@NullMarked</code> package, the parameter must be <code>@Nullable</code> (NullAway reports an error otherwise).</p>`,
     },
     {
       id: "hashcode",

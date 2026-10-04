@@ -22,7 +22,7 @@ registerConcept({
         ["Describes", "What an object <b>can do</b>", "Shared, partial implementation", "A full implementation"],
         ["Method bodies?", "No (all abstract)", "Some", "All"],
         ["Fields?", "No", "Optional", "Yes"],
-        ["Can you <code>new</code> it?", "❌", "❌", "✅"],
+        ["Can you <code>new</code> it?", "<i data-icon=\"no\"></i> No", "<i data-icon=\"no\"></i> No", "<i data-icon=\"yes\"></i> Yes"],
         ["Inherits from", "Many interfaces", "One class + many interfaces", "One class + many interfaces"],
       ],
     },
@@ -100,7 +100,7 @@ registerConcept({
       title: "Rule: an interface for every object",
       lec: [6],
       html: `
-        <p>📌 <b>“An object is what it does, not what it has.”</b> An object’s specification is its public methods, which is exactly what an interface describes.</p>
+        <p class="callout key"><b>“An object is what it does, not what it has.”</b> An object’s specification is its public methods, which is exactly what an interface describes.</p>
         <ul>
           <li><b>Every <code>public</code> method should come from an interface</b> that the object implements. No public methods “out of thin air.” (Constructors are the exception.)</li>
           <li>Design an object by <b>defining its interface first</b>. Then reading the interfaces tells you everything the object can do.</li>
@@ -118,7 +118,7 @@ registerConcept({
           <li>an <b>unnecessary dependency</b>: changes to <code>turnOn/turnOff</code> now affect <code>Thermostat</code>.</li>
         </ul>
         <p><b>Interface Segregation Principle:</b> objects should only offer methods relevant to them, and clients should only be exposed to the methods they need. The fix splits on/off into its own <code>Switchable</code> interface and gives every public method a home in some interface.</p>
-        <p class="widget-hint">👇 <b>Try it:</b> click any box to see what it <i>is</i> and which methods you can call on it.</p>`,
+        <p class="callout try">Click any box to see what it <i>is</i> and which methods you can call on it.</p>`,
       widget: "hierarchy",
     },
   ],

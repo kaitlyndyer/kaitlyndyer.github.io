@@ -9,8 +9,8 @@ registerConcept({
     keyPoints: [
       { lec: [4], html: "<b>Functional correctness</b> (“does it work?”) is the most objective measure of quality. It’s binary and about the present: it works right now, or it doesn’t." },
       { lec: [4], html: "<b>Non-functional goals</b> determine long-term quality: understandability, readability, changeability, and testability." },
-      { lec: [4], html: "⚠️ Correct code that fails the non-functional goals <b>tends to evolve into incorrect code</b>, because each change gets harder and riskier." },
-      { lec: [4], html: "📌 “Software engineering is the <b>integral of programming over time</b>.”" },
+      { lec: [4], kind: "warn", html: "Correct code that fails the non-functional goals <b>tends to evolve into incorrect code</b>, because each change gets harder and riskier." },
+      { lec: [4], kind: "key", html: "“Software engineering is the <b>integral of programming over time</b>.”" },
       { lec: [4], html: "These goals still matter with AI: you must understand code to prompt and verify AI, and AI testing its own code is often self-defeating." },
     ],
     compare: {

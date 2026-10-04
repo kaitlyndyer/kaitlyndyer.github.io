@@ -12,16 +12,11 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-.hub { max-width: 880px; margin: 0 auto; padding: 70px 24px 40px; }
+.hub { max-width: 880px; margin: 0 auto; padding: 24px 24px 40px; }
+.hub-top { display: flex; justify-content: flex-end; margin-bottom: 26px; }
 
 .hub-head { text-align: center; margin-bottom: 44px; }
-.hub-logo {
-    display: inline-grid; place-items: center;
-    width: 84px; height: 84px; font-size: 46px;
-    border-radius: 26px; background: white; transform: rotate(-6deg);
-    box-shadow: 0 10px 30px rgba(124, 92, 255, .25);
-}
-.hub-head h1 { font: 700 64px/1 "Fredoka", sans-serif; color: #7c5cff; margin: 18px 0 8px; letter-spacing: -1px; }
+.hub-logo { margin: 0 0 14px; font-size: 76px; font-weight: 700; color: #7c5cff; line-height: 1; }
 .hub-head p { font-size: 18px; color: #4b4560; margin: 0; }
 
 .courses { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
@@ -35,7 +30,11 @@ body {
 }
 a.course-card:hover { transform: translateY(-5px) rotate(-.5deg); border-color: var(--c); box-shadow: 0 16px 34px rgba(124, 92, 255, .2); }
 a.course-card:focus-visible { outline: 3px solid var(--c); outline-offset: 3px; }
-.course-emoji { font-size: 38px; }
+.course-icon {
+    width: 56px; height: 56px; border-radius: 17px; display: grid; place-items: center;
+    color: var(--c, #7a7490); background: color-mix(in srgb, var(--c, #7a7490) 14%, white);
+}
+.course-icon svg { width: 32px; height: 32px; }
 .course-title { font: 600 23px/1.2 "Fredoka", sans-serif; }
 .course-desc { color: #4b4560; }
 .course-go { margin-top: 8px; font-weight: 800; color: var(--c); }
