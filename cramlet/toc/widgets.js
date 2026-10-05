@@ -1027,6 +1027,127 @@
     };
 
     // ======================================================================
+    // DFA → regex: simple-form GNFA, then remove the middle states one at a time.
+    // config: { machines: [{ id, name, lang, machine (a DFA), examples: [] }] }
+    // ======================================================================
+    const GNFA_RULES = [
+        "Start with a <b>DFA</b> for the language.",
+        "Add a <b>new accept state</b> with ε-arrows from the old accept states, which stop accepting. No arrows leave it.",
+        "Add a <b>new start state</b> with an ε-arrow to the old start. No arrows enter it.",
+        "Keep <b>at most one arrow</b> between each pair of states: combine labels with ∪.",
+        "<b>Remove a middle state</b> q<sub>kill</sub>: for each path q<sub>i</sub> → q<sub>kill</sub> → q<sub>j</sub>, label q<sub>i</sub> → q<sub>j</sub> with <b>R<sub>1</sub>(R<sub>2</sub>)*R<sub>3</sub> ∪ R<sub>4</sub></b>.",
+        "When only the start and accept states are left, the label between them is the <b>regular expression</b>.",
+    ];
+
+    W["gnfa-stepper"] = function (el, config, ctx) {
+        const { icon, esc } = ctx;
+        let mi = 0, m, order, steps, k = 0, player;
+
+        el.innerHTML = `
+            <div class="gnfa">
+                <div class="pick-row" role="group" aria-label="Choose a DFA">
+                    ${config.machines.map((x, i) => `<button type="button" class="pick" data-m="${i}">${esc(x.name)}</button>`).join("")}
+                </div>
+                <div class="order-row"></div>
+                <div class="diagram gnfa-box"></div>
+                ${statusHTML}
+                ${playerHTML(icon)}
+                ${sideHTML([["Recipe", `<ol class="recipe"></ol>`], ["Check the regex", `${inputHTML(14, "String to test")}<div class="verdicts"></div>`]])}
+            </div>`;
+        const $ = s => el.querySelector(s);
+        const win = $(".run-controls .input-w input");
+        const rx = n => `<span class="rx">${esc(A.regexText(n))}</span>`;
+        const middle = () => Object.keys(m.states);
+
+        function load(i) {
+            if (player) player.stop();
+            mi = i; m = config.machines[i].machine;
+            el.querySelectorAll(".pick").forEach((b, j) => b.setAttribute("aria-pressed", j === i));
+            $(".run-controls .examples").innerHTML = exampleChips(esc, config.machines[i].examples);
+            win.value = config.machines[i].examples[0];
+            order = middle();
+            steps = A.gnfaSteps(m, order);
+            k = 0;
+            draw();
+        }
+        // States already removed before step k, and the one being removed right now (if any).
+        function progress() {
+            const done = [], seen = steps.slice(0, k + 1);
+            seen.forEach(s => { if (s.kind === "removed") done.push(s.kill); });
+            const cur = steps[k];
+            const busy = cur && ["pick", "pair"].includes(cur.kind) ? cur.kill : null;
+            return { done, busy };
+        }
+        const canChoose = () => { const cur = steps[k]; return cur && !["pair", "pick", "done"].includes(cur.kind) && progress().done.length < middle().length; };
+
+        function choose(q) {
+            const { done, busy } = progress();
+            if (done.includes(q) || q === busy) return;
+            order = [...done, ...(busy ? [busy] : []), q, ...order.filter(x => !done.includes(x) && x !== busy && x !== q)];
+            steps = A.gnfaSteps(m, order);
+            if (player) player.stop();
+            k = Math.min(k + 1, steps.length - 1);
+            draw();
+        }
+
+        function draw() {
+            const st = steps[k];
+            $(".gnfa-box").innerHTML = A.render(st.machine, { label: "The GNFA" });
+            const svg = $(".gnfa-box svg");
+            A.highlight(svg, { states: st.on, edges: st.edges, result: st.kind === "done" ? "accept" : null });
+            const { done } = progress();
+            const pickable = canChoose();
+            svg.querySelectorAll(".st").forEach(g => {
+                const ok = pickable && middle().includes(g.dataset.state) && !done.includes(g.dataset.state);
+                g.classList.toggle("pickable", ok);
+                g.setAttribute("tabindex", ok ? "0" : "-1");
+                if (ok) g.setAttribute("role", "button");
+            });
+            $(".order-row").innerHTML = `Removal order: ${order.map(q => `<span class="ord${done.includes(q) ? " gone" : ""}">${sub(q)}</span>`).join(" → ")}`;
+
+            const choose = pickable ? ` <span class="hintline">Click a middle state on the diagram to choose which one to remove next, or press <b>Step</b>.</span>` : "";
+            let msg, tone = "", react = "";
+            if (st.kind === "dfa") msg = `Here’s a DFA for <b>${esc(config.machines[mi].lang)}</b>. Press <b>Step</b> to turn it into a regular expression.`;
+            else if (st.kind === "accept") msg = `Add a <b>new accept state f</b> with ε-arrows from the old accept state${st.oldAcc.length > 1 ? "s" : ""} ${st.oldAcc.map(sub).join(", ")}, which stop accepting. Now there’s exactly one accept state, and no arrows leave it.`;
+            else if (st.kind === "start") msg = `Add a <b>new start state s</b> with an ε-arrow to the old start ${sub(st.oldStart)}. No arrows come into s.`;
+            else if (st.kind === "merge") msg = st.merged.length
+                ? `Labels are now regular expressions. An arrow that used to say “0,1” now says <b>0 ∪ 1</b>, so there’s at most one arrow between any two states. This is the <b>simple form</b>.`
+                : `Labels are now regular expressions, and there’s already at most one arrow between any two states. This is the <b>simple form</b>.`;
+            else if (st.kind === "pick") msg = `Remove <b>${sub(st.kill)}</b>. Every path that goes through it needs a replacement arrow: ${st.ins.length * st.outs.length ? `${st.ins.length * st.outs.length} path${st.ins.length * st.outs.length > 1 ? "s" : ""} (${st.ins.length} arrow${st.ins.length > 1 ? "s" : ""} in × ${st.outs.length} out)` : "none, because nothing passes through it"}.${st.loop ? ` Its loop is ${rx(st.loop)}.` : ""}`;
+            else if (st.kind === "pair") {
+                msg = `Path ${sub(st.p)} → ${sub(st.kill)} → ${sub(st.q)}${st.p === st.q ? " (back to itself, so it becomes a loop)" : ""}: ` +
+                    `R<sub>1</sub> = ${rx(st.R1)}, R<sub>2</sub> = ${st.R2 ? rx(st.R2) : "none (no loop, so (R<sub>2</sub>)* = ε)"}, R<sub>3</sub> = ${rx(st.R3)}, R<sub>4</sub> = ${st.R4.t === "empty" ? "∅ (no direct arrow yet)" : rx(st.R4)}. ` +
+                    `New label: R<sub>1</sub>(R<sub>2</sub>)*R<sub>3</sub> ∪ R<sub>4</sub> = <b>${rx(st.result)}</b>.`;
+            } else if (st.kind === "removed") msg = `All paths through ${sub(st.kill)} have their own arrows now, so <b>delete ${sub(st.kill)}</b> and its arrows. The GNFA accepts the same strings.`;
+            else { msg = `Only s and f are left. The label between them is the answer: <b>R = ${rx(st.regex)}</b>. Check it on some strings below.`; tone = "yes"; react = "great"; }
+            setStatus(el, ctx, msg + (st.kind !== "done" ? choose : ""), tone, react);
+
+            const used = new Set(steps.slice(0, k).map(s => s.rule));
+            $(".recipe").innerHTML = recipeHTML(icon, GNFA_RULES, used, [st.rule]);
+            test();
+            if (player) player.sync();
+        }
+
+        function test() {
+            const w = win.value, dfaSays = A.accepts(m, w), last = steps[steps.length - 1], fin = k === steps.length - 1;
+            const re = last.regex, reSays = A.acceptsNFA(A.regexToNFA(re, m.alphabet), w);
+            $(".verdicts").innerHTML = `<div class="vrow"><span class="vchip ${dfaSays ? "yes" : "no"}">The DFA ${dfaSays ? "accepts" : "rejects"}</span>${fin ? `<span class="vchip ${reSays ? "yes" : "no"}">R ${reSays ? "matches" : "doesn’t match"}</span>` : ""}</div>
+                ${fin ? `<p class="vnote">${reSays === dfaSays ? `<span class="tag ok">Correct</span> The regex agrees with the DFA on ${esc(show(w))}.` : `<span class="tag in">Mismatch</span>`}</p>` : `<p class="muted">Finish removing states to get the regex and test it.</p>`}`;
+        }
+
+        player = bindPlayer(el, ctx, {
+            pos: () => k, max: () => steps.length - 1, go: v => { k = v; draw(); },
+            counter: (j, n) => (j === 0 ? "Not started" : `Step ${j} of ${n}`),
+        });
+        $(".gnfa-box").addEventListener("click", e => { const g = e.target.closest(".st.pickable"); if (g) choose(g.dataset.state); });
+        $(".gnfa-box").addEventListener("keydown", e => { const g = e.target.closest(".st.pickable"); if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); choose(g.dataset.state); } });
+        el.querySelector(".pick-row").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (b) load(+b.dataset.m); });
+        $(".run-controls .examples").addEventListener("click", e => { const b = e.target.closest("[data-w]"); if (b) { win.value = b.dataset.w; test(); } });
+        win.addEventListener("input", () => { win.value = win.value.split("").filter(c => m.alphabet.includes(c)).join(""); test(); });
+        load(0);
+    };
+
+    // ======================================================================
     // Write a regex: type a regex for a language; check it on every string up to length 10.
     // config: { alphabet, challenges: [{ id, name, lang, test(w), hint }] }
     // ======================================================================

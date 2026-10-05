@@ -304,3 +304,16 @@ table.threads .dot.acc { background: var(--good); box-shadow: 0 0 0 3px color-mi
 .nfa-box .automaton { margin: 0 auto; }
 .panel-label b { font-family: var(--font-code); text-transform: none; letter-spacing: 0; color: var(--ink); }
 @media (max-width: 900px) { .two-up.wide-right { grid-template-columns: minmax(0, 1fr); } }
+
+/* ========== DFA → regex (GNFAs) ========== */
+.gnfa { display: grid; gap: 14px; }
+.gnfa .pick-row { margin-bottom: 0; }
+.gnfa-box { overflow-x: auto; }
+.order-row { font-size: 14px; font-weight: 700; color: var(--ink-2); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.order-row .ord { font: 700 14px var(--font-code); padding: 2px 9px; border-radius: 8px; background: var(--surface-2); color: var(--ink); }
+.order-row .ord.gone { text-decoration: line-through; color: var(--muted); }
+.automaton .st.pickable { cursor: pointer; }
+.automaton .st.pickable .st-body { stroke-dasharray: 4 3; stroke: var(--c); }
+.automaton .st.pickable:hover .st-body { fill: color-mix(in srgb, var(--c) 18%, var(--surface)); }
+.rx { font: 600 .95em var(--font-code); padding: 0 5px; border-radius: 6px; background: var(--surface); white-space: nowrap; }
+.run-status .hintline { display: block; margin-top: 4px; font-size: 14px; color: var(--ink-2); }
