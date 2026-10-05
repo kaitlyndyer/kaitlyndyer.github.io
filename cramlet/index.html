@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>cramlet</title>
     <meta name="description" content="cramlet: bite-size, concept-by-concept study guides with flashcards and quizzes.">
+    <script src="theme.js"></script>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +15,7 @@
 </head>
 <body>
     <main class="hub">
-        <div class="hub-top"><button type="button" class="buddy-chip" id="buddy-chip"></button></div>
+        <div class="hub-top"><button type="button" id="theme-toggle"></button><button type="button" class="buddy-chip" id="buddy-chip"></button></div>
         <header class="hub-head">
             <h1 class="hub-logo" id="hub-logo">cramlet</h1>
             <p>Interactive study guides: concepts, code, flashcards, and quizzes.</p>
@@ -44,6 +45,7 @@
     <script>
         document.getElementById("hub-logo").innerHTML = CRAMLET.logo();
         document.querySelectorAll(".course-icon").forEach(el => { el.innerHTML = CRAMLET.icon(el.dataset.icon); });
+        CRAMLET.theme.mountToggle(document.getElementById("theme-toggle"));
         CRAMLET.buddy.mountChip(document.getElementById("buddy-chip"));
         CRAMLET.buddy.welcomeIfNew();
     </script>

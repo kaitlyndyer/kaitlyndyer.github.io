@@ -5,6 +5,7 @@
     const icon = CRAMLET.icon;
     document.getElementById("search-icon").innerHTML = icon("magnifying-glass");
     const buddy = CRAMLET.buddy;
+    CRAMLET.theme.mountToggle(document.getElementById("theme-toggle"));
     buddy.mountChip(document.getElementById("buddy-chip"));
     document.getElementById("brand").innerHTML = CRAMLET.logo();
     const main = document.getElementById("main");

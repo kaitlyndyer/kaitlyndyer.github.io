@@ -1,3 +1,95 @@
+/* ========== Color tokens (light + dark). theme.js sets data-theme on <html>. ========== */
+:root {
+    color-scheme: light;
+    --bg: #fbf7f1;
+    --surface: #ffffff;
+    --surface-2: #f5f0e8;
+    --ink: #221d33;
+    --ink-2: #4b4560;
+    --muted: #7a7490;
+    --line: #ebe4d8;
+    --brand: #7c5cff;
+    --brand-soft: #f1edff;
+    --brand-line: #c9bcff;
+    --good: #1f9d63;
+    --good-bg: #e7f7ee;
+    --good-line: #b3e6cb;
+    --bad: #d64545;
+    --bad-bg: #fdecec;
+    --warn: #c98a00;
+    --oops-bg: #fff6e6;
+    --oops-line: #ffd99a;
+    --code-bg: #1e2235;
+    --code-ink: #e9ecf5;
+    --paper: #ffffff;   /* what accent tints are mixed with */
+    --deep: #000000;    /* what accent text is mixed with to stay readable */
+    --track: rgba(34, 29, 51, .08);
+    --mark: #ffe680;
+    --glow-warm: rgba(255, 210, 120, .45);
+    --glow-brand: rgba(124, 92, 255, .22);
+    --hero-a: #f1ecff;
+    --hero-b: #fff4e6;
+    --diagram-line: #c5bfd6;
+    --diagram-ink: #8a84a3;
+    /* note boxes */
+    --warn-ink: #b26a00; --warn-soft: #fff3d6; --warn-tint: #fffaf0; --warn-edge: #e0a100;
+    --tip-ink: #23885a;  --tip-soft: #e3f6ec;
+    --try-ink: #22789f;  --try-soft: #e2f2fa;
+    --key-tint: #faf8ff;
+    --shadow: 0 1px 2px rgba(34, 29, 51, .05), 0 6px 20px rgba(34, 29, 51, .06);
+    --shadow-lg: 0 14px 34px rgba(34, 29, 51, .14);
+}
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #16131f;
+    --surface: #211d2d;
+    --surface-2: #2a2539;
+    --ink: #f2eefa;
+    --ink-2: #cbc4dc;
+    --muted: #9c95b1;
+    --line: #383149;
+    --brand: #8e72ff;
+    --brand-soft: #2c2547;
+    --brand-line: #5b4b9c;
+    --good: #3cc488;
+    --good-bg: #16302a;
+    --good-line: #2b6b4f;
+    --bad: #ff6f6f;
+    --bad-bg: #3a1d24;
+    --warn: #e6a93a;
+    --oops-bg: #33291a;
+    --oops-line: #6b5426;
+    --code-bg: #0f0d16;
+    --code-ink: #e9ecf5;
+    --paper: #211d2d;
+    --deep: #ffffff;
+    --track: rgba(255, 255, 255, .1);
+    --mark: #6d5c10;
+    --glow-warm: rgba(255, 190, 90, .1);
+    --glow-brand: rgba(124, 92, 255, .2);
+    --hero-a: #2a2342;
+    --hero-b: #2d2421;
+    --diagram-line: #4f4762;
+    --diagram-ink: #9c95b1;
+    --warn-ink: #f0b54a; --warn-soft: #362b15; --warn-tint: #2a2418; --warn-edge: #c98a00;
+    --tip-ink: #5fd39a;  --tip-soft: #17322a;
+    --try-ink: #6cc3ea;  --try-soft: #15303c;
+    --key-tint: #252038;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
+    --shadow-lg: 0 14px 34px rgba(0, 0, 0, .4);
+}
+body { transition: background-color .25s, color .25s; }
+
+/* Sun/moon button (see theme.js) */
+.theme-toggle {
+    width: 40px; height: 40px; flex: none; display: inline-grid; place-items: center; cursor: pointer;
+    border-radius: 50%; border: 2px solid var(--line); background: var(--surface); color: var(--ink-2);
+    transition: border-color .15s, transform .2s, color .15s;
+}
+.theme-toggle:hover { border-color: var(--brand); color: var(--brand); transform: rotate(-15deg); }
+.theme-toggle:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.theme-toggle svg { width: 21px; height: 21px; }
+
 /* cramlet logo: the mascot peeks over the wordmark. Sized in em, so set font-size on .peek. */
 .peek { position: relative; display: inline-block; padding-top: 1.04em; line-height: 1; }
 .peek .clip { position: absolute; left: 50%; top: 0; transform: translateX(-48%); width: 1.64em; height: 1.32em; overflow: hidden; }
@@ -11,12 +103,12 @@
 /* Button in the top bar: mini buddy + name */
 .buddy-chip {
     display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
-    padding: 3px 12px 3px 4px; border-radius: 999px; border: 2px solid #ebe4d8; background: #fff;
-    font: 800 14px "Nunito", system-ui, sans-serif; color: #4b4560;
+    padding: 3px 12px 3px 4px; border-radius: 999px; border: 2px solid var(--line); background: var(--surface);
+    font: 800 14px "Nunito", system-ui, sans-serif; color: var(--ink-2);
     transition: border-color .15s, transform .15s;
 }
-.buddy-chip:hover { border-color: #7c5cff; transform: translateY(-1px); }
-.buddy-chip:focus-visible { outline: 3px solid #7c5cff; outline-offset: 2px; }
+.buddy-chip:hover { border-color: var(--brand); transform: translateY(-1px); }
+.buddy-chip:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
 .buddy-chip .chip-av { width: 34px; height: 34px; display: block; }
 .buddy-chip .chip-av svg { width: 100%; height: 100%; display: block; }
 
@@ -30,14 +122,14 @@
 
 /* Speech bubble that points up at the buddy */
 .buddy-say {
-    position: relative; background: #f1edff; color: #221d33; border-radius: 14px;
+    position: relative; background: var(--brand-soft); color: var(--ink); border-radius: 14px;
     padding: 8px 12px; font: 700 14px/1.4 "Nunito", system-ui, sans-serif;
 }
 
 /* Welcome / change-buddy picker */
 .buddy-dialog {
     width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0;
-    border: none; border-radius: 26px; background: #fbf7f1; color: #221d33;
+    border: none; border-radius: 26px; background: var(--bg); color: var(--ink);
     box-shadow: 0 30px 80px rgba(34, 29, 51, .35);
     font: 16px/1.5 "Nunito", system-ui, sans-serif;
 }
@@ -46,39 +138,39 @@
 .bd-head { text-align: center; display: grid; justify-items: center; gap: 4px; }
 .bd-logo .peek { font-size: 52px; }
 .bd-head h2 { margin: 6px 0 0; font: 700 28px/1.2 "Fredoka", "Nunito", sans-serif; }
-.bd-head p { margin: 0; color: #4b4560; }
+.bd-head p { margin: 0; color: var(--ink-2); }
 .bd-main { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 22px; align-items: start; }
 .bd-preview { display: grid; justify-items: center; gap: 10px; text-align: center; }
 .bd-big { width: 170px; height: 170px; }
 .bd-big svg { width: 100%; height: 100%; display: block; }
-.bd-bubble { position: relative; background: #f1edff; border-radius: 16px; padding: 10px 14px; font-weight: 700; font-size: 14px; line-height: 1.4; }
-.bd-bubble::before { content: ""; position: absolute; top: -8px; left: 50%; margin-left: -8px; border: 8px solid transparent; border-top: 0; border-bottom-color: #f1edff; }
+.bd-bubble { position: relative; background: var(--brand-soft); border-radius: 16px; padding: 10px 14px; font-weight: 700; font-size: 14px; line-height: 1.4; }
+.bd-bubble::before { content: ""; position: absolute; top: -8px; left: 50%; margin-left: -8px; border: 8px solid transparent; border-top: 0; border-bottom-color: var(--brand-soft); }
 .bd-controls { display: grid; gap: 8px; }
 .bd-label { font-weight: 800; font-size: 14px; margin-top: 4px; }
 .bd-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
 .bd-pick {
     display: grid; justify-items: center; padding: 3px 2px 4px; cursor: pointer;
-    border: 2px solid #ebe4d8; background: #fff; border-radius: 12px;
-    font: 700 11px "Nunito", system-ui, sans-serif; color: #7a7490;
+    border: 2px solid var(--line); background: var(--surface); border-radius: 12px;
+    font: 700 11px "Nunito", system-ui, sans-serif; color: var(--muted);
 }
 .bd-pick svg { width: 100%; max-width: 48px; height: auto; }
-.bd-pick:hover { border-color: #c9bcff; }
-.bd-pick[aria-pressed="true"] { border-color: #7c5cff; background: #f1edff; color: #7c5cff; }
+.bd-pick:hover { border-color: var(--brand-line); }
+.bd-pick[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }
 .bd-swatches { display: flex; flex-wrap: wrap; gap: 7px; }
-.bd-swatch { width: 30px; height: 30px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 2px #ebe4d8; cursor: pointer; }
-.bd-swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px #7c5cff; }
+.bd-swatch { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--surface); box-shadow: 0 0 0 2px var(--line); cursor: pointer; }
+.bd-swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--brand); }
 .bd #bd-name {
     font: 600 16px "Nunito", system-ui, sans-serif; padding: 10px 14px; border-radius: 12px;
-    border: 2px solid #ebe4d8; background: #fff; color: #221d33; width: 100%; max-width: 320px;
+    border: 2px solid var(--line); background: var(--surface); color: var(--ink); width: 100%; max-width: 320px;
 }
-.bd #bd-name:focus { outline: none; border-color: #7c5cff; }
-.bd-note { margin: 0; text-align: center; font-size: 13px; color: #7a7490; }
+.bd #bd-name:focus { outline: none; border-color: var(--brand); }
+.bd-note { margin: 0; text-align: center; font-size: 13px; color: var(--muted); }
 .bd-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 .bd-btn { font: 800 15px "Nunito", system-ui, sans-serif; padding: 11px 20px; border-radius: 14px; cursor: pointer; border: 2px solid transparent; }
-.bd-btn.primary { background: #7c5cff; color: #fff; box-shadow: 0 4px 0 #5a3fd6; }
+.bd-btn.primary { background: var(--brand); color: #fff; box-shadow: 0 4px 0 #5a3fd6; }
 .bd-btn.primary:hover { transform: translateY(-1px); }
-.bd-btn.ghost { background: transparent; color: #4b4560; border-color: #ebe4d8; }
-.buddy-dialog button:focus-visible { outline: 3px solid #7c5cff; outline-offset: 2px; }
+.bd-btn.ghost { background: transparent; color: var(--ink-2); border-color: var(--line); }
+.buddy-dialog button:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
 
 @media (max-width: 640px) {
     .bd { padding: 20px 16px; }
