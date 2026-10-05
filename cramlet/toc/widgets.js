@@ -901,6 +901,132 @@
     };
 
     // ======================================================================
+    // Regex → NFA: build the NFA for each node of the syntax tree, bottom-up, with the lecture's constructions.
+    // config: { examples: [regex strings], strings: { "01": [...], ab: [...] } }
+    // ======================================================================
+    const NFA_RULES = [
+        "<b>a</b>: two states joined by an a-arrow; the second one accepts.",
+        "<b>ε</b>: one state that is both the start and an accept state.",
+        "<b>∅</b>: one state that doesn’t accept.",
+        "<b>R<sub>1</sub> ∪ R<sub>2</sub></b>: a new start state with ε-arrows to both NFAs. Keep all their accept states.",
+        "<b>R<sub>1</sub>R<sub>2</sub></b>: ε-arrows from R<sub>1</sub>’s accept states to R<sub>2</sub>’s start. Only R<sub>2</sub>’s accept states accept.",
+        "<b>R*</b>: a new start state that accepts, an ε-arrow to the old start, and ε-arrows from the accept states back to the old start.",
+        "Shorthand: <b>Σ</b> is one arrow labeled with every symbol, and <b>R<sup>+</sup> = RR*</b>.",
+    ];
+
+    W["regex-nfa-stepper"] = function (el, config, ctx) {
+        const { icon, esc } = ctx;
+        let SIG = [], ast = null, order = [], steps = [], k = 0, player;
+
+        el.innerHTML = `
+            <div class="regex-x">
+                ${regexInputHTML()}
+                <div class="sigma-note"></div>
+                <div class="examples regex-ex">${config.examples.map(x => `<button type="button" class="ex" data-r="${esc(x)}">${esc(x)}</button>`).join("")}</div>
+                <div class="regex-err" aria-live="polite"></div>
+                <div class="two-up wide-right">
+                    <div><div class="panel-label">Syntax tree</div><div class="diagram tree-box"></div></div>
+                    <div><div class="panel-label nfa-label">The NFA</div><div class="diagram nfa-box"></div></div>
+                </div>
+                ${statusHTML}
+                ${playerHTML(icon)}
+                ${sideHTML([["Recipe", `<ol class="recipe"></ol>`], ["Test a string", `${inputHTML(14, "String to test")}<div class="verdicts"></div>`]])}
+            </div>`;
+        const $ = s => el.querySelector(s);
+        const rin = $(".regex-in input"), win = $(".run-controls .input-w input");
+        const last = () => steps[steps.length - 1];
+
+        function parse() {
+            const key = /[ab]/.test(rin.value) ? "ab" : "01";
+            if (SIG.join("") !== key) {
+                SIG = key.split("");
+                const list = (config.strings || {})[key] || [""];
+                $(".run-controls .examples").innerHTML = exampleChips(esc, list);
+                win.value = list[0];
+            }
+            $(".sigma-note").innerHTML = `Alphabet: Σ = {${SIG.join(", ")}}`;
+            const r = A.parseRegex(rin.value, SIG);
+            $(".regex-err").textContent = r.error || "";
+            if (r.error) {
+                ast = null; steps = []; k = 0;
+                $(".tree-box").innerHTML = `<p class="muted empty-dfa">Fix the expression to see its syntax tree.</p>`;
+                $(".nfa-box").innerHTML = "";
+                setStatus(el, ctx, r.error, "no");
+                $(".recipe").innerHTML = recipeHTML(icon, NFA_RULES, new Set(), []);
+                $(".verdicts").innerHTML = "";
+                if (player) player.sync();
+                return;
+            }
+            ast = r.ast;
+            order = A.postorder(ast);
+            steps = A.regexNFASteps(ast, SIG);
+            $(".tree-box").innerHTML = treeSVG(ast, esc);
+            k = 0;
+            draw();
+        }
+
+        function draw() {
+            if (!ast) return;
+            const st = steps[k - 1], i = k - 1;
+            el.querySelectorAll(".tree .tn").forEach(g => { const n = +g.dataset.n; g.classList.toggle("now", n === i); g.classList.toggle("done", n < i); });
+            el.querySelectorAll(".tree .tl").forEach(l => l.classList.toggle("done", +l.dataset.n < k));
+            const fin = k === steps.length;
+            if (!st) {
+                $(".nfa-box").innerHTML = `<p class="muted empty-dfa">Press <b>Step</b> to build the NFA, starting from the leaves.</p>`;
+                $(".nfa-label").textContent = "The NFA";
+                setStatus(el, ctx, `R = ${esc(A.regexText(ast))}. Build an NFA for every node of the syntax tree, <b>leaves first</b>. Each step glues together NFAs you’ve already built, so at the top you have an NFA for all of R. Press <b>Step</b> or <b>Play</b>.`);
+            } else {
+                const n = st.node, txt = esc(A.regexText(n)), kids = [n.a, n.b].filter(Boolean).map(c => esc(A.regexText(c)));
+                $(".nfa-label").innerHTML = `The NFA for <b>${txt}</b>`;
+                $(".nfa-box").innerHTML = A.render(st.machine, { label: "NFA for " + A.regexText(n) });
+                const svg = $(".nfa-box svg");
+                // Don't shrink the NFA below a readable size; the panel scrolls sideways instead.
+                svg.style.minWidth = Math.min(+svg.getAttribute("width"), +svg.getAttribute("width") * .62) + "px";
+                if (fin) {
+                    const r = A.runNFA(st.machine, win.value);
+                    A.highlight(svg, { states: r.sets[r.sets.length - 1], result: r.accepted ? "accept" : "reject" });
+                } else A.highlight(svg, { states: st.added, edges: st.edges });
+                let msg;
+                if (n.t === "sym") msg = `<b>${txt}</b> is a single symbol: two states joined by a ${txt}-arrow. The NFA accepts exactly “${txt}”.`;
+                else if (n.t === "sigma") msg = `<b>Σ</b> is any one symbol: two states joined by one arrow labeled ${SIG.join(",")}.`;
+                else if (n.t === "eps") msg = `<b>ε</b>: one state that is both the start and an accept state, so the NFA accepts only the empty string.`;
+                else if (n.t === "empty") msg = `<b>∅</b>: one state with no accept states, so the NFA accepts nothing.`;
+                else if (n.t === "union") msg = `<b>${txt}</b>: add a new start state with ε-arrows to the NFAs for <b>${kids[0]}</b> (top) and <b>${kids[1]}</b> (bottom). The NFA guesses which one to run. Both keep their accept states.`;
+                else if (n.t === "concat") msg = `<b>${txt}</b>: put the NFA for <b>${kids[0]}</b> first and the NFA for <b>${kids[1]}</b> after it. ε-arrows go from ${kids[0]}’s accept state${st.edges.length > 1 ? "s" : ""} to ${kids[1]}’s start, and only ${kids[1]}’s accept states still accept.`;
+                else if (n.t === "star") msg = `<b>${txt}</b>: add a new start state that accepts (for ε), an ε-arrow into the NFA for <b>${kids[0]}</b>, and ε-arrows from its accept state${st.edges.length > 2 ? "s" : ""} back to its start, so it can repeat.`;
+                else msg = `<b>${txt}</b> means ${kids[0]}(${kids[0]})*: a copy of the NFA for <b>${kids[0]}</b>, followed by the star construction on another copy.`;
+                if (fin) msg += ` <b>Done:</b> this NFA has ${Object.keys(st.machine.states).length} states and recognizes L(${esc(A.regexText(ast))}). Test some strings below.`;
+                setStatus(el, ctx, msg, fin ? "yes" : "", fin ? "great" : "");
+            }
+            const ruleOf = n => RULE_OF[n.t];
+            const used = new Set(steps.slice(0, Math.max(0, k - 1)).map(s => ruleOf(s.node)));
+            $(".recipe").innerHTML = recipeHTML(icon, NFA_RULES, used, st ? [ruleOf(st.node)] : []);
+            test();
+            if (player) player.sync();
+        }
+
+        function test() {
+            if (!ast) return;
+            const w = win.value, nfa = last().machine, yes = A.acceptsNFA(nfa, w);
+            const want = A.regexLang(ast, SIG, Math.max(w.length, 1)).has(w);
+            $(".verdicts").innerHTML = `<div class="vrow"><span class="vchip ${want ? "yes" : "no"}">${esc(show(w))} ${want ? "is" : "isn’t"} in L(R)</span>${k === steps.length ? `<span class="vchip ${yes ? "yes" : "no"}">The NFA ${yes ? "accepts" : "rejects"}</span>` : ""}</div>
+                ${k === steps.length ? `<p class="vnote">${yes === want ? `<span class="tag ok">Correct</span> The NFA agrees with the regex.` : `<span class="tag in">Mismatch</span>`}</p>`
+                    : `<p class="muted">Finish building to run the NFA on this string.</p>`}`;
+        }
+
+        player = bindPlayer(el, ctx, {
+            pos: () => k, max: () => steps.length, go: v => { k = v; draw(); },
+            counter: (j, n) => (n === 0 ? "No expression" : j === 0 ? "Not started" : `Step ${j} of ${n}`),
+        });
+        bindRegexKeys(el, rin, () => { player.stop(); parse(); });
+        $(".regex-ex").addEventListener("click", e => { const b = e.target.closest("[data-r]"); if (b) { player.stop(); rin.value = b.dataset.r; parse(); } });
+        $(".run-controls .examples").addEventListener("click", e => { const b = e.target.closest("[data-w]"); if (b) { win.value = b.dataset.w; draw(); } });
+        win.addEventListener("input", () => { win.value = win.value.split("").filter(c => SIG.includes(c)).join(""); draw(); });
+        rin.value = config.examples[0];
+        parse();
+    };
+
+    // ======================================================================
     // Write a regex: type a regex for a language; check it on every string up to length 10.
     // config: { alphabet, challenges: [{ id, name, lang, test(w), hint }] }
     // ======================================================================

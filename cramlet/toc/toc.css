@@ -299,3 +299,8 @@ table.threads .dot.acc { background: var(--good); box-shadow: 0 0 0 3px color-mi
 .tree .tn.now circle { fill: color-mix(in srgb, var(--c) 22%, var(--surface)); stroke: var(--c); stroke-width: 3.5; }
 .builder .regex-row { margin-top: 2px; }
 .sigma-note { font: 600 13.5px var(--font-code); color: var(--muted); margin-top: -6px; }
+.two-up.wide-right { grid-template-columns: minmax(0, 1fr) minmax(0, 3fr); }
+.nfa-box { overflow-x: auto; place-items: center start; }
+.nfa-box .automaton { margin: 0 auto; }
+.panel-label b { font-family: var(--font-code); text-transform: none; letter-spacing: 0; color: var(--ink); }
+@media (max-width: 900px) { .two-up.wide-right { grid-template-columns: minmax(0, 1fr); } }
