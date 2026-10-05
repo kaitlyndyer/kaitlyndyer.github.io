@@ -317,3 +317,87 @@ table.threads .dot.acc { background: var(--good); box-shadow: 0 0 0 3px color-mi
 .automaton .st.pickable:hover .st-body { fill: color-mix(in srgb, var(--c) 18%, var(--surface)); }
 .rx { font: 600 .95em var(--font-code); padding: 0 5px; border-radius: 6px; background: var(--surface); white-space: nowrap; }
 .run-status .hintline { display: block; margin-top: 4px; font-size: 14px; color: var(--ink-2); }
+
+/* ========== Foundations: Σ*, sets, truth tables, cards ========== */
+.sigma, .setlab, .truth, .cards-game { display: grid; gap: 14px; }
+.sigma .pick-row { margin-bottom: 0; }
+.sigma-rows { display: grid; gap: 6px; padding: 14px 16px; }
+.srow { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; align-items: center; padding: 6px 8px; border-radius: 10px; transition: background .2s; }
+.srow.now { background: color-mix(in srgb, var(--c) 12%, var(--surface)); box-shadow: inset 3px 0 0 var(--c); }
+.slabel { font: 700 16px var(--font-code); color: var(--ink-2); }
+.schips { display: flex; flex-wrap: wrap; gap: 5px; }
+.schip { font: 600 14px var(--font-code); padding: 3px 9px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); color: var(--ink-2); animation: rise .25s; }
+.schip.in { background: var(--c); border-color: var(--c); color: #fff; }
+.srow.more .muted { font-size: 13.5px; }
+.sigma-count { width: 100%; }
+.sigma-count tr.now-row > * { background: color-mix(in srgb, var(--c) 14%, var(--surface)); }
+.set-inputs { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+.set-inputs .input-w input { width: 11em; letter-spacing: 0; }
+.set-results { display: grid; gap: 2px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+.set-row { display: grid; grid-template-columns: 80px 170px minmax(0, 1fr) 110px; gap: 10px; padding: 9px 12px; background: var(--surface); align-items: start; }
+.set-row.head { background: var(--surface-2); font: 800 11.5px var(--font-body); text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+.set-name { font: 700 15px var(--font-code); }
+.set-def { font-size: 14px; color: var(--ink-2); }
+.set-val { font: 600 14px var(--font-code); overflow-wrap: anywhere; }
+.set-size { font: 600 13.5px var(--font-code); color: var(--ink-2); }
+.tt-wrap { overflow-x: auto; }
+.tt { width: auto; }
+.tt th.main, .tt td.main { background: color-mix(in srgb, var(--c) 14%, var(--surface)); }
+.tt th.main2, .tt td.main2 { background: color-mix(in srgb, var(--warn) 16%, var(--surface)); }
+.tt tr.diff > * { box-shadow: inset 0 0 0 999px color-mix(in srgb, var(--bad) 12%, transparent); }
+.tv { font-weight: 800; }
+.tv.t { color: var(--good); }
+.tv.f { color: var(--bad); }
+.verdict.neutral { background: var(--surface-2); border: 2px solid var(--line); }
+.card-row { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; padding: 8px 0; }
+.pcard {
+    width: 92px; height: 128px; border-radius: 14px; cursor: pointer; display: grid; place-items: center;
+    font: 700 30px var(--font-head); border: 3px solid var(--line); background: var(--surface); color: var(--ink);
+    box-shadow: var(--shadow); transition: transform .18s, border-color .18s, box-shadow .18s;
+}
+.pcard.red { background: #e5484d; color: #fff; font-size: 18px; border-color: #e5484d; }
+.pcard.brown { background: #8a5a3b; color: #fff; font-size: 18px; border-color: #8a5a3b; }
+.pcard:hover { transform: translateY(-4px) rotate(-1deg); }
+.pcard[aria-pressed="true"] { transform: translateY(-8px); box-shadow: 0 0 0 4px var(--c), var(--shadow-lg); }
+.card-why { margin: 8px 0 0; padding-left: 20px; }
+.card-why li { margin-bottom: 4px; }
+@media (max-width: 700px) { .set-row { grid-template-columns: minmax(0, 1fr); gap: 2px; } .set-row.head { display: none; } }
+.tt-wrap .tt { width: auto; min-width: 0; }
+.tt th, .tt td { white-space: nowrap; padding: 6px 14px; }
+
+/* ========== Proof puzzles ========== */
+.proofs { display: grid; gap: 14px; }
+.proofs .pick-row { margin-bottom: 0; }
+.ptype { display: inline-block; font: 800 11px var(--font-body); text-transform: uppercase; letter-spacing: .6px; color: #fff; background: var(--c); border-radius: 999px; padding: 2px 9px; margin-right: 6px; vertical-align: 2px; }
+.proof-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.pool { display: grid; gap: 7px; }
+.pstep {
+    text-align: left; font: 500 14.5px/1.45 var(--font-body); color: var(--ink); padding: 9px 12px; cursor: pointer;
+    background: var(--surface); border: 2px solid var(--line); border-radius: 12px; transition: border-color .15s, transform .12s;
+}
+.pstep:hover { border-color: var(--c); transform: translateX(3px); }
+.mine { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.mine li {
+    display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 8px; align-items: start; padding: 8px 8px 8px 10px;
+    border-radius: 12px; background: var(--surface); border: 2px solid var(--line); font-size: 14.5px; line-height: 1.45; animation: rise .2s;
+}
+.mnum { font: 800 13px var(--font-code); color: var(--muted); padding-top: 1px; }
+.mctl { display: flex; gap: 3px; }
+.mctl .ctl.small { width: 26px; height: 26px; font-size: 13px; }
+.mwhy { display: block; margin-top: 5px; font-size: 13.5px; font-weight: 700; }
+.mine li.ok { border-color: var(--good); background: var(--good-bg); }
+.mine li.place { border-color: var(--warn); background: var(--oops-bg); }
+.mine li.place .mwhy { color: var(--warn-ink); }
+.mine li.bad { border-color: var(--bad); background: var(--bad-bg); }
+.mine li.bad .mwhy { color: var(--bad); }
+.flaw-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.fline {
+    width: 100%; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; text-align: left; cursor: pointer;
+    font: 500 15px/1.5 var(--font-body); color: var(--ink); padding: 10px 12px;
+    background: var(--surface); border: 2px solid var(--line); border-radius: 12px; transition: border-color .15s;
+}
+.fline:hover { border-color: var(--c); }
+.fline .fnum { font: 800 13px var(--font-code); color: var(--muted); padding-top: 2px; }
+.fline.ok { border-color: var(--good); background: var(--good-bg); }
+.fline.bad { border-color: var(--bad); background: var(--bad-bg); animation: shake .35s; }
+@media (max-width: 800px) { .proof-cols { grid-template-columns: minmax(0, 1fr); } }
