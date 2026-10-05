@@ -29,6 +29,69 @@
     }
     const accepts = (m, w) => runDFA(m, w).accepted;
 
+    // ---------- NFAs: delta values are lists of states, and "ε" is a symbol ----------
+
+    const targets = (m, q, a) => [].concat((m.delta[q] || {})[a] || []);
+    const sortStates = (m, set) => Object.keys(m.states).filter(q => set.has(q));
+
+    // ε-closure E(P): everything reachable from P using only ε-arrows (including P itself).
+    function eclose(m, states) {
+        const seen = new Set(states), todo = [...states];
+        while (todo.length) targets(m, todo.pop(), "ε").forEach(r => { if (!seen.has(r)) { seen.add(r); todo.push(r); } });
+        return sortStates(m, seen);
+    }
+    // States reachable from P by reading a, before taking the ε-closure.
+    function move(m, states, a) {
+        const out = new Set();
+        states.forEach(q => targets(m, q, a).forEach(r => out.add(r)));
+        return sortStates(m, out);
+    }
+
+    // Run an NFA the efficient way: keep the set of every state you could be in.
+    // sets[j] = δ̂(q_start, first j symbols). Each step also lists the arrows used.
+    function runNFA(m, w) {
+        const sets = [eclose(m, [m.start])], steps = [];
+        for (let i = 0; i < w.length; i++) {
+            const from = sets[i], moved = move(m, from, w[i]), closed = eclose(m, moved);
+            const edges = [];
+            from.forEach(q => targets(m, q, w[i]).forEach(r => edges.push({ from: q, to: r })));
+            closed.forEach(q => targets(m, q, "ε").forEach(r => { if (closed.includes(r)) edges.push({ from: q, to: r, eps: true }); }));
+            steps.push({ i, sym: w[i], from, moved, closed, edges });
+            sets.push(closed);
+        }
+        const last = sets[sets.length - 1];
+        return { sets, steps, accepted: last.some(q => m.accept.includes(q)) };
+    }
+    const acceptsNFA = (m, w) => runNFA(m, w).accepted;
+
+    // Subset construction, recorded one (DFA state, symbol) at a time so it can be animated.
+    // DFA states get letter names A, B, C, … in the order they're discovered.
+    function subsetConstruction(m) {
+        const key = set => set.join(",");
+        const start = eclose(m, [m.start]);
+        const dstates = [{ name: "A", set: start }];
+        const byKey = { [key(start)]: "A" };
+        const delta = {};
+        const steps = [{ kind: "start", set: start, name: "A" }];
+        for (let i = 0; i < dstates.length; i++) {
+            const S = dstates[i];
+            delta[S.name] = {};
+            m.alphabet.forEach(a => {
+                const moved = move(m, S.set, a), T = eclose(m, moved), k = key(T);
+                const isNew = !(k in byKey);
+                if (isNew) {
+                    byKey[k] = String.fromCharCode(65 + dstates.length);
+                    dstates.push({ name: byKey[k], set: T });
+                }
+                delta[S.name][a] = byKey[k];
+                steps.push({ kind: "edge", from: S.name, fromSet: S.set, sym: a, moved, set: T, to: byKey[k], isNew });
+            });
+        }
+        const accept = dstates.filter(d => d.set.some(q => m.accept.includes(q))).map(d => d.name);
+        steps.push({ kind: "accept", accept });
+        return { dstates, delta, accept, steps };
+    }
+
     // All strings over the alphabet, shortest first, up to maxLen (includes the empty string).
     function* strings(alphabet, maxLen) {
         let level = [""];
@@ -73,12 +136,10 @@
         const box = (x, y, r) => pts.push([x - r, y - r], [x + r, y + r]);
         Object.values(m.states).forEach(([x, y]) => box(x, y, R + 3));
 
-        let paths = "", labels = "";
-        edges.forEach(e => {
+        // Pass 1: the shape of every arrow. pointAt(t) gives a point on it and the normal there.
+        const shapes = edges.map(e => {
             const [ax, ay] = pos(e.from), [bx, by] = pos(e.to);
             const text = e.syms.join(",");
-            const data = `data-from="${esc(e.from)}" data-to="${esc(e.to)}" data-syms="${esc(e.syms.join(" "))}"`;
-            let d, lx, ly;
             if (e.from === e.to) {
                 // self-loop on the side given by the state's loop angle (default: straight up)
                 const ang = ((pos(e.from)[2] || {}).loop ?? -90) * Math.PI / 180, spread = .5;
@@ -86,28 +147,70 @@
                 const p2 = [ax + R * Math.cos(ang + spread), ay + R * Math.sin(ang + spread)];
                 const c1 = [ax + R * 2.9 * Math.cos(ang - .55), ay + R * 2.9 * Math.sin(ang - .55)];
                 const c2 = [ax + R * 2.9 * Math.cos(ang + .55), ay + R * 2.9 * Math.sin(ang + .55)];
-                d = `M${f(p1[0])} ${f(p1[1])} C${f(c1[0])} ${f(c1[1])} ${f(c2[0])} ${f(c2[1])} ${f(p2[0])} ${f(p2[1])}`;
-                lx = ax + R * 2.75 * Math.cos(ang); ly = ay + R * 2.75 * Math.sin(ang) + 5;
+                const at = t => { const u = 1 - t; return [0, 1].map(k => u * u * u * p1[k] + 3 * u * u * t * c1[k] + 3 * u * t * t * c2[k] + t * t * t * p2[k]); };
                 box(ax + R * 2.3 * Math.cos(ang), ay + R * 2.3 * Math.sin(ang), 14);
+                return { e, text, kind: "loop", ang, a: [ax, ay], at,
+                    d: `M${f(p1[0])} ${f(p1[1])} C${f(c1[0])} ${f(c1[1])} ${f(c2[0])} ${f(c2[1])} ${f(p2[0])} ${f(p2[1])}` };
+            }
+            const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy), ux = dx / len, uy = dy / len, nx = -uy, ny = ux;
+            if (has(e.to, e.from)) {
+                // two-way: bend each arrow to its own side so they don't overlap
+                const t0 = .42, bend = Math.min(46, len * .22);
+                const s0 = [ax + R * (ux * Math.cos(t0) + nx * Math.sin(t0)), ay + R * (uy * Math.cos(t0) + ny * Math.sin(t0))];
+                const en = [bx + R * (-ux * Math.cos(t0) + nx * Math.sin(t0)), by + R * (-uy * Math.cos(t0) + ny * Math.sin(t0))];
+                const c = [(ax + bx) / 2 + nx * bend * 2, (ay + by) / 2 + ny * bend * 2];
+                const at = t => { const u = 1 - t; return [0, 1].map(k => u * u * s0[k] + 2 * u * t * c[k] + t * t * en[k]); };
+                box(...at(.5), 4);
+                return { e, text, kind: "curve", at, n: [nx, ny], d: `M${f(s0[0])} ${f(s0[1])} Q${f(c[0])} ${f(c[1])} ${f(en[0])} ${f(en[1])}` };
+            }
+            const s0 = [ax + ux * R, ay + uy * R], en = [bx - ux * R, by - uy * R];
+            const at = t => [s0[0] + (en[0] - s0[0]) * t, s0[1] + (en[1] - s0[1]) * t];
+            return { e, text, kind: "line", at, n: [nx, ny], d: `M${f(s0[0])} ${f(s0[1])} L${f(en[0])} ${f(en[1])}` };
+        });
+
+        // Pass 2: place labels so none of them touch another label, a state, or someone else's arrow.
+        const samples = shapes.map(sh => Array.from({ length: 25 }, (_, i) => sh.at(i / 24)));
+        const placed = [];
+        const halfW = text => 3 + 4.8 * text.length, HALF_H = 9;
+        function clashes(cx, cy, text, own) {
+            const hw = halfW(text) + 3, hh = HALF_H + 3;
+            let n = 0;
+            placed.forEach(([px, py, pw]) => { if (Math.abs(px - cx) < hw + pw && Math.abs(py - cy) < hh + HALF_H) n += 10; });
+            Object.values(m.states).forEach(([x, y]) => {
+                const qx = Math.max(cx - hw, Math.min(x, cx + hw)), qy = Math.max(cy - hh, Math.min(y, cy + hh));
+                if (Math.hypot(qx - x, qy - y) < R + 2) n += 10;
+            });
+            samples.forEach((pts, j) => { if (j !== own) pts.forEach(([x, y]) => { if (Math.abs(x - cx) < hw && Math.abs(y - cy) < hh) n += 1; }); });
+            return n;
+        }
+        const T_TRY = [.5, .38, .62, .28, .72, .2, .8];
+        const order = shapes.map((sh, i) => i).sort((a, b) => ({ loop: 0, curve: 1, line: 2 }[shapes[a].kind] - { loop: 0, curve: 1, line: 2 }[shapes[b].kind]));
+        const spots = [];
+        order.forEach(i => {
+            const sh = shapes[i];
+            let best = null;
+            if (sh.kind === "loop") {
+                best = [sh.a[0] + R * 2.75 * Math.cos(sh.ang), sh.a[1] + R * 2.75 * Math.sin(sh.ang) - 1];
             } else {
-                const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy), ux = dx / len, uy = dy / len, nx = -uy, ny = ux;
-                if (has(e.to, e.from)) {
-                    // two-way: bend each arrow to its own side so they don't overlap
-                    const t = .42, bend = Math.min(46, len * .22);
-                    const s = [ax + R * (ux * Math.cos(t) + nx * Math.sin(t)), ay + R * (uy * Math.cos(t) + ny * Math.sin(t))];
-                    const en = [bx + R * (-ux * Math.cos(t) + nx * Math.sin(t)), by + R * (-uy * Math.cos(t) + ny * Math.sin(t))];
-                    const c = [(ax + bx) / 2 + nx * bend * 2, (ay + by) / 2 + ny * bend * 2];
-                    d = `M${f(s[0])} ${f(s[1])} Q${f(c[0])} ${f(c[1])} ${f(en[0])} ${f(en[1])}`;
-                    lx = .25 * s[0] + .5 * c[0] + .25 * en[0] + nx * 11; ly = .25 * s[1] + .5 * c[1] + .25 * en[1] + ny * 11 + 5;
-                    box((s[0] + 2 * c[0] + en[0]) / 4, (s[1] + 2 * c[1] + en[1]) / 4, 4);
-                } else {
-                    d = `M${f(ax + ux * R)} ${f(ay + uy * R)} L${f(bx - ux * R)} ${f(by - uy * R)}`;
-                    lx = (ax + bx) / 2 + nx * 13; ly = (ay + by) / 2 + ny * 13 + 5;
+                const off = sh.kind === "curve" ? 12 : 13, sides = [1, -1];
+                let bestScore = Infinity;
+                search: for (const extra of [0, 9]) for (const side of sides) for (const t of T_TRY) {
+                    const [px, py] = sh.at(t), d = (off + extra) * side, cx = px + sh.n[0] * d, cy = py + sh.n[1] * d;
+                    const score = clashes(cx, cy, sh.text, i) + (side < 0 ? .5 : 0) + Math.abs(t - .5) + extra / 30;
+                    if (score < bestScore) { bestScore = score; best = [cx, cy]; }
+                    if (score < 1) break search;
                 }
             }
-            box(lx, ly - 5, 6 + 4.5 * text.length);
-            paths += `<path class="ed" ${data} d="${d}" marker-end="url(#${id}-arr)"/>`;
-            labels += `<text class="el" ${data} x="${f(lx)}" y="${f(ly)}">${esc(text)}</text>`;
+            placed.push([best[0], best[1], halfW(sh.text)]);
+            spots[i] = best;
+            box(best[0], best[1], halfW(sh.text));
+        });
+
+        let paths = "", labels = "";
+        shapes.forEach((sh, i) => {
+            const data = `data-from="${esc(sh.e.from)}" data-to="${esc(sh.e.to)}" data-syms="${esc(sh.e.syms.join(" "))}"`;
+            paths += `<path class="ed" ${data} d="${sh.d}" marker-end="url(#${id}-arr)"/>`;
+            labels += `<text class="el" ${data} x="${f(spots[i][0])}" y="${f(spots[i][1] + 5)}">${esc(sh.text)}</text>`;
         });
 
         const [sx, sy] = pos(m.start);
@@ -128,8 +231,9 @@
             </g>`;
         }).join("");
 
-        // Natural size is a little over 1:1; CSS shrinks it to fit narrow screens.
-        return `<svg class="automaton" data-mid="${id}" viewBox="${vb.map(f).join(" ")}" width="${f(vb[2] * 1.4)}" height="${f(vb[3] * 1.4)}" role="img" aria-label="${esc(opts.label || "State diagram")}" xmlns="http://www.w3.org/2000/svg">
+        // Natural size is a bit over 1:1 (capped so tall machines stay on screen); CSS shrinks it on narrow screens.
+        const scale = Math.min(1.4, 330 / vb[3]);
+        return `<svg class="automaton" data-mid="${id}" viewBox="${vb.map(f).join(" ")}" width="${f(vb[2] * scale)}" height="${f(vb[3] * scale)}" role="img" aria-label="${esc(opts.label || "State diagram")}" xmlns="http://www.w3.org/2000/svg">
             <defs>
                 <marker id="${id}-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M1 1 L9 5 L1 9 Z"/></marker>
                 <marker id="${id}-arr-on" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path class="arrowhead on" d="M1 1 L9 5 L1 9 Z"/></marker>
@@ -139,7 +243,8 @@
     }
 
     // Light up the current state(s) and the arrow just taken.
-    function highlight(svg, { states = [], edge = null, result = null } = {}) {
+    function highlight(svg, { states = [], edge = null, edges = null, result = null } = {}) {
+        const list = edges || (edge ? [edge] : []);
         svg.querySelectorAll(".st").forEach(g => {
             const on = states.includes(g.dataset.state);
             g.classList.toggle("on", on);
@@ -148,7 +253,7 @@
         });
         const mid = svg.dataset.mid;
         svg.querySelectorAll(".ed, .el").forEach(p => {
-            const on = !!edge && p.dataset.from === edge.from && p.dataset.to === edge.to;
+            const on = list.some(e => p.dataset.from === e.from && p.dataset.to === e.to);
             p.classList.toggle("on", on);
             if (p.classList.contains("ed")) p.setAttribute("marker-end", `url(#${mid}-arr${on ? "-on" : ""})`);
         });
@@ -175,6 +280,6 @@
     }
 
     window.CRAMLET = Object.assign(window.CRAMLET || {}, {
-        automata: { runDFA, accepts, strings, render, highlight, layout, stateLabel },
+        automata: { runDFA, accepts, strings, eclose, move, runNFA, acceptsNFA, subsetConstruction, render, highlight, layout, stateLabel },
     });
 })();
