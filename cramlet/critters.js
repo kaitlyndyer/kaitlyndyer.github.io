@@ -184,5 +184,5 @@
     const MASCOT = { id: 'pip', acc: 'glasses' };
     const logo = () => peekLogo(byId(MASCOT.id), { acc: MASCOT.acc });
 
-    window.CRAMLET = { CRITTERS, COLORS, byId, critterSVG, peekLogo, logo, MASCOT };
+    window.CRAMLET = Object.assign(window.CRAMLET || {}, { CRITTERS, COLORS, byId, critterSVG, peekLogo, logo, MASCOT });
 })();
