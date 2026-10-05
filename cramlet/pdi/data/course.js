@@ -5,6 +5,9 @@
 
 window.STUDY = {
   course: {
+    id: "pdi",
+    // Key kept from the old /study address so saved progress carries over to cramlet.
+    storeKey: "study.pdi.v1",
     title: "Program Design & Implementation",
     tagline: "A concept-by-concept study guide to designing programs in Java.",
   },

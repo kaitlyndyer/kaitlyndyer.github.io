@@ -1,0 +1,153 @@
+/* Theory of Computation: state diagrams and playground widgets. Colors come from ../brand.css tokens;
+   --c is the current concept's accent color. */
+
+/* Widgets toggle things with the hidden attribute; don't let display rules (.btn, .callout) override it. */
+.widget [hidden] { display: none !important; }
+
+/* ========== State diagrams (automata.js) ========== */
+.automaton { display: block; max-width: 100%; height: auto; margin: 0 auto; overflow: visible; }
+.automaton .st-body { fill: var(--surface); stroke: var(--ink-2); stroke-width: 2.5; transition: fill .25s, stroke .25s; }
+.automaton .st-ring { fill: none; stroke: var(--ink-2); stroke-width: 2; transition: stroke .25s; }
+.automaton .st-name { font: 700 17px var(--font-code); fill: var(--ink); text-anchor: middle; pointer-events: none; }
+.automaton .st-name .sub { font-size: 11px; }
+.automaton .st.on .st-body { fill: color-mix(in srgb, var(--c) 22%, var(--surface)); stroke: var(--c); stroke-width: 3.5; }
+.automaton .st.on .st-ring { stroke: var(--c); }
+.automaton .st.on.yes .st-body { fill: color-mix(in srgb, var(--good) 25%, var(--surface)); stroke: var(--good); }
+.automaton .st.on.yes .st-ring { stroke: var(--good); }
+.automaton .st.on.no .st-body { fill: color-mix(in srgb, var(--bad) 20%, var(--surface)); stroke: var(--bad); }
+.automaton .ed, .automaton .start-arrow { fill: none; stroke: var(--diagram-ink); stroke-width: 2; transition: stroke .2s, stroke-width .2s; }
+.automaton .ed.on { stroke: var(--c); stroke-width: 3.5; }
+.automaton .arrowhead { fill: var(--diagram-ink); }
+.automaton .arrowhead.on { fill: var(--c); }
+.automaton .el {
+    font: 700 15px var(--font-code); fill: var(--ink-2); text-anchor: middle;
+    paint-order: stroke; stroke: var(--surface-2); stroke-width: 6px; stroke-linejoin: round;
+}
+.automaton .el.on { fill: var(--c); }
+
+.diagram { padding: 10px 14px; border-radius: 16px; background: var(--surface-2); }
+.quiz-machine { max-width: 460px; margin-bottom: 16px; }
+.quiz-machine .diagram, .quiz-machine { padding: 8px 12px; border-radius: 16px; background: var(--surface-2); }
+
+/* ========== Shared widget bits ========== */
+.play .prose { margin-bottom: 12px; }
+.pick-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.pick {
+    display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+    font: 700 14px var(--font-body); color: var(--ink-2); padding: 6px 14px; border-radius: 999px;
+    background: var(--surface); border: 2px solid var(--line); transition: border-color .15s, background .15s;
+}
+.pick:hover { border-color: var(--c); }
+.pick[aria-pressed="true"] { background: var(--c); border-color: var(--c); color: #fff; }
+.pick .done { display: inline-flex; color: var(--good); }
+.pick[aria-pressed="true"] .done { color: #fff; }
+.pick .done .ic { width: 15px; height: 15px; }
+.btn.small { padding: 5px 12px; font-size: 13.5px; border-radius: 10px; }
+.ctl {
+    width: 42px; height: 42px; display: inline-grid; place-items: center; cursor: pointer; flex: none;
+    font: 700 15px var(--font-body); color: var(--ink); border-radius: 50%;
+    background: var(--surface); border: 2px solid var(--line); transition: border-color .15s, transform .12s;
+}
+.ctl:hover:not(:disabled) { border-color: var(--c); transform: translateY(-1px); }
+.ctl:disabled { opacity: .4; cursor: default; }
+.ctl.play { width: 50px; height: 50px; background: var(--c); border-color: var(--c); color: #fff; box-shadow: 0 3px 0 color-mix(in srgb, var(--c) 70%, black); }
+.ctl.small { width: 30px; height: 30px; font-size: 16px; }
+.ctl .ic { width: 19px; height: 19px; }
+kbd { font: 600 12px var(--font-code); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 0 5px; background: var(--surface-2); }
+
+/* ========== DFA runner ========== */
+.runner { display: grid; gap: 14px; }
+.runner .pick-row { margin-bottom: 0; }
+.lang-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 700; color: var(--ink-2); }
+.lang-a { font: 600 15px var(--font-code); color: var(--ink); background: color-mix(in srgb, var(--c) 12%, var(--paper)); padding: 4px 12px; border-radius: 10px; }
+
+.tape { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; padding: 4px 0 10px; }
+.cell {
+    position: relative; width: 38px; height: 44px; display: grid; place-items: center;
+    font: 700 19px var(--font-code); border-radius: 10px; background: var(--surface); border: 2px solid var(--line);
+    transition: opacity .2s, border-color .2s, transform .2s;
+}
+.cell.read { opacity: .4; }
+.cell.end { color: var(--muted); border-style: dashed; font-size: 16px; }
+.cell.eps { width: auto; padding: 0 14px; color: var(--muted); }
+.cell.head { border-color: var(--c); background: color-mix(in srgb, var(--c) 12%, var(--surface)); transform: translateY(-3px); opacity: 1; }
+.cell.head::after {
+    content: ""; position: absolute; bottom: -12px; left: 50%; margin-left: -6px;
+    border: 6px solid transparent; border-bottom-color: var(--c);
+}
+
+.run-status {
+    display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 12px; align-items: center;
+    padding: 10px 14px; border-radius: 14px; background: var(--surface-2); min-height: 72px; font-size: 15.5px;
+    transition: background .2s;
+}
+.run-status.yes { background: var(--good-bg); }
+.run-status.no { background: var(--bad-bg); }
+.run-status b.yes { color: var(--good); }
+.run-status b.no { color: var(--bad); }
+.rs-av { width: 52px; height: 52px; display: block; }
+.rs-av svg { width: 100%; height: 100%; display: block; }
+
+.run-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.input-w { display: inline-flex; align-items: center; gap: 8px; font: 700 16px var(--font-code); }
+.input-w input {
+    width: 13em; font: 600 17px var(--font-code); letter-spacing: 2px; color: var(--ink);
+    padding: 8px 12px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface);
+}
+.input-w input:focus { outline: none; border-color: var(--c); }
+.examples { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.examples::before { content: "Try:"; font-size: 13px; font-weight: 800; color: var(--muted); margin-right: 2px; }
+.ex {
+    font: 600 14px var(--font-code); padding: 4px 10px; border-radius: 8px; cursor: pointer; color: var(--ink-2);
+    background: color-mix(in srgb, var(--c) 10%, var(--paper)); border: 1px solid color-mix(in srgb, var(--c) 25%, var(--paper));
+}
+.ex:hover { border-color: var(--c); }
+
+.player { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.speed { display: inline-flex; align-items: center; gap: 8px; margin-left: 10px; font-size: 13px; font-weight: 800; color: var(--muted); }
+.speed input { accent-color: var(--c); width: 110px; }
+
+.run-side { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.side-box { padding: 12px 14px; border-radius: 14px; background: var(--surface-2); min-width: 0; }
+.side-title { font: 800 11.5px var(--font-body); text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 6px; }
+.trace { list-style: none; margin: 0; padding: 0; font: 500 14px/1.8 var(--font-code); color: var(--ink-2); max-height: 230px; overflow-y: auto; }
+.trace li.now { color: var(--ink); font-weight: 700; background: color-mix(in srgb, var(--c) 14%, transparent); border-radius: 6px; padding: 0 6px; margin: 0 -6px; }
+.formal p { margin: 0 0 8px; font-size: 14px; }
+table.delta { border-collapse: collapse; font: 600 14px var(--font-code); }
+table.delta th, table.delta td { padding: 5px 12px; text-align: center; border: 1px solid var(--line); }
+table.delta thead th { background: var(--surface); font-family: var(--font-code); }
+table.delta tbody th { text-align: left; background: var(--surface); white-space: nowrap; }
+table.delta td { background: var(--surface); transition: background .2s; }
+table.delta td.now { background: color-mix(in srgb, var(--c) 28%, var(--surface)); color: var(--ink); }
+
+/* ========== DFA builder ========== */
+.builder { display: grid; gap: 14px; }
+.builder .pick-row { margin-bottom: 0; }
+.challenge { padding: 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--c) 9%, var(--paper)); border: 2px dashed color-mix(in srgb, var(--c) 35%, var(--paper)); }
+.ch-lang { font: 600 18px var(--font-head); }
+.ch-lang .set { font: 600 16px var(--font-code); white-space: nowrap; }
+.ch-meta { font-size: 14px; color: var(--ink-2); margin-top: 2px; }
+.build-grid { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: start; }
+.count-row { display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--ink-2); margin-bottom: 10px; }
+.count-row .count { font: 700 18px var(--font-head); min-width: 16px; text-align: center; color: var(--ink); }
+table.delta.edit select {
+    font: 600 14px var(--font-code); color: var(--ink); padding: 3px 4px; border-radius: 8px;
+    border: 2px solid var(--line); background: var(--surface); cursor: pointer;
+}
+table.delta.edit select:focus { outline: none; border-color: var(--c); }
+table.delta.edit input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--c); cursor: pointer; }
+.build-table .muted { margin: 8px 0 0; max-width: 260px; }
+.build-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ch-hint { margin: 0; }
+.verdict { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: start; padding: 14px 16px; border-radius: 14px; font-size: 15.5px; animation: rise .25s; }
+.verdict[hidden] { display: none; }
+.verdict.yes { background: var(--good-bg); border: 2px solid var(--good-line); }
+.verdict.no { background: var(--oops-bg); border: 2px solid var(--oops-line); }
+.verdict .path { margin-top: 8px; font: 600 14.5px var(--font-code); }
+.verdict .arrow { color: var(--muted); margin: 0 2px; }
+.verdict code { font-size: .95em; padding: 1px 6px; border-radius: 6px; background: var(--surface); }
+
+@media (max-width: 900px) {
+    .run-side, .build-grid { grid-template-columns: minmax(0, 1fr); }
+    .input-w input { width: 10em; }
+}
