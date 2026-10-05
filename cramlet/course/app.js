@@ -1,3 +1,5 @@
+// cramlet course app, shared by every course. A course page loads its data/course.js and concept
+// files (which fill window.STUDY), any widget scripts (which register in CRAMLET.widgets), then this.
 (function () {
     "use strict";
 
@@ -6,7 +8,7 @@
     document.getElementById("search-icon").innerHTML = icon("magnifying-glass");
     const buddy = CRAMLET.buddy;
     const progress = CRAMLET.progress;
-    const COURSE = "pdi";
+    const COURSE = S.course.id;
     CRAMLET.theme.mountToggle(document.getElementById("theme-toggle"));
     buddy.mountChip(document.getElementById("buddy-chip"));
     document.getElementById("brand").innerHTML = CRAMLET.logo();
@@ -22,14 +24,20 @@
     const TABS = [
         { id: "summary", label: "Summary", icon: "note" },
         { id: "details", label: "Details", icon: "microscope" },
+        { id: "playground", label: "Playground", icon: "sparkle" },
         { id: "code", label: "Code", icon: "code" },
         { id: "practice", label: "Practice", icon: "brain" },
     ];
+    // Playground and Code only show up for concepts that have them.
+    const tabsFor = d => TABS.filter(t =>
+        (t.id !== "code" || (d.code && d.code.length)) && (t.id !== "playground" || (d.playground && d.playground.length)));
+
+    // Interactive widgets register here: CRAMLET.widgets.name = (el, config, ctx) => {}.
+    const widgets = CRAMLET.widgets || (CRAMLET.widgets = {});
 
     // ---------- Saved progress (per browser) ----------
 
-    // Key kept from the old /study address so saved progress carries over to cramlet.
-    const STORE_KEY = "study.pdi.v1";
+    const STORE_KEY = S.course.storeKey;
     let saved = { status: {} };
     try {
         saved = JSON.parse(localStorage.getItem(STORE_KEY)) || saved;
@@ -163,6 +171,7 @@
     // ---------- Concept page ----------
 
     function renderSoon(c) {
+        const done = allConcepts.find(x => hasContent(x.id));
         main.innerHTML = `
             <div class="concept-head" style="--c:${c.color}">
                 <div class="concept-icon">${icon(c.icon)}</div>
@@ -175,7 +184,7 @@
                 <div class="empty-icon">${icon("hourglass-medium")}</div>
                 <h2>Coming soon</h2>
                 <p>This concept will be built from ${c.lectures.map(n => `Lecture ${n} (${esc(S.lectures[n])})`).join(", ")}.</p>
-                <a class="btn" href="#/c/interfaces">Try a finished concept: ${icon("puzzle-piece")} Interfaces &amp; Abstract Classes</a>
+                ${done ? `<a class="btn" href="#/c/${done.id}">Try a finished concept: ${icon(done.icon)} ${esc(done.title)}</a>` : ""}
             </div>`;
     }
 
@@ -185,7 +194,8 @@
         if (!hasContent(id)) { renderSoon(c); return; }
 
         const d = S.content[id];
-        if (!TABS.some(t => t.id === tab)) tab = "summary";
+        const tabs = tabsFor(d);
+        if (!tabs.some(t => t.id === tab)) tab = "summary";
         const st = saved.status[id];
 
         main.innerHTML = `
@@ -202,7 +212,7 @@
                 <div class="one-liner"><span class="one-liner-label">In one sentence</span>${d.oneLiner}</div>
 
                 <div class="tabs" role="tablist" aria-label="${esc(c.title)} sections">
-                    ${TABS.map(t => `
+                    ${tabs.map(t => `
                         <a class="tab${t.id === tab ? " active" : ""}" role="tab" href="#/c/${id}/${t.id}"
                            aria-selected="${t.id === tab}">${icon(t.icon)} ${t.label}</a>`).join("")}
                 </div>
@@ -225,7 +235,7 @@
             </div>`;
 
         const panel = document.getElementById("tab-panel");
-        ({ summary: renderSummary, details: renderDetails, code: renderCode, practice: renderPractice })[tab](panel, d, c);
+        ({ summary: renderSummary, details: renderDetails, playground: renderPlayground, code: renderCode, practice: renderPractice })[tab](panel, d, c);
         CRAMLET.decorateIcons(panel);
 
         main.querySelectorAll("[data-status]").forEach(b =>
@@ -275,9 +285,38 @@
                     <h3>${esc(s.title)} ${lectureChips(s.lec, true)}</h3>
                     <div class="prose">${s.html}</div>
                     ${s.widget === "hierarchy" ? `<div class="hierarchy" id="hierarchy"></div>` : ""}
+                    ${s.widget && s.widget !== "hierarchy" ? `<div class="widget" data-widget="${s.widget}" data-sec="${s.id}"></div>` : ""}
                 </section>`).join("")}
         `;
         if (d.hierarchy) mountHierarchy(document.getElementById("hierarchy"), d.hierarchy);
+        panel.querySelectorAll("[data-widget]").forEach(el =>
+            mountWidget(el, el.dataset.widget, d.details.find(s => s.id === el.dataset.sec).config, c));
+    }
+
+    // ---------- Playground: interactive widgets ----------
+
+    function mountWidget(el, name, config, c) {
+        const w = widgets[name];
+        if (!w) { el.innerHTML = `<p class="muted">This widget didn’t load. Try refreshing the page.</p>`; return; }
+        w(el, config || {}, { course: COURSE, concept: c, icon, esc, buddy, progress, celebrate, setKeyHandler });
+    }
+
+    function renderPlayground(panel, d, c) {
+        panel.innerHTML = `
+            ${d.playground.length > 1 ? `<div class="toc">
+                <span class="toc-label">Jump to</span>
+                ${d.playground.map(p => `<a href="#/c/${c.id}/playground/${p.id}">${esc(p.title)}</a>`).join("")}
+            </div>` : ""}
+            ${d.playground.map(p => `
+                <section class="detail play" id="sec-${p.id}">
+                    <h3>${esc(p.title)} ${lectureChips(p.lec || [], true)}</h3>
+                    ${p.intro ? `<div class="prose">${p.intro}</div>` : ""}
+                    <div class="widget" data-widget="${p.widget}" data-play="${p.id}"></div>
+                </section>`).join("")}`;
+        panel.querySelectorAll("[data-widget]").forEach(el => {
+            const p = d.playground.find(x => x.id === el.dataset.play);
+            mountWidget(el, p.widget, p.config, c);
+        });
     }
 
     function renderCode(panel, d) {
@@ -404,6 +443,7 @@
                 </div>`;
             } else {
                 body = `${q.code ? codeBlock(q.code) : ""}
+                ${q.machine && CRAMLET.automata ? `<div class="quiz-machine">${CRAMLET.automata.render(q.machine)}</div>` : ""}
                 <div class="options">
                     ${options.map((o, k) => `<button type="button" class="option" data-pick="${k}">
                         <span class="opt-letter">${"ABCD"[k]}</span><span>${o}</span></button>`).join("")}
@@ -585,7 +625,8 @@
         if (!d) return;
         d.summary.keyPoints.forEach(k => index.push({ concept: c, title: "Key idea", where: "Summary", text: stripTags(k.html), href: `#/c/${c.id}/summary` }));
         d.details.forEach(s => index.push({ concept: c, title: s.title, where: "Details", text: s.title + " " + stripTags(s.html), href: `#/c/${c.id}/details/${s.id}` }));
-        d.code.forEach(ex => index.push({ concept: c, title: ex.title, where: "Code", text: ex.title + " " + ex.code + " " + stripTags(ex.note || ""), href: `#/c/${c.id}/code` }));
+        (d.code || []).forEach(ex => index.push({ concept: c, title: ex.title, where: "Code", text: ex.title + " " + ex.code + " " + stripTags(ex.note || ""), href: `#/c/${c.id}/code` }));
+        (d.playground || []).forEach(p => index.push({ concept: c, title: p.title, where: "Playground", text: p.title + " " + stripTags(p.intro || ""), href: `#/c/${c.id}/playground/${p.id}` }));
         d.flashcards.forEach(f => index.push({ concept: c, title: stripTags(f.front), where: "Flashcard", text: stripTags(f.front + " " + f.back), href: `#/c/${c.id}/practice` }));
     });
 
@@ -682,7 +723,7 @@
         } else {
             renderNav("");
             renderHome();
-            document.title = "Program Design & Implementation · cramlet";
+            document.title = S.course.title + " · cramlet";
         }
         if (!parts[3]) window.scrollTo(0, 0);
     }

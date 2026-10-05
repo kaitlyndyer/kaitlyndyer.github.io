@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Design & Implementation · cramlet</title>
-    <meta name="description" content="A concept-by-concept study guide to designing programs in Java, with summaries, code examples, flashcards, and quizzes.">
+    <title>Theory of Computation · cramlet</title>
+    <meta name="description" content="A concept-by-concept study guide to the theory of computation: automata, regular expressions, and the pumping lemma, with interactive machines, flashcards, and quizzes.">
     <script src="../theme.js"></script>
     <link rel="icon" href="../favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../brand.css">
     <link rel="stylesheet" href="../course/styles.css">
+    <link rel="stylesheet" href="toc.css">
 </head>
 <body>
     <div class="app">
@@ -20,7 +21,7 @@
         <header class="topbar">
             <a class="brand" id="brand" href="../" title="All courses">cramlet</a>
             <span class="topbar-sep" aria-hidden="true">/</span>
-            <a class="course-name" href="#/">Program Design &amp; Implementation</a>
+            <a class="course-name" href="#/">Theory of Computation</a>
             <button type="button" id="theme-toggle"></button>
             <button type="button" class="buddy-chip" id="buddy-chip"></button>
         </header>
@@ -53,21 +54,10 @@
     <script src="../icons.js"></script>
     <script src="../progress.js"></script>
     <script src="../buddy.js"></script>
+    <script src="automata.js"></script>
+    <script src="widgets.js"></script>
     <script src="data/course.js"></script>
-    <script src="data/concepts/paradigms.js"></script>
-    <script src="data/concepts/design-goals.js"></script>
-    <script src="data/concepts/program-understanding.js"></script>
-    <script src="data/concepts/interfaces.js"></script>
-    <script src="data/concepts/inheritance.js"></script>
-    <script src="data/concepts/polymorphism.js"></script>
-    <script src="data/concepts/types-generics.js"></script>
-    <script src="data/concepts/exceptions.js"></script>
-    <script src="data/concepts/collections.js"></script>
-    <script src="data/concepts/io.js"></script>
-    <script src="data/concepts/specifications.js"></script>
-    <script src="data/concepts/nullness.js"></script>
-    <script src="data/concepts/contracts.js"></script>
-    <script src="data/concepts/tooling.js"></script>
+    <script src="data/concepts/dfa.js"></script>
     <script src="../course/app.js"></script>
 </body>
 </html>
