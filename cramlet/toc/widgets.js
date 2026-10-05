@@ -726,6 +726,267 @@
     };
 
     // ======================================================================
+    // Regular expressions: shared bits for typing a regex and drawing its syntax tree.
+    // ======================================================================
+    const REGEX_KEYS = ["ε", "∅", "∪", "*", "+", "(", ")", "Σ"];
+    // "R = [input]" plus buttons that type the special symbols.
+    const regexInputHTML = (label = "R") => `
+        <div class="regex-row">
+            <label class="input-w regex-in">${label} = <input type="text" spellcheck="false" autocomplete="off" aria-label="Regular expression"></label>
+            <div class="sym-keys" role="group" aria-label="Insert a symbol">${REGEX_KEYS.map(k => `<button type="button" class="sym-key" data-key="${k}" title="Insert ${k}">${k}</button>`).join("")}</div>
+        </div>`;
+    function bindRegexKeys(el, input, onChange) {
+        el.querySelector(".sym-keys").addEventListener("click", e => {
+            const b = e.target.closest("[data-key]");
+            if (!b) return;
+            const at = input.selectionStart ?? input.value.length, end = input.selectionEnd ?? at;
+            input.value = input.value.slice(0, at) + b.dataset.key + input.value.slice(end);
+            input.focus();
+            input.setSelectionRange(at + b.dataset.key.length, at + b.dataset.key.length);
+            onChange();
+        });
+        input.addEventListener("input", onChange);
+    }
+    const NODE_LABEL = { union: "∪", concat: "∘", star: "*", plus: "+", eps: "ε", empty: "∅", sigma: "Σ" };
+
+    // Syntax tree as SVG: leaves spread out left to right, each parent centered over its children.
+    function treeSVG(ast, esc) {
+        const nodes = [], edges = [];
+        let slot = 0, depthMax = 0;
+        (function place(n, d) {
+            depthMax = Math.max(depthMax, d);
+            const kids = [n.a, n.b].filter(Boolean);
+            kids.forEach(k => place(k, d + 1));
+            n._x = kids.length ? kids.reduce((s, k) => s + k._x, 0) / kids.length : slot++ * 56;
+            n._y = d * 62;
+            n._id = nodes.length;
+            nodes.push(n);
+            kids.forEach(k => edges.push([n, k]));
+        })(ast, 0);
+        const w = Math.max(0, (slot - 1) * 56), R = 19, pad = 26;
+        const vb = [-pad, -pad, w + pad * 2, depthMax * 62 + pad * 2];
+        const scale = Math.min(1.25, 300 / vb[3]);
+        return `<svg class="tree" viewBox="${vb.join(" ")}" width="${vb[2] * scale}" height="${vb[3] * scale}" role="img" aria-label="Syntax tree of the regular expression">
+            ${edges.map(([p, c]) => `<line class="tl" data-n="${c._id}" x1="${p._x}" y1="${p._y + R}" x2="${c._x}" y2="${c._y - R}"/>`).join("")}
+            ${nodes.map(n => `<g class="tn ${n.a ? "op" : "leaf"}" data-n="${n._id}"><circle cx="${n._x}" cy="${n._y}" r="${R}"/><text x="${n._x}" y="${n._y + 6}">${esc(NODE_LABEL[n.t] || n.c)}</text></g>`).join("")}
+        </svg>`;
+    }
+
+    // ======================================================================
+    // Unfold L(R): work out the language of a regex bottom-up, one rule per step.
+    // config: { examples: [regex strings], strings: { "01": [test strings], ab: [test strings] } }
+    // The alphabet is {a, b} if the expression uses a or b, and {0, 1} otherwise (the lecture uses both).
+    // ======================================================================
+    const LANG_RULES = [
+        "<b>L(a) = {a}</b> for a symbol a",
+        "<b>L(ε) = {ε}</b>",
+        "<b>L(∅) = ∅</b>",
+        "<b>L(R<sub>1</sub> ∪ R<sub>2</sub>) = L(R<sub>1</sub>) ∪ L(R<sub>2</sub>)</b>",
+        "<b>L(R<sub>1</sub>R<sub>2</sub>) = L(R<sub>1</sub>) ∘ L(R<sub>2</sub>)</b>: a string from the first, then one from the second",
+        "<b>L(R*) = L(R)*</b>: any number of strings from L(R) stuck together, including ε",
+        "Shorthand: <b>Σ</b> is any one symbol, and <b>R<sup>+</sup> = RR*</b> (one or more)",
+    ];
+    const RULE_OF = { sym: 0, eps: 1, empty: 2, union: 3, concat: 4, star: 5, sigma: 6, plus: 6 };
+    const SHOW_LEN = 6;
+
+    W["regex-explorer"] = function (el, config, ctx) {
+        const { icon, esc } = ctx;
+        let SIG = [], ast = null, order = [], k = 0, player, langs, more;
+
+        el.innerHTML = `
+            <div class="regex-x">
+                ${regexInputHTML()}
+                <div class="sigma-note"></div>
+                <div class="examples regex-ex">${config.examples.map(x => `<button type="button" class="ex" data-r="${esc(x)}">${esc(x)}</button>`).join("")}</div>
+                <div class="regex-err" aria-live="polite"></div>
+                <div class="diagram tree-box"></div>
+                ${statusHTML}
+                ${playerHTML(icon)}
+                ${sideHTML([["Recipe: what each piece means", `<ol class="recipe"></ol>`], ["Test a string", `${inputHTML(14, "String to test")}<div class="verdicts"></div>`]])}
+            </div>`;
+        const $ = s => el.querySelector(s);
+        const rin = $(".regex-in input"), win = $(".run-controls .input-w input");
+
+        // A set of strings, shortest first, cut off with "…" when there are more.
+        function setText(set, hasMore) {
+            const list = A.byLength(set);
+            if (!list.length) return "∅";
+            const shown = list.slice(0, 10).map(x => esc(show(x)));
+            return `{${shown.join(", ")}${list.length > 10 || hasMore ? ", …" : ""}}`;
+        }
+        function load(text) {
+            if (player) player.stop();
+            rin.value = text;
+            parse();
+        }
+        function parse() {
+            const key = /[ab]/.test(rin.value) ? "ab" : "01";
+            if (SIG.join("") !== key) {
+                SIG = key.split("");
+                const list = (config.strings || {})[key] || [""];
+                $(".run-controls .examples").innerHTML = exampleChips(esc, list);
+                win.value = list[0];
+            }
+            $(".sigma-note").innerHTML = `Alphabet: Σ = {${SIG.join(", ")}}`;
+            const r = A.parseRegex(rin.value, SIG);
+            $(".regex-err").textContent = r.error || "";
+            if (r.error) {
+                ast = null;
+                $(".tree-box").innerHTML = `<p class="muted empty-dfa">Fix the expression to see its syntax tree.</p>`;
+                setStatus(el, ctx, r.error, "no");
+                $(".recipe").innerHTML = recipeHTML(icon, LANG_RULES, new Set(), []);
+                $(".verdicts").innerHTML = "";
+                if (player) player.sync();
+                return;
+            }
+            ast = r.ast;
+            order = A.postorder(ast);
+            const memo = new Map(), memo2 = new Map();
+            A.regexLang(ast, SIG, SHOW_LEN, memo);
+            A.regexLang(ast, SIG, SHOW_LEN + 1, memo2);
+            langs = order.map(n => memo.get(n));
+            more = order.map(n => memo2.get(n).size > memo.get(n).size);
+            $(".tree-box").innerHTML = treeSVG(ast, esc);
+            k = 0;
+            draw();
+        }
+
+        function draw() {
+            if (!ast) return;
+            const cur = order[k - 1], i = k - 1;
+            el.querySelectorAll(".tree .tn").forEach(g => {
+                const n = +g.dataset.n;
+                g.classList.toggle("now", n === i);
+                g.classList.toggle("done", n < i);
+            });
+            el.querySelectorAll(".tree .tl").forEach(l => l.classList.toggle("done", +l.dataset.n < k));
+            const L = j => setText(langs[j], more[j]), txt = n => esc(A.regexText(n));
+            const idx = n => order.indexOf(n);
+            if (!cur) setStatus(el, ctx, `This is the <b>syntax tree</b> of R = ${esc(A.regexText(ast))}. ${order.length > 1 ? "* binds tightest, then concatenation (∘), then ∪. " : ""}Press <b>Step</b> or <b>Play</b> to work out L(R) from the leaves up.`);
+            else {
+                let msg;
+                if (cur.t === "sym") msg = `L(${txt(cur)}) = <b>{${esc(cur.c)}}</b>: a single symbol matches just itself.`;
+                else if (cur.t === "eps") msg = `L(ε) = <b>{ε}</b>: just the empty string.`;
+                else if (cur.t === "empty") msg = `L(∅) = <b>∅</b>: it matches nothing at all.`;
+                else if (cur.t === "sigma") msg = `L(Σ) = <b>{${SIG.join(", ")}}</b>: Σ is shorthand for any one symbol (${SIG.join(" ∪ ")}).`;
+                else if (cur.t === "union") msg = `L(${txt(cur)}) = L(${txt(cur.a)}) ∪ L(${txt(cur.b)}) = ${L(idx(cur.a))} ∪ ${L(idx(cur.b))} = <b>${L(i)}</b>.`;
+                else if (cur.t === "concat") msg = `L(${txt(cur)}) = L(${txt(cur.a)}) ∘ L(${txt(cur.b)}): each string of ${L(idx(cur.a))} followed by each string of ${L(idx(cur.b))} = <b>${L(i)}</b>.`;
+                else if (cur.t === "star") msg = `L(${txt(cur)}) = L(${txt(cur.a)})*: zero or more strings from ${L(idx(cur.a))} stuck together = <b>${L(i)}</b>.`;
+                else msg = `${txt(cur)} means ${txt(cur.a)}(${txt(cur.a)})*: one or more strings from ${L(idx(cur.a))} = <b>${L(i)}</b>.`;
+                if (k === order.length) msg += ` That’s all of R.${more[i] ? ` (The language is infinite; strings up to length ${SHOW_LEN} are shown.)` : ""}`;
+                setStatus(el, ctx, msg, k === order.length ? "yes" : "", k === order.length ? "great" : "");
+            }
+            const used = new Set(order.slice(0, Math.max(0, k - 1)).map(n => RULE_OF[n.t]));
+            $(".recipe").innerHTML = recipeHTML(icon, LANG_RULES, used, cur ? [RULE_OF[cur.t]] : []);
+            test();
+            if (player) player.sync();
+        }
+
+        function test() {
+            if (!ast) return;
+            const w = win.value, yes = A.acceptsNFA(A.regexToNFA(ast, SIG), w);
+            $(".verdicts").innerHTML = `<div class="vrow"><span class="vchip ${yes ? "yes" : "no"}">R ${yes ? "matches" : "doesn’t match"} ${esc(show(w))}</span></div>
+                <p class="vnote">${esc(show(w))} ${yes ? "<b>is</b>" : "is <b>not</b>"} in L(${esc(A.regexText(ast))}).</p>`;
+        }
+
+        player = bindPlayer(el, ctx, {
+            pos: () => k, max: () => (ast ? order.length : 0), go: v => { k = v; draw(); },
+            counter: (j, n) => (n === 0 ? "No expression" : j === 0 ? "Not started" : `Step ${j} of ${n}`),
+        });
+        bindRegexKeys(el, rin, () => { player.stop(); parse(); });
+        $(".regex-ex").addEventListener("click", e => { const b = e.target.closest("[data-r]"); if (b) load(b.dataset.r); });
+        $(".run-controls .examples").addEventListener("click", e => { const b = e.target.closest("[data-w]"); if (b) { win.value = b.dataset.w; test(); } });
+        win.addEventListener("input", () => { win.value = win.value.split("").filter(c => SIG.includes(c)).join(""); test(); });
+        load(config.examples[0]);
+    };
+
+    // ======================================================================
+    // Write a regex: type a regex for a language; check it on every string up to length 10.
+    // config: { alphabet, challenges: [{ id, name, lang, test(w), hint }] }
+    // ======================================================================
+    W["regex-writer"] = function (el, config, ctx) {
+        const { icon, esc, buddy, progress, course } = ctx;
+        const SIG = config.alphabet || ["0", "1"], CHECK_LEN = 10;
+        let ci = 0;
+        el.innerHTML = `
+            <div class="builder">
+                <div class="pick-row" role="group" aria-label="Choose a challenge"></div>
+                <div class="challenge">
+                    <div class="ch-lang"></div>
+                    <div class="ch-meta">Σ = {${SIG.join(", ")}}. Use ∪, *, +, ε, ∅, Σ and parentheses.</div>
+                </div>
+                ${regexInputHTML()}
+                <div class="regex-err" aria-live="polite"></div>
+                <div class="build-actions">
+                    <button type="button" class="btn primary" data-act="check">${icon("check")} Check my regex</button>
+                    <button type="button" class="btn ghost" data-act="hint">${icon("lightbulb")} Hint</button>
+                    <button type="button" class="btn ghost" data-act="clear">${icon("arrow-clockwise")} Start over</button>
+                </div>
+                <div class="callout tip ch-hint done" hidden></div>
+                <div class="verdict" aria-live="polite" hidden></div>
+            </div>`;
+        const $ = s => el.querySelector(s);
+        const rin = $(".regex-in input");
+        const solvedList = () => { try { return JSON.parse(localStorage.getItem("cramlet.toc.solved")) || []; } catch (e) { return []; } };
+
+        function drawPicks() {
+            const sv = solvedList();
+            $(".pick-row").innerHTML = config.challenges.map((c, i) =>
+                `<button type="button" class="pick" data-c="${i}" aria-pressed="${i === ci}">${sv.includes("regex-" + c.id) ? `<span class="done">${icon("check")}</span>` : ""}${esc(c.name)}</button>`).join("");
+        }
+        function load(i) {
+            ci = i;
+            const c = config.challenges[i];
+            $(".ch-lang").innerHTML = `Write a regular expression for <span class="set">${c.lang}</span>`;
+            $(".ch-hint").hidden = true;
+            $(".ch-hint").innerHTML = `${icon("lightbulb", "callout-ic")}<div class="callout-body"><span class="callout-label">Hint</span>${c.hint}</div>`;
+            $(".verdict").hidden = true;
+            rin.value = "";
+            $(".regex-err").textContent = "";
+            drawPicks();
+        }
+        function check() {
+            const c = config.challenges[ci], v = $(".verdict"), r = A.parseRegex(rin.value, SIG);
+            v.hidden = false;
+            if (r.error) {
+                v.className = "verdict no";
+                v.innerHTML = `<span class="fb-av"></span><div><b>That isn’t a regular expression yet.</b> ${esc(r.error)}</div>`;
+                buddy.react(v.querySelector(".fb-av"), "oops", "wobble");
+                return;
+            }
+            const nfa = A.regexToNFA(r.ast, SIG);
+            let bad = null;
+            for (const w of A.strings(SIG, CHECK_LEN)) if (A.acceptsNFA(nfa, w) !== c.test(w)) { bad = w; break; }
+            if (bad === null) {
+                v.className = "verdict yes";
+                v.innerHTML = `<span class="fb-av"></span><div><b>It works!</b> ${esc(A.regexText(r.ast))} matches exactly the right strings, checked on every string up to length ${CHECK_LEN}.</div>`;
+                buddy.react(v.querySelector(".fb-av"), "cheer", "party");
+                ctx.celebrate($('[data-act="check"]'));
+                progress.award("challenge", `${course}:regex-write:${c.id}`, { at: $('[data-act="check"]') });
+                const sv = solvedList();
+                if (!sv.includes("regex-" + c.id)) { sv.push("regex-" + c.id); try { localStorage.setItem("cramlet.toc.solved", JSON.stringify(sv)); } catch (e) { /* ignore */ } }
+                drawPicks();
+                return;
+            }
+            const should = c.test(bad);
+            v.className = "verdict no";
+            v.innerHTML = `<span class="fb-av"></span><div><b>Not yet.</b> Your regex ${should ? "doesn’t match" : "matches"} <code>${esc(show(bad))}</code>, but that string ${should ? "<b>is</b>" : "is <b>not</b>"} in the language. It’s the shortest string your regex gets wrong.</div>`;
+            buddy.react(v.querySelector(".fb-av"), "oops", "wobble");
+        }
+        bindRegexKeys(el, rin, () => {
+            const r = A.parseRegex(rin.value, SIG);
+            $(".regex-err").textContent = rin.value.trim() && r.error ? r.error : "";
+            $(".verdict").hidden = true;
+        });
+        rin.addEventListener("keydown", e => { if (e.key === "Enter") check(); });
+        $(".pick-row").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (b) load(+b.dataset.c); });
+        $('[data-act="check"]').addEventListener("click", check);
+        $('[data-act="hint"]').addEventListener("click", () => { $(".ch-hint").hidden = false; });
+        $('[data-act="clear"]').addEventListener("click", () => load(ci));
+        load(0);
+    };
+
+    // ======================================================================
     // Pumping lemma game: you vs. the adversary.
     //   adversary picks p → you pick w ∈ L, |w| ≥ p → adversary splits w = xyz (|xy| ≤ p, |y| > 0)
     //   → you pick i and win if xyⁱz ∉ L.
@@ -804,7 +1065,7 @@
                 moves.push(`<li class="move them win-them"><span class="who">Adversary</span><div>
                     I split it as ${segs(split, 1)} and now <b>every</b> xyⁱz is still in L:
                     <div class="pumped">${[0, 1, 2, 3].map(i => `<div>i = ${i}: ${esc(compact(pump(split, i)))} <span class="tag in">in L</span></div>`).join("")}</div>
-                    <div class="callout warn">${icon("warning", "callout-ic")}<div class="callout-body"><span class="callout-label">This w can’t win</span>With this w, I have a split you can’t beat. A proof has to work against <b>every</b> split, so pick a different w.</div></div>
+                    <div class="callout warn done">${icon("warning", "callout-ic")}<div class="callout-body"><span class="callout-label">This w can’t win</span>With this w, I have a split you can’t beat. A proof has to work against <b>every</b> split, so pick a different w.</div></div>
                     <button type="button" class="btn" data-act="again">${icon("arrow-clockwise")} Pick another w</button></div></li>`);
             }
 
@@ -928,7 +1189,7 @@
                     <button type="button" class="btn ghost" data-act="hint">${icon("lightbulb")} Hint</button>
                     <button type="button" class="btn ghost" data-act="clear">${icon("arrow-clockwise")} Start over</button>
                 </div>
-                <div class="callout tip ch-hint" hidden></div>
+                <div class="callout tip ch-hint done" hidden></div>
                 <div class="verdict" aria-live="polite" hidden></div>
             </div>`;
         const $ = s => el.querySelector(s);

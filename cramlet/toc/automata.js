@@ -101,6 +101,133 @@
         }
     }
 
+    // ---------- Regular expressions (lecture notation) ----------
+    // Syntax: symbols (0, 1, a, b, …), ε, ∅, Σ (any one symbol), R ∪ R (also | or U), RR (concatenation, also ∘ or ·),
+    // R* and R+ (one or more), and parentheses. Precedence: * and + first, then concatenation, then ∪.
+    // AST nodes: { t: "sym", c } | { t: "eps" } | { t: "empty" } | { t: "sigma" } | { t: "union"|"concat", a, b } | { t: "star"|"plus", a }
+
+    function parseRegex(text, alphabet) {
+        const src = text.replace(/\s+/g, "").replace(/[|U]/g, "∪").replace(/[∘·]/g, "");
+        let i = 0;
+        const err = (msg, at = i) => { throw { error: msg, at }; };
+        const peek = () => src[i];
+        function union() {
+            let n = concat();
+            while (peek() === "∪") { i++; n = { t: "union", a: n, b: concat() }; }
+            return n;
+        }
+        function concat() {
+            let n = null;
+            while (i < src.length && peek() !== "∪" && peek() !== ")") {
+                const p = postfix();
+                n = n ? { t: "concat", a: n, b: p } : p;
+            }
+            if (!n) err(peek() === ")" ? "Something is missing before “)”." : i === src.length ? "Something is missing at the end." : "Something is missing before “∪”.");
+            return n;
+        }
+        function postfix() {
+            let n = atom();
+            while (peek() === "*" || peek() === "+") n = { t: peek() === "*" ? "star" : "plus", a: n }, i++;
+            return n;
+        }
+        function atom() {
+            const c = peek();
+            if (c === "(") {
+                i++;
+                const n = union();
+                if (peek() !== ")") err("A “(” is never closed.");
+                i++;
+                return n;
+            }
+            if (c === "*" || c === "+") err(`“${c}” needs something before it to repeat.`);
+            if (c === "ε") { i++; return { t: "eps" }; }
+            if (c === "∅") { i++; return { t: "empty" }; }
+            if (c === "Σ") { i++; return { t: "sigma" }; }
+            if (alphabet.includes(c)) { i++; return { t: "sym", c }; }
+            err(`“${c}” isn’t in the alphabet {${alphabet.join(", ")}}.`);
+        }
+        try {
+            if (!src.length) err("Type a regular expression.", 0);
+            const ast = union();
+            if (i < src.length) err(peek() === ")" ? "There’s a “)” without a matching “(”." : `Unexpected “${peek()}”.`);
+            return { ast };
+        } catch (e) {
+            if (e && e.error) return e;
+            throw e;
+        }
+    }
+
+    // The regex as text, with only the parentheses that are needed.
+    const PREC = { union: 1, concat: 2, star: 3, plus: 3, sym: 4, eps: 4, empty: 4, sigma: 4 };
+    function regexText(n, outer = 0) {
+        let s;
+        if (n.t === "sym") s = n.c;
+        else if (n.t === "eps") s = "ε";
+        else if (n.t === "empty") s = "∅";
+        else if (n.t === "sigma") s = "Σ";
+        else if (n.t === "union") s = regexText(n.a, 1) + " ∪ " + regexText(n.b, 2);
+        else if (n.t === "concat") s = regexText(n.a, 2) + regexText(n.b, 3);
+        else s = regexText(n.a, 4) + (n.t === "star" ? "*" : "+");
+        return PREC[n.t] < outer ? `(${s})` : s;
+    }
+
+    // Every node, children before parents (the order to work out L(R) bottom-up).
+    function postorder(n, out = []) {
+        if (n.a) postorder(n.a, out);
+        if (n.b) postorder(n.b, out);
+        out.push(n);
+        return out;
+    }
+
+    // L(R) restricted to strings of length ≤ maxLen, as a Set. Follows the inductive definition.
+    function regexLang(n, alphabet, maxLen, memo = new Map()) {
+        if (memo.has(n)) return memo.get(n);
+        let out;
+        const cat = (X, Y) => { const s = new Set(); X.forEach(x => Y.forEach(y => { if (x.length + y.length <= maxLen) s.add(x + y); })); return s; };
+        if (n.t === "sym") out = new Set(maxLen >= 1 ? [n.c] : []);
+        else if (n.t === "eps") out = new Set([""]);
+        else if (n.t === "empty") out = new Set();
+        else if (n.t === "sigma") out = new Set(maxLen >= 1 ? alphabet : []);
+        else if (n.t === "union") out = new Set([...regexLang(n.a, alphabet, maxLen, memo), ...regexLang(n.b, alphabet, maxLen, memo)]);
+        else if (n.t === "concat") out = cat(regexLang(n.a, alphabet, maxLen, memo), regexLang(n.b, alphabet, maxLen, memo));
+        else {
+            const A = regexLang(n.a, alphabet, maxLen, memo);
+            let S = new Set(n.t === "star" ? [""] : A), size = -1;
+            if (n.t === "plus") S = new Set(A);
+            while (S.size !== size) { size = S.size; cat(S, A).forEach(x => S.add(x)); }
+            out = S;
+        }
+        memo.set(n, out);
+        return out;
+    }
+    const byLength = set => [...set].sort((x, y) => x.length - y.length || (x < y ? -1 : 1));
+
+    // Regex → NFA with the lecture's constructions (the same ones as the closure proofs):
+    //   a: two states with an a-arrow; ε: one accepting state; ∅: one non-accepting state;
+    //   R1 ∪ R2: new start with ε-arrows to both; R1R2: ε from R1's accept states to R2's start;
+    //   R*: new accepting start with ε to the old start, and ε from accept states back to it. R+ = RR*.
+    function regexToNFA(ast, alphabet) {
+        let count = 0;
+        const delta = {};
+        const fresh = () => { const q = "q" + count++; delta[q] = {}; return q; };
+        const arrow = (p, a, q) => { (delta[p][a] = delta[p][a] || []).push(q); };
+        function build(n) {
+            if (n.t === "sym" || n.t === "sigma") { const s = fresh(), f = fresh(); (n.t === "sym" ? [n.c] : alphabet).forEach(a => arrow(s, a, f)); return { start: s, accept: [f] }; }
+            if (n.t === "eps") { const s = fresh(); return { start: s, accept: [s] }; }
+            if (n.t === "empty") { const s = fresh(); return { start: s, accept: [] }; }
+            if (n.t === "union") { const s = fresh(), x = build(n.a), y = build(n.b); arrow(s, "ε", x.start); arrow(s, "ε", y.start); return { start: s, accept: [...x.accept, ...y.accept] }; }
+            if (n.t === "concat") { const x = build(n.a), y = build(n.b); x.accept.forEach(q => arrow(q, "ε", y.start)); return { start: x.start, accept: y.accept }; }
+            if (n.t === "plus") return build({ t: "concat", a: n.a, b: { t: "star", a: n.a } });
+            const s = fresh(), x = build(n.a);
+            arrow(s, "ε", x.start);
+            x.accept.forEach(q => arrow(q, "ε", x.start));
+            return { start: s, accept: [s, ...x.accept] };
+        }
+        const r = build(ast);
+        const states = Object.fromEntries(Object.keys(delta).map(q => [q, [0, 0]]));
+        return { states, start: r.start, accept: r.accept, alphabet, delta };
+    }
+
     // ---------- Drawing ----------
 
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -289,6 +416,7 @@
     }
 
     window.CRAMLET = Object.assign(window.CRAMLET || {}, {
-        automata: { runDFA, accepts, strings, eclose, move, runNFA, acceptsNFA, subsetConstruction, render, highlight, layout, stateLabel },
+        automata: { runDFA, accepts, strings, eclose, move, runNFA, acceptsNFA, subsetConstruction, render, highlight, layout, stateLabel,
+            parseRegex, regexText, postorder, regexLang, byLength, regexToNFA },
     });
 })();

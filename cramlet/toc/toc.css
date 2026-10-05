@@ -274,3 +274,28 @@ table.threads .dot.acc { background: var(--good); box-shadow: 0 0 0 3px color-mi
 .recipe li.now .r-mark { background: var(--c); border-color: var(--c); color: #fff; }
 .side-box .run-controls { margin-bottom: 10px; }
 .side-box .table-wrap { box-shadow: none; }
+
+/* ========== Regular expressions ========== */
+.regex-x { display: grid; gap: 14px; }
+.regex-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.regex-in input { width: 18em; letter-spacing: 1px; }
+.sym-keys { display: flex; flex-wrap: wrap; gap: 5px; }
+.sym-key {
+    min-width: 34px; height: 34px; padding: 0 8px; cursor: pointer; border-radius: 9px;
+    font: 700 16px var(--font-code); color: var(--ink-2);
+    background: var(--surface); border: 2px solid var(--line); transition: border-color .15s, transform .12s;
+}
+.sym-key:hover { border-color: var(--c); transform: translateY(-1px); }
+.regex-err { font-weight: 700; color: var(--bad); font-size: 14px; }
+.regex-err:empty { display: none; }
+.tree-box { display: grid; place-items: center; min-height: 120px; }
+.tree { display: block; max-width: 100%; height: auto; overflow: visible; }
+.tree .tl { stroke: var(--diagram-line); stroke-width: 2; transition: stroke .2s; }
+.tree .tl.done { stroke: var(--diagram-ink); }
+.tree .tn circle { fill: var(--surface); stroke: var(--ink-2); stroke-width: 2.5; transition: fill .25s, stroke .25s; }
+.tree .tn.op circle { fill: var(--surface-2); }
+.tree .tn text { font: 700 17px var(--font-code); fill: var(--ink); text-anchor: middle; }
+.tree .tn.done circle { fill: color-mix(in srgb, var(--good) 18%, var(--surface)); stroke: var(--good); }
+.tree .tn.now circle { fill: color-mix(in srgb, var(--c) 22%, var(--surface)); stroke: var(--c); stroke-width: 3.5; }
+.builder .regex-row { margin-top: 2px; }
+.sigma-note { font: 600 13.5px var(--font-code); color: var(--muted); margin-top: -6px; }
