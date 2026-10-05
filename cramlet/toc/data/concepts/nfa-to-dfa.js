@@ -107,7 +107,7 @@ registerConcept({
       id: "stepper",
       title: "Build the DFA step by step",
       lec: [2],
-      intro: `<p>Watch the subset construction add one transition at a time. The NFA on the left highlights the set being computed, and the DFA on the right grows as new sets are discovered. Keyboard: <kbd>←</kbd> <kbd>→</kbd> to step.</p>`,
+      intro: `<p>Watch the subset construction add one transition at a time. The NFA on the left highlights the set being computed, and the DFA on the right grows as new sets are discovered. The <b>Recipe</b> below shows which rule each step uses.</p>`,
       widget: "subset-stepper",
       config: {
         examples: [
