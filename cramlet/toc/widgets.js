@@ -1148,6 +1148,436 @@
     };
 
     // ======================================================================
+    // Σ* explorer: build Σ* = Σ⁰ ∪ Σ¹ ∪ Σ² ∪ … one length at a time, and see which strings a language contains.
+    // config: { alphabet, maxLen, languages: [{ id, name, set, test(w), note }] }
+    // ======================================================================
+    W["sigma-explorer"] = function (el, config, ctx) {
+        const { icon, esc } = ctx;
+        const SIG = config.alphabet || ["0", "1"], MAX = config.maxLen || 4;
+        let li = 0, k = 0, player;
+        const rows = Array.from({ length: MAX + 1 }, (_, i) => [...A.strings(SIG, i)].filter(w => w.length === i));
+        const supN = n => String(n).split("").map(d => "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]).join("");
+
+        el.innerHTML = `
+            <div class="sigma">
+                <div class="pick-row" role="group" aria-label="Choose a language"></div>
+                <div class="challenge"><div class="ch-lang"></div><div class="ch-meta"></div></div>
+                <div class="diagram sigma-rows"></div>
+                ${statusHTML}
+                ${playerHTML(icon)}
+                ${sideHTML([["Counting strings", `<table class="delta sigma-count"></table>`], ["Test a string", `${inputHTML(12, "String to test")}<div class="verdicts"></div>`]])}
+            </div>`;
+        const $ = s => el.querySelector(s);
+        const win = $(".run-controls .input-w input");
+        $(".run-controls .examples").innerHTML = exampleChips(esc, ["101", "0101", "", "10"]);
+        win.value = "101";
+        const L = () => config.languages[li];
+
+        function pick(i) {
+            li = i;
+            el.querySelectorAll(".pick").forEach((b, j) => b.setAttribute("aria-pressed", j === i));
+            $(".ch-lang").innerHTML = `<span class="set">L = ${L().set}</span>`;
+            $(".ch-meta").innerHTML = L().note || "";
+            draw();
+        }
+        function draw() {
+            const member = L().test;
+            $(".sigma-rows").innerHTML = rows.map((r, i) => `
+                <div class="srow${i < k ? " shown" : ""}${i === k - 1 ? " now" : ""}">
+                    <span class="slabel">Σ${supN(i)}</span>
+                    <span class="schips">${i < k ? r.map(w => `<span class="schip${member(w) ? " in" : ""}">${esc(show(w))}</span>`).join("") : `<span class="muted">${r.length} string${r.length > 1 ? "s" : ""} of length ${i}</span>`}</span>
+                </div>`).join("") + `<div class="srow more"><span class="slabel">…</span><span class="muted">Σ* keeps going: strings of every length</span></div>`;
+            const inL = r => r.filter(L().test).length;
+            if (k === 0) setStatus(el, ctx, `Σ = {${SIG.join(", ")}}. <b>Σ*</b> is every string over Σ: Σ* = Σ<sup>0</sup> ∪ Σ<sup>1</sup> ∪ Σ<sup>2</sup> ∪ …, where Σ<sup>i</sup> is the strings of length i. Press <b>Step</b> to build it one length at a time. Strings in L are highlighted.`);
+            else {
+                const i = k - 1, n = rows[i].length;
+                let msg = i === 0 ? `<b>Σ<sup>0</sup> = {ε}</b>: exactly one string of length 0, the empty string. So |Σ<sup>0</sup>| = 1, not 0. (The empty <i>set</i> ∅ has no strings at all.)`
+                    : `<b>Σ${supN(i)}</b>: all strings of length ${i}. There are |Σ|${supN(i)} = ${SIG.length}${supN(i)} = <b>${n}</b> of them.`;
+                msg += ` ${inL(rows[i])} of them ${inL(rows[i]) === 1 ? "is" : "are"} in L.`;
+                if (k === MAX + 1) msg += ` That’s every string up to length ${MAX}. Σ* goes on forever, but each string in it is <b>finite</b>.`;
+                setStatus(el, ctx, msg, k === MAX + 1 ? "yes" : "", k === MAX + 1 ? "great" : "");
+            }
+            $(".sigma-count").innerHTML = `<thead><tr><th>i</th><th>|Σ<sup>i</sup>|</th><th>in L</th></tr></thead><tbody>${rows.map((r, i) =>
+                `<tr class="${i === k - 1 ? "now-row" : ""}"><th>${i}</th><td>${i < k ? r.length : ""}</td><td>${i < k ? inL(r) : ""}</td></tr>`).join("")}</tbody>`;
+            test();
+            if (player) player.sync();
+        }
+        function test() {
+            const w = win.value, yes = L().test(w);
+            $(".verdicts").innerHTML = `<div class="vrow"><span class="vchip ${yes ? "yes" : "no"}">${esc(show(w))} ${yes ? "∈" : "∉"} L</span></div>
+                <p class="vnote">Length |${esc(show(w))}| = ${w.length}, so it’s in Σ${supN(w.length)}.</p>`;
+        }
+        $(".pick-row").innerHTML = config.languages.map((x, i) => `<button type="button" class="pick" data-l="${i}">${esc(x.name)}</button>`).join("");
+        $(".pick-row").addEventListener("click", e => { const b = e.target.closest("[data-l]"); if (b) pick(+b.dataset.l); });
+        $(".run-controls .examples").addEventListener("click", e => { const b = e.target.closest("[data-w]"); if (b) { win.value = b.dataset.w; test(); } });
+        win.addEventListener("input", () => { win.value = win.value.split("").filter(c => SIG.includes(c)).join(""); test(); });
+        player = bindPlayer(el, ctx, {
+            pos: () => k, max: () => MAX + 1, go: v => { k = v; draw(); },
+            counter: (j, n) => (j === 0 ? "Not started" : `Length ${j - 1} of ${n - 1}`),
+        });
+        pick(0);
+    };
+
+    // ======================================================================
+    // Set lab: union, intersection, difference, Cartesian product, and power set of two small sets.
+    // config: { examples: [{ a: "1, 2", b: "a, b" }] }
+    // ======================================================================
+    W["set-lab"] = function (el, config, ctx) {
+        const { esc } = ctx;
+        el.innerHTML = `
+            <div class="setlab">
+                <div class="set-inputs">
+                    <label class="input-w">A = { <input type="text" data-set="a" spellcheck="false" autocomplete="off" aria-label="Elements of A"> }</label>
+                    <label class="input-w">B = { <input type="text" data-set="b" spellcheck="false" autocomplete="off" aria-label="Elements of B"> }</label>
+                </div>
+                <div class="examples set-ex">${config.examples.map((x, i) => `<button type="button" class="ex" data-x="${i}">A = {${esc(x.a)}}, B = {${esc(x.b)}}</button>`).join("")}</div>
+                <p class="muted">Separate elements with commas. Repeats don’t count: a set has each element once.</p>
+                <div class="set-results"></div>
+            </div>`;
+        const $ = s => el.querySelector(s);
+        const ia = $('[data-set="a"]'), ib = $('[data-set="b"]');
+        const parse = t => [...new Set(t.split(",").map(x => x.trim()).filter(Boolean))];
+        const fmt = list => (list.length ? `{${list.map(esc).join(", ")}}` : "∅");
+        function draw() {
+            const A = parse(ia.value), B = parse(ib.value);
+            const union = [...new Set([...A, ...B])], inter = A.filter(x => B.includes(x));
+            const aMinusB = A.filter(x => !B.includes(x)), bMinusA = B.filter(x => !A.includes(x));
+            const prod = A.length * B.length <= 30 ? A.flatMap(x => B.map(y => `(${x}, ${y})`)) : null;
+            const subsets = A.length <= 4 ? Array.from({ length: 2 ** A.length }, (_, m) => A.filter((_, i) => m & (1 << i))).sort((x, y) => x.length - y.length) : null;
+            const row = (name, def, val, size) => `<div class="set-row"><div class="set-name">${name}</div><div class="set-def">${def}</div><div class="set-val">${val}</div><div class="set-size">${size}</div></div>`;
+            $(".set-results").innerHTML = `
+                <div class="set-row head"><div>Operation</div><div>Means</div><div>Result</div><div>Size</div></div>
+                ${row("A ∪ B", "in A or in B", fmt(union), union.length)}
+                ${row("A ∩ B", "in A and in B", fmt(inter), inter.length)}
+                ${row("A \\ B", "in A but not in B", fmt(aMinusB), aMinusB.length)}
+                ${row("B \\ A", "in B but not in A", fmt(bMinusA), bMinusA.length)}
+                ${row("A × B", "ordered pairs (a, b)", prod ? fmt(prod) : `<span class="muted">too many to list</span>`, `${A.length} × ${B.length} = ${A.length * B.length}`)}
+                ${row("P(A)", "every subset of A", subsets ? `{${subsets.map(x => (x.length ? `{${x.map(esc).join(", ")}}` : "∅")).join(", ")}}` : `<span class="muted">A is too big to list (try 4 or fewer)</span>`, `2<sup>${A.length}</sup> = ${2 ** A.length}`)}`;
+        }
+        function load(i) { ia.value = config.examples[i].a; ib.value = config.examples[i].b; draw(); }
+        ia.addEventListener("input", draw); ib.addEventListener("input", draw);
+        $(".set-ex").addEventListener("click", e => { const b = e.target.closest("[data-x]"); if (b) load(+b.dataset.x); });
+        load(0);
+    };
+
+    // ======================================================================
+    // Truth tables: evaluate a formula with P, Q, R, … and compare it with a second one.
+    // Syntax: letters, T/F, ¬ (also ~ or !), ∧ (&), ∨ (|), → (->), ↔ (<->), parentheses.
+    // Precedence: ¬, then ∧, then ∨, then → (right to left), then ↔.
+    // config: { examples: [[formula, other]] }
+    // ======================================================================
+    function parseLogic(text) {
+        const src = text.replace(/\s+/g, "").replace(/<->|<=>/g, "↔").replace(/->|=>/g, "→").replace(/[~!]/g, "¬").replace(/&/g, "∧").replace(/\|/g, "∨");
+        let i = 0;
+        const err = m => { throw { error: m }; };
+        const peek = () => src[i];
+        function iff() { let n = imp(); while (peek() === "↔") { i++; n = { op: "↔", a: n, b: imp() }; } return n; }
+        function imp() { const n = or(); if (peek() === "→") { i++; return { op: "→", a: n, b: imp() }; } return n; }
+        function or() { let n = and(); while (peek() === "∨") { i++; n = { op: "∨", a: n, b: and() }; } return n; }
+        function and() { let n = not(); while (peek() === "∧") { i++; n = { op: "∧", a: n, b: not() }; } return n; }
+        function not() { if (peek() === "¬") { i++; return { op: "¬", a: not() }; } return atom(); }
+        function atom() {
+            const c = peek();
+            if (c === "(") { i++; const n = iff(); if (peek() !== ")") err("A “(” is never closed."); i++; return n; }
+            if (c === "T" || c === "F") { i++; return { k: c === "T" }; }
+            if (c && /[A-Z]/.test(c)) { i++; return { v: c }; }
+            err(!c ? "Something is missing at the end." : /[a-z]/.test(c) ? `Use capital letters (P, Q, R, …) for variables, not “${c}”.` : `Unexpected “${c}”.`);
+        }
+        try {
+            if (!src) err("Type a formula.");
+            const n = iff();
+            if (i < src.length) err(`Unexpected “${src[i]}”.`);
+            return { ast: n };
+        } catch (e) { if (e && e.error) return e; throw e; }
+    }
+    const LPREC = { "↔": 1, "→": 2, "∨": 3, "∧": 4, "¬": 5 };
+    function logicText(n, outer = 0) {
+        if (n.v) return n.v;
+        if ("k" in n) return n.k ? "T" : "F";
+        if (n.op === "¬") return "¬" + logicText(n.a, 5);
+        // Mixed ∧/∨ always get parentheses, as in the lecture: R ∨ (P ∧ Q), not R ∨ P ∧ Q.
+        const mixed = c => c.op && ["∧", "∨"].includes(c.op) && ["∧", "∨"].includes(n.op) && c.op !== n.op;
+        const side = (c, p) => (mixed(c) ? `(${logicText(c)})` : logicText(c, p));
+        const s = `${side(n.a, LPREC[n.op] + (n.op === "→" ? 1 : 0))} ${n.op} ${side(n.b, LPREC[n.op] + (n.op === "→" ? 0 : 1))}`;
+        return LPREC[n.op] < outer ? `(${s})` : s;
+    }
+    const logicVars = (n, s = new Set()) => { if (n.v) s.add(n.v); if (n.a) logicVars(n.a, s); if (n.b) logicVars(n.b, s); return s; };
+    function evalLogic(n, env) {
+        if (n.v) return env[n.v];
+        if ("k" in n) return n.k;
+        const a = evalLogic(n.a, env), b = n.b ? evalLogic(n.b, env) : null;
+        return { "¬": !a, "∧": a && b, "∨": a || b, "→": !a || b, "↔": a === b }[n.op];
+    }
+    const subformulas = (n, out = []) => { if (n.a) subformulas(n.a, out); if (n.b) subformulas(n.b, out); if (n.op && !out.some(x => logicText(x) === logicText(n))) out.push(n); return out; };
+    const LOGIC_KEYS = ["¬", "∧", "∨", "→", "↔", "(", ")", "T", "F"];
+
+    W["truth-table"] = function (el, config, ctx) {
+        const { esc, icon } = ctx;
+        let focus;
+        el.innerHTML = `
+            <div class="truth">
+                <div class="regex-row"><label class="input-w regex-in">φ = <input type="text" data-f="1" spellcheck="false" autocomplete="off" aria-label="Formula"></label></div>
+                <div class="regex-row"><label class="input-w regex-in">ψ = <input type="text" data-f="2" spellcheck="false" autocomplete="off" aria-label="Formula to compare (optional)" placeholder="optional: compare with"></label></div>
+                <div class="sym-keys" role="group" aria-label="Insert a symbol">${LOGIC_KEYS.map(k => `<button type="button" class="sym-key" data-key="${k}">${k}</button>`).join("")}</div>
+                <div class="examples tt-ex">${config.examples.map((x, i) => `<button type="button" class="ex" data-x="${i}">${esc(x[0])}${x[1] ? " vs " + esc(x[1]) : ""}</button>`).join("")}</div>
+                <div class="regex-err" aria-live="polite"></div>
+                <div class="table-wrap tt-wrap"><table class="delta tt"></table></div>
+                <div class="verdict" aria-live="polite" hidden></div>
+            </div>`;
+        const $ = s => el.querySelector(s);
+        const f1 = $('[data-f="1"]'), f2 = $('[data-f="2"]');
+        focus = f1;
+        [f1, f2].forEach(inp => { inp.addEventListener("focus", () => { focus = inp; }); inp.addEventListener("input", draw); });
+        $(".sym-keys").addEventListener("click", e => {
+            const b = e.target.closest("[data-key]"); if (!b) return;
+            const at = focus.selectionStart ?? focus.value.length, end = focus.selectionEnd ?? at;
+            focus.value = focus.value.slice(0, at) + b.dataset.key + focus.value.slice(end);
+            focus.focus(); focus.setSelectionRange(at + 1, at + 1);
+            draw();
+        });
+        $(".tt-ex").addEventListener("click", e => { const b = e.target.closest("[data-x]"); if (!b) return; const x = config.examples[+b.dataset.x]; f1.value = x[0]; f2.value = x[1] || ""; draw(); });
+
+        function draw() {
+            const p1 = parseLogic(f1.value), p2 = f2.value.trim() ? parseLogic(f2.value) : null;
+            const errs = [p1.error && `φ: ${p1.error}`, p2 && p2.error && `ψ: ${p2.error}`].filter(Boolean);
+            $(".regex-err").textContent = errs.join(" ");
+            const v = $(".verdict");
+            if (p1.error || (p2 && p2.error)) { $(".tt").innerHTML = ""; v.hidden = true; return; }
+            const vars = [...new Set([...logicVars(p1.ast), ...(p2 ? logicVars(p2.ast) : [])])].sort();
+            const cols = [...subformulas(p1.ast), ...(p2 ? subformulas(p2.ast) : [])].filter((x, i, a) => a.findIndex(y => logicText(y) === logicText(x)) === i);
+            const last1 = logicText(p1.ast), last2 = p2 ? logicText(p2.ast) : null;
+            const rows = Array.from({ length: 2 ** vars.length }, (_, r) => Object.fromEntries(vars.map((x, i) => [x, !(r & (1 << (vars.length - 1 - i)))])));
+            const cell = b => `<span class="tv ${b ? "t" : "f"}">${b ? "T" : "F"}</span>`;
+            const diff = r => p2 && evalLogic(p1.ast, r) !== evalLogic(p2.ast, r);
+            $(".tt").innerHTML = `<thead><tr>${vars.map(x => `<th>${x}</th>`).join("")}${cols.map(c => { const t = logicText(c); return `<th class="${t === last1 ? "main" : t === last2 ? "main2" : ""}">${esc(t)}</th>`; }).join("")}</tr></thead>
+                <tbody>${rows.map(r => `<tr class="${diff(r) ? "diff" : ""}">${vars.map(x => `<td>${cell(r[x])}</td>`).join("")}${cols.map(c => { const t = logicText(c); return `<td class="${t === last1 ? "main" : t === last2 ? "main2" : ""}">${cell(evalLogic(c, r))}</td>`; }).join("")}</tr>`).join("")}</tbody>`;
+            if (!p2) {
+                const vals = rows.map(r => evalLogic(p1.ast, r));
+                v.hidden = false;
+                v.className = "verdict neutral";
+                v.innerHTML = `<span class="fb-av"></span><div>${vals.every(Boolean) ? `<b>${esc(last1)}</b> is true in every row: it’s a <b>tautology</b>.` : vals.some(Boolean) ? `<b>${esc(last1)}</b> is true in ${vals.filter(Boolean).length} of ${vals.length} rows.` : `<b>${esc(last1)}</b> is false in every row: it’s a <b>contradiction</b>.`} Type a second formula ψ to compare.</div>`;
+                ctx.buddy.react(v.querySelector(".fb-av"), "idle", "");
+                return;
+            }
+            const bad = rows.filter(diff);
+            v.hidden = false;
+            v.className = "verdict " + (bad.length ? "no" : "yes");
+            v.innerHTML = `<span class="fb-av"></span><div>${bad.length
+                ? `<b>Not equivalent.</b> They disagree in ${bad.length} row${bad.length > 1 ? "s" : ""} (highlighted), for example when ${vars.map(x => `${x} = ${bad[0][x] ? "T" : "F"}`).join(", ")}.`
+                : `<b>Equivalent!</b> φ and ψ have the same value in every row, so you can always replace one with the other.`}</div>`;
+            ctx.buddy.react(v.querySelector(".fb-av"), bad.length ? "oops" : "happy", bad.length ? "wobble" : "bounce");
+        }
+        f1.value = config.examples[0][0]; f2.value = config.examples[0][1] || "";
+        draw();
+    };
+
+    // ======================================================================
+    // Card puzzle (Intro slide 26): which cards must you flip to test "if even, then red"?
+    // config: { cards: [{ face, kind: "even"|"odd"|"red"|"other" }] }
+    // ======================================================================
+    W["card-puzzle"] = function (el, config, ctx) {
+        const { icon, esc, buddy, progress, course } = ctx;
+        const cards = config.cards, picked = new Set();
+        const needed = i => cards[i].kind === "even" || cards[i].kind === "other";
+        el.innerHTML = `
+            <div class="cards-game">
+                <div class="challenge"><div class="ch-lang">Each card has a <b>number</b> on one side and a <b>color</b> on the other. Someone claims: <span class="set">“If a card has an even number on one side, then its other side is red.”</span></div>
+                <div class="ch-meta">Which cards do you <b>have</b> to turn over to test the claim? Click to pick them, then check.</div></div>
+                <div class="card-row">${cards.map((c, i) => `<button type="button" class="pcard ${c.kind === "red" ? "red" : c.kind === "other" ? "brown" : "num"}" data-c="${i}" aria-pressed="false">${esc(c.face)}</button>`).join("")}</div>
+                <div class="build-actions">
+                    <button type="button" class="btn primary" data-act="check">${icon("check")} Check my cards</button>
+                    <button type="button" class="btn ghost" data-act="clear">${icon("arrow-clockwise")} Start over</button>
+                </div>
+                <div class="verdict" aria-live="polite" hidden></div>
+            </div>`;
+        const $ = s => el.querySelector(s);
+        $(".card-row").addEventListener("click", e => {
+            const b = e.target.closest("[data-c]"); if (!b) return;
+            const i = +b.dataset.c;
+            picked.has(i) ? picked.delete(i) : picked.add(i);
+            b.setAttribute("aria-pressed", picked.has(i));
+            $(".verdict").hidden = true;
+        });
+        $('[data-act="clear"]').addEventListener("click", () => { picked.clear(); el.querySelectorAll(".pcard").forEach(b => b.setAttribute("aria-pressed", "false")); $(".verdict").hidden = true; });
+        $('[data-act="check"]').addEventListener("click", () => {
+            const ok = cards.every((_, i) => picked.has(i) === needed(i));
+            const why = cards.map((c, i) => `<li><b>${esc(c.face)}</b>: ${needed(i) ? "<b>flip it.</b> " : "leave it. "}${c.kind === "even" ? "It’s even, so the claim says its back must be red. Check that it is." : c.kind === "odd" ? "The claim says nothing about odd numbers; any color is fine." : c.kind === "red" ? "The claim doesn’t say red cards must be even (that’s the converse). Either number is fine." : "If its back were even, the claim would be false. By the contrapositive, “not red → not even,” you must check it."}</li>`).join("");
+            const v = $(".verdict");
+            v.hidden = false;
+            v.className = "verdict " + (ok ? "yes" : "no");
+            v.innerHTML = `<span class="fb-av"></span><div>${ok ? "<b>Exactly right!</b>" : "<b>Not quite.</b> Here’s each card:"}<ul class="card-why">${why}</ul></div>`;
+            buddy.react(v.querySelector(".fb-av"), ok ? "cheer" : "oops", ok ? "party" : "wobble");
+            if (ok) { ctx.celebrate($('[data-act="check"]')); progress.award("challenge", `${course}:card-puzzle`, { at: $('[data-act="check"]') }); }
+        });
+    };
+
+    // ======================================================================
+    // Proof puzzles. Two kinds:
+    //   order: pick proof steps (mixed with a few wrong ones) and put them in order.
+    //          { id, name, type: "order", theorem, steps: [html in the right order], groups: [[i, j]] (steps i..j may come in
+    //            any order), distractors: [{ html, why }] }
+    //   flaw:  find the one broken line in a proof. { id, name, type: "flaw", theorem, lines: [{ html, ok }], flaw, why }
+    // config: { puzzles: [...] }
+    // ======================================================================
+    W["proof-puzzle"] = function (el, config, ctx) {
+        const { icon, esc, buddy, progress, course } = ctx;
+        let pi = 0, pool = [], mine = [], checked = null, hint = null;
+        const solvedList = () => { try { return JSON.parse(localStorage.getItem("cramlet.toc.solved")) || []; } catch (e) { return []; } };
+        const P = () => config.puzzles[pi];
+        const shuffle = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(x => x[1]);
+
+        el.innerHTML = `
+            <div class="proofs">
+                <div class="pick-row" role="group" aria-label="Choose a proof"></div>
+                <div class="challenge"><div class="ch-lang"></div><div class="ch-meta"></div></div>
+                <div class="proof-area"></div>
+                <div class="build-actions">
+                    <button type="button" class="btn primary" data-act="check">${icon("check")} Check my proof</button>
+                    <button type="button" class="btn ghost" data-act="hint">${icon("lightbulb")} Hint</button>
+                    <button type="button" class="btn ghost" data-act="clear">${icon("arrow-clockwise")} Start over</button>
+                </div>
+                <div class="callout tip ch-hint done" hidden></div>
+                <div class="verdict" aria-live="polite" hidden></div>
+            </div>`;
+        const $ = s => el.querySelector(s);
+
+        function drawPicks() {
+            const sv = solvedList();
+            $(".pick-row").innerHTML = config.puzzles.map((x, i) =>
+                `<button type="button" class="pick" data-p="${i}" aria-pressed="${i === pi}">${sv.includes("proof-" + x.id) ? `<span class="done">${icon("check")}</span>` : ""}${esc(x.name)}</button>`).join("");
+        }
+        function load(i) {
+            pi = i; checked = null; hint = null; mine = [];
+            const p = P();
+            pool = p.type === "order" ? shuffle([...p.steps.map((h, k) => ({ id: "s" + k, html: h })), ...(p.distractors || []).map((d, k) => ({ id: "d" + k, html: d.html, why: d.why }))]) : [];
+            $(".ch-lang").innerHTML = `<span class="ptype">${p.type === "order" ? "Build the proof" : "Find the flaw"}</span> ${p.theorem}`;
+            $(".ch-meta").innerHTML = p.type === "order"
+                ? `Click steps to add them to your proof, then put them in order. <b>Some steps don’t belong</b>: leave those out.`
+                : `This proof has exactly <b>one</b> broken step. Click the line you think is wrong.`;
+            $(".verdict").hidden = true; $(".ch-hint").hidden = true;
+            $('[data-act="check"]').hidden = p.type !== "order";
+            $('[data-act="hint"]').hidden = p.type !== "order";
+            drawPicks();
+            draw();
+        }
+
+        // Which positions are right, given that steps in a group can come in any order.
+        function grade() {
+            const p = P(), n = p.steps.length, slots = [];
+            for (let i = 0; i < n;) {
+                const g = (p.groups || []).find(g => g[0] === i);
+                const hi = g ? g[1] : i;
+                slots.push(Array.from({ length: hi - i + 1 }, (_, k) => "s" + (i + k)));
+                i = hi + 1;
+            }
+            const marks = mine.map(x => (x.id[0] === "d" ? "bad" : "place"));
+            let pos = 0, firstWrong = -1, expected = null;
+            for (const slot of slots) {
+                for (let t = 0; t < slot.length; t++) {
+                    const item = mine[pos + t];
+                    if (item && slot.includes(item.id)) marks[pos + t] = "ok";
+                    else if (firstWrong < 0) {
+                        firstWrong = pos + t;
+                        const okIds = mine.slice(pos, pos + slot.length).filter(x => slot.includes(x.id)).map(x => x.id);
+                        expected = slot.find(id => !okIds.includes(id));
+                    }
+                }
+                pos += slot.length;
+            }
+            const solved = firstWrong < 0 && mine.length === n;
+            return { marks, solved, firstWrong: firstWrong < 0 ? (mine.length > n ? n : -1) : firstWrong, expected, missing: Math.max(0, n - mine.filter((_, i) => marks[i] === "ok").length) };
+        }
+
+        function draw() {
+            const p = P();
+            if (p.type === "flaw") {
+                $(".proof-area").innerHTML = `<ol class="flaw-lines">${p.lines.map((l, i) => `<li><button type="button" class="fline${checked && checked.i === i ? (checked.ok ? " ok" : " bad") : ""}" data-l="${i}"><span class="fnum">${i + 1}</span><span>${l.html}</span></button></li>`).join("")}</ol>`;
+                return;
+            }
+            const marks = checked ? checked.marks : [];
+            $(".proof-area").innerHTML = `
+                <div class="proof-cols">
+                    <div class="side-box"><div class="side-title">Steps to choose from</div>
+                        <div class="pool">${pool.length ? pool.map((x, i) => `<button type="button" class="pstep" data-pool="${i}">${x.html}</button>`).join("") : `<p class="muted">You’ve used every step.</p>`}</div></div>
+                    <div class="side-box"><div class="side-title">Your proof</div>
+                        ${mine.length ? `<ol class="mine">${mine.map((x, i) => `<li class="${marks[i] || ""}">
+                            <span class="mnum">${i + 1}</span><span class="mtext">${x.html}${marks[i] === "bad" ? `<span class="mwhy">${x.why}</span>` : marks[i] === "place" ? `<span class="mwhy">This step belongs in the proof, but not here.</span>` : ""}</span>
+                            <span class="mctl"><button type="button" class="ctl small" data-up="${i}" aria-label="Move up" ${i === 0 ? "disabled" : ""}>↑</button><button type="button" class="ctl small" data-down="${i}" aria-label="Move down" ${i === mine.length - 1 ? "disabled" : ""}>↓</button><button type="button" class="ctl small" data-out="${i}" aria-label="Remove">✕</button></span>
+                        </li>`).join("")}</ol>` : `<p class="muted">Click a step on the left to start your proof.</p>`}</div>
+                </div>`;
+        }
+        const changed = () => { checked = null; $(".verdict").hidden = true; draw(); };
+
+        function check() {
+            const g = grade(), v = $(".verdict"), p = P();
+            checked = g;
+            draw();
+            v.hidden = false;
+            if (g.solved) {
+                v.className = "verdict yes";
+                v.innerHTML = `<span class="fb-av"></span><div><b>That’s a complete, correct proof!</b> ${p.done || ""}</div>`;
+                buddy.react(v.querySelector(".fb-av"), "cheer", "party");
+                ctx.celebrate($('[data-act="check"]'));
+                solve();
+                return;
+            }
+            const bad = g.marks.filter(m => m === "bad").length, place = g.marks.filter(m => m === "place").length;
+            v.className = "verdict no";
+            v.innerHTML = `<span class="fb-av"></span><div><b>Not yet.</b> ${[
+                g.marks.filter(m => m === "ok").length ? `${g.marks.filter(m => m === "ok").length} step${g.marks.filter(m => m === "ok").length > 1 ? "s are" : " is"} in the right place (green).` : "",
+                place ? `${place} belong${place > 1 ? "" : "s"} somewhere else (orange).` : "",
+                bad ? `${bad} ${bad > 1 ? "don’t" : "doesn’t"} belong in the proof at all (red); read why.` : "",
+                g.missing ? `${g.missing} step${g.missing > 1 ? "s are" : " is"} still missing or misplaced.` : "",
+            ].filter(Boolean).join(" ")}</div>`;
+            buddy.react(v.querySelector(".fb-av"), "oops", "wobble");
+        }
+        function solve() {
+            const p = P();
+            progress.award("challenge", `${course}:proof:${p.id}`, { at: $(".build-actions .btn") });
+            const sv = solvedList();
+            if (!sv.includes("proof-" + p.id)) { sv.push("proof-" + p.id); try { localStorage.setItem("cramlet.toc.solved", JSON.stringify(sv)); } catch (e) { /* ignore */ } }
+            drawPicks();
+        }
+        function showHint() {
+            const g = grade(), p = P(), h = $(".ch-hint");
+            let text;
+            if (g.solved) text = "Your proof is already complete. Press <b>Check my proof</b>.";
+            else if (g.firstWrong < 0) text = `So far so good. The next step is: <i>${p.steps[mine.length]}</i>`;
+            else {
+                const k = +g.expected.slice(1);
+                text = `Step ${g.firstWrong + 1} should be: <i>${p.steps[k]}</i>`;
+            }
+            h.innerHTML = `${icon("lightbulb", "callout-ic")}<div class="callout-body"><span class="callout-label">Hint</span>${text}</div>`;
+            h.hidden = false;
+        }
+
+        el.addEventListener("click", e => {
+            const t = e.target.closest("button");
+            if (!t || !el.contains(t)) return;
+            const d = t.dataset;
+            if (d.p !== undefined) load(+d.p);
+            else if (d.pool !== undefined) { mine.push(pool.splice(+d.pool, 1)[0]); changed(); }
+            else if (d.up !== undefined) { const i = +d.up; [mine[i - 1], mine[i]] = [mine[i], mine[i - 1]]; changed(); }
+            else if (d.down !== undefined) { const i = +d.down; [mine[i + 1], mine[i]] = [mine[i], mine[i + 1]]; changed(); }
+            else if (d.out !== undefined) { pool.push(mine.splice(+d.out, 1)[0]); changed(); }
+            else if (d.l !== undefined) {
+                const p = P(), i = +d.l, ok = i === p.flaw, v = $(".verdict");
+                checked = { i, ok };
+                draw();
+                v.hidden = false;
+                v.className = "verdict " + (ok ? "yes" : "no");
+                v.innerHTML = `<span class="fb-av"></span><div>${ok ? `<b>Found it!</b> Line ${i + 1} is the flaw. ${p.why}` : `<b>Line ${i + 1} is fine.</b> ${p.lines[i].ok || ""} Look for another line.`}</div>`;
+                buddy.react(v.querySelector(".fb-av"), ok ? "cheer" : "oops", ok ? "party" : "wobble");
+                if (ok) { ctx.celebrate(t); solve(); }
+            }
+            else if (d.act === "check") check();
+            else if (d.act === "hint") showHint();
+            else if (d.act === "clear") load(pi);
+        });
+        load(0);
+    };
+
+    // ======================================================================
     // Write a regex: type a regex for a language; check it on every string up to length 10.
     // config: { alphabet, challenges: [{ id, name, lang, test(w), hint }] }
     // ======================================================================

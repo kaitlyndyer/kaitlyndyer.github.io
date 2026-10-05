@@ -27,6 +27,7 @@ window.STUDY = {
       concepts: [
         { id: "languages", title: "Strings & Languages", icon: "venn", color: "#ff7a59", lectures: [0] },
         { id: "logic-proofs", title: "Logic & Proofs", icon: "scroll", color: "#e0567c", lectures: [0] },
+        { id: "proof-practice", title: "Proof Practice", icon: "list-checks", color: "#c2569b", lectures: [0, 1, 4] },
       ],
     },
     {
