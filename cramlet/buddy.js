@@ -58,11 +58,14 @@
     function mountChip(el) {
         if (!el) return;
         const draw = () => {
-            el.innerHTML = `<span class="chip-av">${svg()}</span><span class="chip-name">${esc(nameOf())}</span>`;
+            const p = C.progress && C.progress.summary();
+            el.innerHTML = `<span class="chip-av">${svg()}</span><span class="chip-name">${esc(nameOf())}</span>` +
+                (p ? `<span class="chip-crumbs" title="Level ${p.level}">${C.progress.crumbIcon()}${p.crumbs.toLocaleString()}</span>` : "");
             el.title = "Change your study buddy";
         };
         draw();
         listeners.push(draw);
+        if (C.progress) C.progress.onChange(r => { draw(); if (r && (r.leveledUp || r.streakDay)) cheerChip(); });
         el.addEventListener("click", () => openPicker());
     }
     const cheerChip = () => {

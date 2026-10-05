@@ -36,6 +36,8 @@
     --tip-ink: #23885a;  --tip-soft: #e3f6ec;
     --try-ink: #22789f;  --try-soft: #e2f2fa;
     --key-tint: #faf8ff;
+    --crumb-bg: #ffe3ee; --crumb-ink: #b23d6f;
+    --streak-bg: #ffe7dc; --streak-ink: #c9481f;
     --shadow: 0 1px 2px rgba(34, 29, 51, .05), 0 6px 20px rgba(34, 29, 51, .06);
     --shadow-lg: 0 14px 34px rgba(34, 29, 51, .14);
 }
@@ -75,6 +77,8 @@
     --tip-ink: #5fd39a;  --tip-soft: #17322a;
     --try-ink: #6cc3ea;  --try-soft: #15303c;
     --key-tint: #252038;
+    --crumb-bg: #42202f; --crumb-ink: #ff9cc4;
+    --streak-bg: #3f2219; --streak-ink: #ff9a73;
     --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
     --shadow-lg: 0 14px 34px rgba(0, 0, 0, .4);
 }
@@ -111,6 +115,33 @@ body { transition: background-color .25s, color .25s; }
 .buddy-chip:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
 .buddy-chip .chip-av { width: 34px; height: 34px; display: block; }
 .buddy-chip .chip-av svg { width: 100%; height: 100%; display: block; }
+
+/* Crumb count on the chip (see progress.js) */
+.buddy-chip .chip-crumbs {
+    display: inline-flex; align-items: center; gap: 3px; margin-left: 4px; padding: 2px 9px 2px 3px;
+    border-radius: 999px; background: var(--crumb-bg); color: var(--crumb-ink); font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+.buddy-chip .chip-crumbs svg { width: 21px; height: 21px; }
+
+/* "+10 crumbs" that floats up from whatever earned it */
+.crumb-pop {
+    position: fixed; z-index: 200; pointer-events: none; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px 5px 7px;
+    border-radius: 999px; background: var(--crumb-bg); color: var(--crumb-ink); box-shadow: var(--shadow-lg);
+    font: 800 14px "Nunito", system-ui, sans-serif;
+    transform: translate(-50%, -100%); animation: crumb-float 1.6s ease-out forwards;
+}
+.crumb-pop svg { width: 20px; height: 20px; }
+.crumb-pop .crumb-ic { width: 26px; height: 26px; }
+.crumb-pop.streak { padding-left: 11px; background: var(--streak-bg); color: var(--streak-ink); }
+.crumb-pop.level { padding-left: 11px; background: var(--brand); color: #fff; font-size: 16px; }
+@keyframes crumb-float {
+    0% { opacity: 0; transform: translate(-50%, -60%) scale(.7); }
+    15% { opacity: 1; transform: translate(-50%, -110%) scale(1.05); }
+    75% { opacity: 1; transform: translate(-50%, -190%); }
+    100% { opacity: 0; transform: translate(-50%, -220%); }
+}
 
 /* Reactions */
 .bounce { animation: buddy-bounce .6s ease; }
@@ -180,4 +211,6 @@ body { transition: background-color .25s, color .25s; }
 }
 @media (prefers-reduced-motion: reduce) {
     .bounce, .wobble, .party { animation: none; }
+    .crumb-pop { animation: crumb-fade 1.6s forwards; transform: translate(-50%, -130%); }
+    @keyframes crumb-fade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
 }
