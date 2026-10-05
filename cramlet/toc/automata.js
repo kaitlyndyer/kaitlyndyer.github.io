@@ -166,7 +166,7 @@
         else if (n.t === "empty") s = "∅";
         else if (n.t === "sigma") s = "Σ";
         else if (n.t === "union") s = regexText(n.a, 1) + " ∪ " + regexText(n.b, 2);
-        else if (n.t === "concat") s = regexText(n.a, 2) + regexText(n.b, 3);
+        else if (n.t === "concat") s = regexText(n.a, 2) + regexText(n.b, 2); // concatenation is associative: no parentheses needed either side
         else s = regexText(n.a, 4) + (n.t === "star" ? "*" : "+");
         return PREC[n.t] < outer ? `(${s})` : s;
     }
@@ -310,6 +310,111 @@
         return steps;
     }
 
+    // ---------- DFA → regex with generalized NFAs (GNFAs) ----------
+    // Regex ASTs for building labels, plus a small simplifier so labels stay readable:
+    //   ∅ ∪ R = R, R ∪ R = R, ε ∪ R* = R*, ∅R = R∅ = ∅, εR = Rε = R, ∅* = ε* = ε, (R*)* = R*.
+    const RX = {
+        sym: c => ({ t: "sym", c }), eps: () => ({ t: "eps" }), empty: () => ({ t: "empty" }),
+        union: (a, b) => simplify({ t: "union", a, b }),
+        concat: (a, b) => simplify({ t: "concat", a, b }),
+        star: a => simplify({ t: "star", a }),
+    };
+    const same = (x, y) => regexText(x) === regexText(y);
+    function simplify(n) {
+        if (n.t === "union") {
+            const { a, b } = n;
+            if (a.t === "empty") return b;
+            if (b.t === "empty") return a;
+            if (same(a, b)) return a;
+            if (a.t === "eps" && b.t === "star") return b;
+            if (b.t === "eps" && a.t === "star") return a;
+        }
+        if (n.t === "concat") {
+            const { a, b } = n;
+            if (a.t === "empty" || b.t === "empty") return { t: "empty" };
+            if (a.t === "eps") return b;
+            if (b.t === "eps") return a;
+        }
+        if (n.t === "star") {
+            if (n.a.t === "empty" || n.a.t === "eps") return { t: "eps" };
+            if (n.a.t === "star") return n.a;
+        }
+        return n;
+    }
+
+    // Every step of turning a DFA into a regex. order = the middle states in the order to remove them.
+    // Each step: { kind, machine (drawable), on: [states], edges: [{from, to}], ... details for the message }.
+    function gnfaSteps(dfa, order) {
+        const pos = { ...dfa.states };
+        const xs = Object.values(pos).map(p => p[0]), Q = Object.keys(dfa.states);
+        const ys = Object.values(pos).map(p => p[1]);
+        const midY = (Math.min(...ys) + Math.max(...ys)) / 2;
+        const S = "s", F = "f";
+        let states = { ...pos };
+        let labels = new Map(); // "p>q" → AST
+        const key = (p, q) => p + ">" + q;
+        // DFA arrows grouped per pair (the lecture's simple form allows one arrow per pair, labels joined with ∪)
+        Q.forEach(p => Object.entries(dfa.delta[p] || {}).forEach(([a, q]) => {
+            const k = key(p, q);
+            labels.set(k, labels.has(k) ? { t: "union", a: labels.get(k), b: RX.sym(a) } : RX.sym(a));
+        }));
+        let start = dfa.start, accept = [...dfa.accept];
+        const steps = [];
+        const snap = (extra) => {
+            const delta = {};
+            labels.forEach((r, k) => {
+                const [p, q] = k.split(">");
+                if (!(p in states) || !(q in states)) return;
+                (delta[p] = delta[p] || {})[regexText(r)] = [q];
+            });
+            steps.push({ machine: { states: { ...states }, start, accept: [...accept], alphabet: [], delta }, on: [], edges: [], ...extra });
+        };
+        snap({ kind: "dfa", rule: 0 });
+
+        // Simple form, part 1: one new accept state F, with ε-arrows from the old accept states.
+        states[F] = [Math.max(...xs) + 150, midY];
+        const oldAcc = [...accept];
+        oldAcc.forEach(q => labels.set(key(q, F), RX.eps()));
+        accept = [F];
+        snap({ kind: "accept", rule: 1, on: [F, ...oldAcc], edges: oldAcc.map(q => ({ from: q, to: F })), oldAcc });
+
+        // Part 2: a new start state S with an ε-arrow to the old start.
+        states = { [S]: [Math.min(...xs) - 150, pos[dfa.start][1]], ...states };
+        labels.set(key(S, dfa.start), RX.eps());
+        const oldStart = start;
+        start = S;
+        snap({ kind: "start", rule: 2, on: [S, oldStart], edges: [{ from: S, to: oldStart }], oldStart });
+
+        // Part 3: labels with several symbols are already joined with ∪ (that's what "0,1" meant).
+        const merged = [...labels.entries()].filter(([, r]) => r.t === "union").map(([k]) => k.split(">"));
+        snap({ kind: "merge", rule: 3, edges: merged.map(([from, to]) => ({ from, to })), merged });
+
+        // Remove the middle states one at a time.
+        order.forEach(kill => {
+            const loop = labels.get(key(kill, kill));
+            const ins = Object.keys(states).filter(p => p !== kill && labels.has(key(p, kill)));
+            const outs = Object.keys(states).filter(q => q !== kill && labels.has(key(kill, q)));
+            snap({ kind: "pick", rule: 4, kill, on: [kill], edges: [...ins.map(p => ({ from: p, to: kill })), ...outs.map(q => ({ from: kill, to: q })), ...(loop ? [{ from: kill, to: kill }] : [])], ins, outs, loop });
+            const updates = [];
+            ins.forEach(p => outs.forEach(q => {
+                const R1 = labels.get(key(p, kill)), R3 = labels.get(key(kill, q)), R4 = labels.get(key(p, q)) || RX.empty();
+                const through = RX.concat(RX.concat(R1, loop ? RX.star(loop) : RX.eps()), R3);
+                updates.push({ p, q, R1, R2: loop, R3, R4, result: RX.union(through, R4) });
+            }));
+            // Every pair uses the labels from before this removal, so apply them all from that snapshot.
+            updates.forEach(u => {
+                labels.set(key(u.p, u.q), u.result);
+                snap({ kind: "pair", rule: 4, kill, ...u, on: [u.p, kill, u.q], edges: [{ from: u.p, to: u.q }] });
+            });
+            delete states[kill];
+            [...labels.keys()].forEach(k => { const [p, q] = k.split(">"); if (p === kill || q === kill) labels.delete(k); });
+            snap({ kind: "removed", rule: 4, kill, pairs: updates.length });
+        });
+        const final = labels.get(key(S, F)) || RX.empty();
+        snap({ kind: "done", rule: 5, on: [S, F], edges: [{ from: S, to: F }], regex: final });
+        return steps;
+    }
+
     // ---------- Drawing ----------
 
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -366,7 +471,7 @@
             const blocker = Object.entries(m.states).find(([q, [x, y]]) => {
                 if (q === e.from || q === e.to) return false;
                 const t = ((x - ax) * dx + (y - ay) * dy) / (len * len);
-                return t > 0 && t < 1 && Math.hypot(ax + dx * t - x, ay + dy * t - y) < R + 8;
+                return t > 0 && t < 1 && Math.hypot(ax + dx * t - x, ay + dy * t - y) < R + 20;
             });
             // m.curves can ask for an arrow to arc over ("up") or under ("down") the machine.
             const want = (m.curves || {})[e.from + ">" + e.to];
@@ -511,6 +616,6 @@
 
     window.CRAMLET = Object.assign(window.CRAMLET || {}, {
         automata: { runDFA, accepts, strings, eclose, move, runNFA, acceptsNFA, subsetConstruction, render, highlight, layout, stateLabel,
-            parseRegex, regexText, postorder, regexLang, byLength, regexToNFA, regexNFASteps },
+            parseRegex, regexText, postorder, regexLang, byLength, regexToNFA, regexNFASteps, gnfaSteps },
     });
 })();
