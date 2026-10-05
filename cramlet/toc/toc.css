@@ -10,6 +10,7 @@
 .automaton .st-ring { fill: none; stroke: var(--ink-2); stroke-width: 2; transition: stroke .25s; }
 .automaton .st-name { font: 700 17px var(--font-code); fill: var(--ink); text-anchor: middle; pointer-events: none; }
 .automaton .st-name .sub { font-size: 11px; }
+.automaton .st-name.small { font-size: 13px; }
 .automaton .st.on .st-body { fill: color-mix(in srgb, var(--c) 22%, var(--surface)); stroke: var(--c); stroke-width: 3.5; }
 .automaton .st.on .st-ring { stroke: var(--c); }
 .automaton .st.on.yes .st-body { fill: color-mix(in srgb, var(--good) 25%, var(--surface)); stroke: var(--good); }
@@ -151,7 +152,7 @@ table.delta.edit input[type="checkbox"] { width: 18px; height: 18px; accent-colo
 .build-table .muted { margin: 8px 0 0; max-width: 260px; }
 .build-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .ch-hint { margin: 0; }
-.verdict { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: start; padding: 14px 16px; border-radius: 14px; font-size: 15.5px; animation: rise .25s; }
+.verdict { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 12px; align-items: start; padding: 14px 16px; border-radius: 14px; font-size: 15.5px; animation: rise .25s; }
 .verdict[hidden] { display: none; }
 .verdict.yes { background: var(--good-bg); border: 2px solid var(--good-line); }
 .verdict.no { background: var(--oops-bg); border: 2px solid var(--oops-line); }
@@ -192,7 +193,6 @@ table.threads .dot.acc { background: var(--good); box-shadow: 0 0 0 3px color-mi
 .panel-label { font: 800 11.5px var(--font-body); text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin: 0 0 6px 4px; }
 .empty-dfa { margin: 0; text-align: center; }
 .step-no { font: 700 13px var(--font-code); color: var(--muted); margin-left: 6px; white-space: nowrap; }
-.subset .run-status { grid-template-columns: 52px minmax(0, 1fr); }
 .subset-table { width: 100%; }
 .subset-table td.set { text-align: left; }
 .subset-table tr.new > * { background: color-mix(in srgb, var(--c) 14%, var(--surface)); }
@@ -207,12 +207,12 @@ table.threads .dot.acc { background: var(--good); box-shadow: 0 0 0 3px color-mi
 .move.you .who { color: var(--c); }
 .move.active { background: color-mix(in srgb, var(--c) 10%, var(--surface-2)); border: 2px solid color-mix(in srgb, var(--c) 40%, transparent); }
 .move.win-them { background: var(--oops-bg); }
-.move.won { grid-template-columns: 64px minmax(0, 1fr); background: var(--good-bg); border: 2px solid var(--good-line); }
-.move.won .rs-av { width: 64px; height: 64px; }
+.move.won { grid-template-columns: 52px minmax(0, 1fr); background: var(--good-bg); border: 2px solid var(--good-line); }
+.move.won .rs-av { width: 52px; height: 52px; }
 .move .big { font: 700 20px var(--font-head); color: var(--ink); }
 .move .callout { margin: 10px 0; }
 .sugg, .i-row, .w-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
-.sugg::before { content: "Ideas:"; font-size: 13px; font-weight: 800; color: var(--muted); }
+.sugg::before { content: "Try:"; font-size: 13px; font-weight: 800; color: var(--muted); }
 .input-w.small input { width: 5em; letter-spacing: 0; }
 .w-err { margin-top: 6px; font-weight: 700; color: var(--bad); font-size: 14px; }
 .w-err:empty { display: none; }
@@ -237,3 +237,40 @@ table.threads .dot.acc { background: var(--good); box-shadow: 0 0 0 3px color-mi
     .two-up { grid-template-columns: minmax(0, 1fr); }
     .move { grid-template-columns: minmax(0, 1fr); gap: 4px; }
 }
+
+/* ========== Closure constructions ========== */
+.closure { display: grid; gap: 14px; }
+.closure .pick-row { margin-bottom: 0; }
+.machine-picks { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; font: 700 15px var(--font-code); }
+.machine-picks select {
+    font: 600 14px var(--font-body); color: var(--ink); padding: 6px 10px; border-radius: 10px; cursor: pointer;
+    border: 2px solid var(--line); background: var(--surface);
+}
+.machine-picks select:focus { outline: none; border-color: var(--c); }
+.op-sym { font: 600 14px var(--font-body); color: var(--ink-2); }
+.op-sym b { font-family: var(--font-code); color: var(--ink); }
+.vrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.vchip { font: 800 13px var(--font-body); padding: 4px 12px; border-radius: 999px; }
+.vchip.yes { background: var(--good-bg); color: var(--good); }
+.vchip.no { background: var(--bad-bg); color: var(--bad); }
+.vnote { margin: 0; font-size: 15px; }
+.vnote code { font: 600 .95em var(--font-code); padding: 1px 6px; border-radius: 6px; background: var(--surface); }
+.tag.ok { background: var(--good); color: #fff; }
+
+/* ========== Shared widget parts (see the top of widgets.js) ========== */
+/* One buddy size in every widget */
+.widget .rs-av, .widget .fb-av { width: 52px; height: 52px; }
+/* Keyboard hint at the end of every player */
+.keys { font-size: 12.5px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.run-controls .toggle { margin-left: auto; }
+/* Recipe checklist for constructions */
+.recipe { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.recipe li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 8px; align-items: start; padding: 6px 8px; border-radius: 10px; font-size: 14.5px; color: var(--muted); transition: background .2s, color .2s; }
+.recipe .r-mark { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; font: 800 12px var(--font-body); background: var(--surface); border: 2px solid var(--line); }
+.recipe .r-mark .ic { width: 13px; height: 13px; }
+.recipe li.used { color: var(--ink-2); }
+.recipe li.used .r-mark { background: var(--good); border-color: var(--good); color: #fff; }
+.recipe li.now { color: var(--ink); background: color-mix(in srgb, var(--c) 14%, var(--surface)); box-shadow: inset 3px 0 0 var(--c); }
+.recipe li.now .r-mark { background: var(--c); border-color: var(--c); color: #fff; }
+.side-box .run-controls { margin-bottom: 10px; }
+.side-box .table-wrap { box-shadow: none; }

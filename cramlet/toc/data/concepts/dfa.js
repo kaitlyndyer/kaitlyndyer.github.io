@@ -166,7 +166,7 @@ registerConcept({
       id: "runner",
       title: "Run a DFA",
       lec: [1],
-      intro: `<p>Pick a machine, type a string (or pick an example), and step through it. Before you run anything, try to guess what each machine accepts. Keyboard: <kbd>←</kbd> <kbd>→</kbd> to step.</p>`,
+      intro: `<p>Pick a machine, type a string (or pick an example), and step through it. Before you run anything, try to guess what each machine accepts.</p>`,
       widget: "dfa-runner",
       config: {
         machines: [

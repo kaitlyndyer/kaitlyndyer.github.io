@@ -153,9 +153,15 @@
                     d: `M${f(p1[0])} ${f(p1[1])} C${f(c1[0])} ${f(c1[1])} ${f(c2[0])} ${f(c2[1])} ${f(p2[0])} ${f(p2[1])}` };
             }
             const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy), ux = dx / len, uy = dy / len, nx = -uy, ny = ux;
-            if (has(e.to, e.from)) {
+            // Would a straight line run through some other state? Then bend it around.
+            const blocker = Object.entries(m.states).find(([q, [x, y]]) => {
+                if (q === e.from || q === e.to) return false;
+                const t = ((x - ax) * dx + (y - ay) * dy) / (len * len);
+                return t > 0 && t < 1 && Math.hypot(ax + dx * t - x, ay + dy * t - y) < R + 8;
+            });
+            if (has(e.to, e.from) || blocker) {
                 // two-way: bend each arrow to its own side so they don't overlap
-                const t0 = .42, bend = Math.min(46, len * .22);
+                const t0 = .42, bend = blocker ? Math.max(46, len * .2) : Math.min(46, len * .22);
                 const s0 = [ax + R * (ux * Math.cos(t0) + nx * Math.sin(t0)), ay + R * (uy * Math.cos(t0) + ny * Math.sin(t0))];
                 const en = [bx + R * (-ux * Math.cos(t0) + nx * Math.sin(t0)), by + R * (-uy * Math.cos(t0) + ny * Math.sin(t0))];
                 const c = [(ax + bx) / 2 + nx * bend * 2, (ay + by) / 2 + ny * bend * 2];
@@ -213,9 +219,12 @@
             labels += `<text class="el" ${data} x="${f(spots[i][0])}" y="${f(spots[i][1] + 5)}">${esc(sh.text)}</text>`;
         });
 
-        const [sx, sy] = pos(m.start);
-        const startArrow = `<path class="start-arrow" d="M${sx - R - 38} ${sy} L${sx - R} ${sy}" marker-end="url(#${id}-arr)"/>`;
-        box(sx - R - 38, sy, 4);
+        // Usually one start arrow; m.starts can show several (e.g. machines A and B side by side).
+        const startArrow = (m.starts || (m.start ? [m.start] : [])).map(q => {
+            const [sx, sy] = pos(q);
+            box(sx - R - 38, sy, 4);
+            return `<path class="start-arrow" d="M${sx - R - 38} ${sy} L${sx - R} ${sy}" marker-end="url(#${id}-arr)"/>`;
+        }).join("");
 
         const pad = 10;
         const x0 = Math.min(...pts.map(p => p[0])) - pad, y0 = Math.min(...pts.map(p => p[1])) - pad;
@@ -227,7 +236,7 @@
             return `<g class="st${acc ? " acc" : ""}" data-state="${esc(name)}">
                 <circle class="st-body" cx="${x}" cy="${y}" r="${R}"/>
                 ${acc ? `<circle class="st-ring" cx="${x}" cy="${y}" r="${R - 5}"/>` : ""}
-                <text class="st-name" x="${x}" y="${y + 5}">${stateLabel(name)}</text>
+                <text class="st-name${m.labels && m.labels[name] && m.labels[name].length > 2 ? " small" : ""}" x="${x}" y="${y + 5}">${m.labels && m.labels[name] ? esc(m.labels[name]) : stateLabel(name)}</text>
             </g>`;
         }).join("");
 
