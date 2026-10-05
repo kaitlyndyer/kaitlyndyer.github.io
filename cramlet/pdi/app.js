@@ -5,6 +5,8 @@
     const icon = CRAMLET.icon;
     document.getElementById("search-icon").innerHTML = icon("magnifying-glass");
     const buddy = CRAMLET.buddy;
+    const progress = CRAMLET.progress;
+    const COURSE = "pdi";
     CRAMLET.theme.mountToggle(document.getElementById("theme-toggle"));
     buddy.mountChip(document.getElementById("buddy-chip"));
     document.getElementById("brand").innerHTML = CRAMLET.logo();
@@ -229,7 +231,10 @@
         main.querySelectorAll("[data-status]").forEach(b =>
             b.addEventListener("click", () => {
                 setStatus(id, b.dataset.status);
-                if (saved.status[id] === "got") { celebrate(b); buddy.cheerChip(); }
+                if (saved.status[id] === "got") {
+                    celebrate(b); buddy.cheerChip();
+                    progress.award("got", `${COURSE}:${id}`, { at: b });
+                }
                 renderConcept(id, tab);
             }));
 
@@ -300,8 +305,8 @@
             renderPractice(panel, d, c);
         }));
         const area = document.getElementById("practice-area");
-        if (mode === "cards") mountFlashcards(area, d.flashcards);
-        else mountQuiz(area, d.quiz);
+        if (mode === "cards") mountFlashcards(area, d.flashcards, c);
+        else mountQuiz(area, d.quiz, c);
     }
 
     let keyHandler = null;
@@ -311,7 +316,7 @@
         if (fn) document.addEventListener("keydown", fn);
     }
 
-    function mountFlashcards(area, cards) {
+    function mountFlashcards(area, cards, concept) {
         let order = cards.map((_, i) => i);
         let i = 0, flipped = false;
         const seen = new Set();
@@ -356,6 +361,7 @@
                 deckDone = true;
                 mood = "cheer"; anim = "party"; line = buddy.say("deck");
                 celebrate(area.querySelector(".fb-av"));
+                progress.award("deck", `${COURSE}:${concept.id}`, { at: area.querySelector(".flashcard") });
             } else {
                 mood = "happy"; anim = "bounce"; line = buddy.say("flip");
             }
@@ -378,7 +384,7 @@
         draw();
     }
 
-    function mountQuiz(area, questions) {
+    function mountQuiz(area, questions, concept) {
         setKeyHandler(null);
         let pool = questions.map((_, i) => i);
         let pos = 0;
@@ -428,7 +434,6 @@
                     if (Number(b.dataset.pick) === correctIdx) b.classList.add("correct");
                 });
                 if (!right) btn.classList.add("wrong");
-                else celebrate(btn);
 
                 const fb = area.querySelector(".feedback");
                 fb.hidden = false;
@@ -438,7 +443,9 @@
                 buddy.react(fb.querySelector(".fb-av"), right ? "happy" : "oops", right ? "bounce" : "wobble");
                 const next = area.querySelector(".quiz-next");
                 next.hidden = false;
-                next.querySelector("button").focus();
+                next.querySelector("button").focus(); // may scroll, so place the sparkles and crumbs after this
+                if (right) celebrate(btn);
+                progress.award("answer", `${COURSE}:${progress.idFor(q.q)}`, { correct: right, at: fb });
             }));
             area.querySelector("[data-next]").addEventListener("click", () => { pos++; draw(); });
         }
@@ -465,6 +472,12 @@
             area.querySelector("[data-restart]").addEventListener("click", () => { pool = questions.map((_, i) => i); pos = 0; results = {}; draw(); });
             buddy.react(area.querySelector(".end-buddy"), perfect ? "cheer" : good ? "happy" : "idle", perfect ? "party" : "bounce");
             if (perfect) celebrate(area.querySelector(".end-buddy"));
+            // Only a full run counts as finishing the quiz (not "retry missed").
+            if (pool.length === questions.length) {
+                const at = area.querySelector(".quiz-end h3");
+                progress.award("quiz", `${COURSE}:${concept.id}`, { at });
+                if (perfect) setTimeout(() => progress.award("perfect", `${COURSE}:${concept.id}`, { at }), 700);
+            }
         }
 
         draw();
