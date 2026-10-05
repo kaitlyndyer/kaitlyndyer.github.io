@@ -26,10 +26,20 @@
         listeners.forEach(fn => fn(b));
     }
 
+    // Accessories unlock as the buddy levels up (see progress.js). The one picked is worn everywhere.
+    const ACCESSORIES = [
+        { id: "glasses", name: "Glasses", level: 2 },
+        { id: "pencil", name: "Pencil", level: 3 },
+        { id: "cap", name: "Grad cap", level: 4 },
+    ];
+    const level = () => (C.progress ? C.progress.summary().level : 1);
+    const wearing = (b = current()) => { const a = ACCESSORIES.find(x => x.id === b.acc); return a && level() >= a.level ? a.id : ""; };
+    function setAccessory(id) { save({ ...current(), acc: id || "" }); }
+
     // SVG of the current buddy with a mood: idle, happy, oops, cheer.
     function svg(mood = "idle", b = current()) {
         const c = C.byId(b.critter);
-        return C.critterSVG(c, { color: b.color || c.color, mood, label: mood === "idle" ? nameOf(b) : undefined });
+        return C.critterSVG(c, { color: b.color || c.color, mood, acc: wearing(b), label: mood === "idle" ? nameOf(b) : undefined });
     }
 
     // Swap the buddy inside el to a new mood and replay an animation (bounce, wobble, party).
@@ -155,7 +165,7 @@
         dlg.addEventListener("cancel", e => { e.preventDefault(); skip(); });
         $(".bd").addEventListener("submit", e => {
             e.preventDefault();
-            save({ critter: draft.critter, color: draft.color, name: draft.name.trim() });
+            save({ ...current(), critter: draft.critter, color: draft.color, name: draft.name.trim() });
             close();
             cheerChip();
         });
@@ -174,5 +184,6 @@
         openPicker({ first: true });
     }
 
-    C.buddy = { current, nameOf, svg, react, say, mountChip, cheerChip, openPicker, welcomeIfNew, onChange: fn => listeners.push(fn) };
+    C.buddy = { current, nameOf, svg, react, say, mountChip, cheerChip, openPicker, welcomeIfNew, onChange: fn => listeners.push(fn),
+        ACCESSORIES, wearing, setAccessory };
 })();

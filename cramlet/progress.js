@@ -169,6 +169,9 @@
     window.CRAMLET = Object.assign(window.CRAMLET || {}, {
         progress: {
             award, summary, levelOf, crumbsFor, crumbIcon, RULES, STREAK_GOAL,
+            // For the dashboard: everything earned ("kind:course:id" keys) and the per-day log.
+            keys: () => Object.keys(state.earned),
+            days: () => ({ ...state.days }),
             onChange: fn => listeners.push(fn),
             // A short stable id for a question, from its text (survives reordering the quiz).
             idFor: text => {

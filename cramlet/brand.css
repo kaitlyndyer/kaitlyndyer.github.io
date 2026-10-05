@@ -37,6 +37,7 @@
     --try-ink: #22789f;  --try-soft: #e2f2fa;
     --key-tint: #faf8ff;
     --crumb-bg: #ffe3ee; --crumb-ink: #b23d6f;
+    --heat-0: #ece6dc; --heat-1: #d8ccff; --heat-2: #b3a0ff; --heat-3: #8e72ff; --heat-4: #6a49ef;
     --streak-bg: #ffe7dc; --streak-ink: #c9481f;
     --shadow: 0 1px 2px rgba(34, 29, 51, .05), 0 6px 20px rgba(34, 29, 51, .06);
     --shadow-lg: 0 14px 34px rgba(34, 29, 51, .14);
@@ -78,6 +79,7 @@
     --try-ink: #6cc3ea;  --try-soft: #15303c;
     --key-tint: #252038;
     --crumb-bg: #42202f; --crumb-ink: #ff9cc4;
+    --heat-0: #2a2539; --heat-1: #3d3266; --heat-2: #5a46a8; --heat-3: #7a5ef0; --heat-4: #a28bff;
     --streak-bg: #3f2219; --streak-ink: #ff9a73;
     --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
     --shadow-lg: 0 14px 34px rgba(0, 0, 0, .4);

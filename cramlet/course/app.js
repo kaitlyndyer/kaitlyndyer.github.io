@@ -47,6 +47,39 @@
         try { localStorage.setItem(STORE_KEY, JSON.stringify(saved)); } catch (e) { /* ignore */ }
     }
 
+    // ---------- What the home page dashboard reads (see ../dashboard.js) ----------
+    // Each course leaves a short summary of itself, so the dashboard doesn't have to load every course.
+    const CHALLENGE_KIND = { "dfa-builder": ["dfa-build", c => c.challenges.length], "nfa-runner": ["nfa-predict", c => c.machines.length],
+        "regex-writer": ["regex-write", c => c.challenges.length], "pumping-game": ["pump", c => c.languages.length],
+        "proof-puzzle": ["proof", c => c.puzzles.length], "card-puzzle": ["card-puzzle", () => 1] };
+    function rememberCourse() {
+        const concepts = allConcepts.filter(c => hasContent(c.id)).map(c => {
+            const d = S.content[c.id], kinds = [];
+            let challenges = 0;
+            (d.playground || []).forEach(p => { const k = CHALLENGE_KIND[p.widget]; if (k) { kinds.push(k[0]); challenges += k[1](p.config); } });
+            return { id: c.id, title: c.title, color: c.color, icon: c.icon, quiz: d.quiz.length, cards: d.flashcards.length, challenges, kinds };
+        });
+        try {
+            const all = JSON.parse(localStorage.getItem("cramlet.courses")) || {};
+            all[COURSE] = { title: S.course.title, storeKey: STORE_KEY, concepts };
+            localStorage.setItem("cramlet.courses", JSON.stringify(all));
+        } catch (e) { /* ignore */ }
+    }
+    function rememberVisit(c, tab) {
+        try {
+            const now = Date.now();
+            localStorage.setItem("cramlet.last", JSON.stringify({ course: COURSE, courseTitle: S.course.title, concept: c.id, title: c.title, tab, color: c.color, icon: c.icon, at: now }));
+            const v = JSON.parse(localStorage.getItem("cramlet.visits")) || {};
+            (v[COURSE] = v[COURSE] || {})[c.id] = now;
+            localStorage.setItem("cramlet.visits", JSON.stringify(v));
+        } catch (e) { /* ignore */ }
+    }
+    function rememberQuiz(id, right, total) {
+        saved.quizBest = saved.quizBest || {};
+        const old = saved.quizBest[id];
+        if (!old || right / total > old.right / old.total) { saved.quizBest[id] = { right, total }; save(); }
+    }
+
     function setStatus(id, status) {
         if (saved.status[id] === status) delete saved.status[id];
         else saved.status[id] = status;
@@ -520,6 +553,7 @@
             if (perfect) celebrate(area.querySelector(".end-buddy"));
             // Only a full run counts as finishing the quiz (not "retry missed").
             if (pool.length === questions.length) {
+                rememberQuiz(concept.id, right, pool.length);
                 const at = area.querySelector(".quiz-end h3");
                 progress.award("quiz", `${COURSE}:${concept.id}`, { at });
                 if (perfect) setTimeout(() => progress.award("perfect", `${COURSE}:${concept.id}`, { at }), 700);
@@ -725,6 +759,7 @@
             renderNav(parts[1]);
             renderConcept(parts[1], parts[2] || "summary", parts[3]);
             const c = conceptById[parts[1]];
+            if (c && hasContent(c.id)) rememberVisit(c, parts[2] || "summary");
             document.title = (c ? c.title + " · " : "") + "cramlet";
         } else {
             renderNav("");
@@ -735,6 +770,7 @@
     }
 
     window.addEventListener("hashchange", route);
+    rememberCourse();
     route();
     buddy.welcomeIfNew();
 })();
