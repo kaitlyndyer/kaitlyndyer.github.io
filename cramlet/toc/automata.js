@@ -228,6 +228,88 @@
         return { states, start: r.start, accept: r.accept, alphabet, delta };
     }
 
+    // Regex → NFA, recorded node by node (children before parents) so it can be animated.
+    // Same constructions as regexToNFA, but every piece also gets a layout: its start state sits at
+    // (0, 0), the piece grows to the right, and minY/maxY track how tall it is. Bigger pieces place
+    // the smaller pieces inside them without moving their states relative to each other.
+    function regexNFASteps(ast, alphabet) {
+        const GAP_X = 100, GAP_Y = 34;
+        let count = 0;
+        const steps = [];
+        const fresh = () => "q" + count++;
+        const shift = (f, dx, dy) => ({
+            ...f, curves: f.curves,
+            states: Object.fromEntries(Object.entries(f.states).map(([q, [x, y, o]]) => [q, [x + dx, y + dy, o]])),
+            minY: f.minY + dy, maxY: f.maxY + dy,
+        });
+        const join = (...ds) => {
+            const out = {};
+            ds.forEach(d => Object.entries(d).forEach(([q, r]) => {
+                out[q] = out[q] || {};
+                Object.entries(r).forEach(([a, t]) => { out[q][a] = (out[q][a] || []).concat(t); });
+            }));
+            return out;
+        };
+        function build(n) {
+            let f, added = [], edges = [];
+            if (n.t === "sym" || n.t === "sigma") {
+                const s = fresh(), e = fresh(), syms = n.t === "sym" ? [n.c] : alphabet;
+                f = { states: { [s]: [0, 0], [e]: [GAP_X, 0] }, start: s, accept: [e], delta: { [s]: Object.fromEntries(syms.map(a => [a, [e]])) }, w: GAP_X, minY: -30, maxY: 30 };
+                added = [s, e]; edges = [{ from: s, to: e }];
+            } else if (n.t === "eps" || n.t === "empty") {
+                const s = fresh();
+                f = { states: { [s]: [0, 0] }, start: s, accept: n.t === "eps" ? [s] : [], delta: {}, w: 0, minY: -30, maxY: 30 };
+                added = [s];
+            } else if (n.t === "union") {
+                const x = build(n.a), y = build(n.b), s = fresh();
+                const X = shift(x, GAP_X, -x.maxY - GAP_Y / 2), Y = shift(y, GAP_X, -y.minY + GAP_Y / 2);
+                f = { states: { [s]: [0, 0], ...X.states, ...Y.states }, start: s, accept: [...x.accept, ...y.accept],
+                      delta: join(x.delta, y.delta, { [s]: { "ε": [x.start, y.start] } }), w: GAP_X + Math.max(x.w, y.w), minY: X.minY, maxY: Y.maxY,
+                      curves: { ...(x.curves || {}), ...(y.curves || {}) } };
+                added = [s]; edges = [{ from: s, to: x.start }, { from: s, to: y.start }];
+            } else if (n.t === "concat") {
+                const x = build(n.a), y = build(n.b);
+                const Y = shift(y, x.w + GAP_X, 0);
+                const eps = Object.fromEntries(x.accept.map(q => [q, { "ε": [y.start] }]));
+                f = { states: { ...x.states, ...Y.states }, start: x.start, accept: y.accept, delta: join(x.delta, y.delta, eps),
+                      w: x.w + GAP_X + y.w, minY: Math.min(x.minY, Y.minY), maxY: Math.max(x.maxY, Y.maxY),
+                      curves: { ...(x.curves || {}), ...(y.curves || {}) } };
+                edges = x.accept.map(q => ({ from: q, to: y.start }));
+                added = [...x.accept, y.start];
+            } else if (n.t === "star") {
+                const x = build(n.a), s = fresh();
+                const X = shift(x, GAP_X, 0);
+                const back = Object.fromEntries(x.accept.map(q => [q, { "ε": [x.start] }]));
+                const curves = { ...(x.curves || {}) };
+                x.accept.forEach(q => { if (q !== x.start) curves[q + ">" + x.start] = X.states[q][1] > X.states[x.start][1] ? "down" : "up"; });
+                f = { states: { [s]: [0, 0], ...X.states }, start: s, accept: [s, ...x.accept], delta: join(x.delta, back, { [s]: { "ε": [x.start] } }),
+                      w: GAP_X + x.w, minY: X.minY - 40, maxY: X.maxY + 40, curves };
+                added = [s]; edges = [{ from: s, to: x.start }, ...x.accept.map(q => ({ from: q, to: x.start }))];
+            } else {
+                // R+ = RR*: a copy of R's NFA, then R*'s NFA
+                const r = build(n.a), before = steps.length;
+                const x = build({ t: "star", a: n.a });
+                steps.length = before; // building the copy and its star counts as this one step
+                const X = shift(x, r.w + GAP_X, 0);
+                const eps = Object.fromEntries(r.accept.map(q => [q, { "ε": [x.start] }]));
+                f = { states: { ...r.states, ...X.states }, start: r.start, accept: x.accept, delta: join(r.delta, x.delta, eps),
+                      w: r.w + GAP_X + x.w, minY: Math.min(r.minY, X.minY), maxY: Math.max(r.maxY, X.maxY),
+                      curves: { ...(r.curves || {}), ...(x.curves || {}) } };
+                edges = r.accept.map(q => ({ from: q, to: x.start }));
+                added = Object.keys(X.states);
+            }
+            steps.push({ node: n, frag: f, added, edges });
+            return f;
+        }
+        build(ast);
+        // As a machine the diagram code can draw: states keep their layout positions.
+        steps.forEach(st => {
+            const f = st.frag;
+            st.machine = { states: f.states, start: f.start, accept: f.accept, alphabet, delta: f.delta, curves: f.curves };
+        });
+        return steps;
+    }
+
     // ---------- Drawing ----------
 
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -286,6 +368,18 @@
                 const t = ((x - ax) * dx + (y - ay) * dy) / (len * len);
                 return t > 0 && t < 1 && Math.hypot(ax + dx * t - x, ay + dy * t - y) < R + 8;
             });
+            // m.curves can ask for an arrow to arc over ("up") or under ("down") the machine.
+            const want = (m.curves || {})[e.from + ">" + e.to];
+            if (want) {
+                const flip = (ny > 0) === (want === "up");
+                const fx = flip ? -nx : nx, fy = flip ? -ny : ny, t0 = .5, bend = Math.max(40, len * .28);
+                const s0 = [ax + R * (ux * Math.cos(t0) + fx * Math.sin(t0)), ay + R * (uy * Math.cos(t0) + fy * Math.sin(t0))];
+                const en = [bx + R * (-ux * Math.cos(t0) + fx * Math.sin(t0)), by + R * (-uy * Math.cos(t0) + fy * Math.sin(t0))];
+                const c = [(ax + bx) / 2 + fx * bend * 2, (ay + by) / 2 + fy * bend * 2];
+                const at = t => { const u = 1 - t; return [0, 1].map(k => u * u * s0[k] + 2 * u * t * c[k] + t * t * en[k]); };
+                box(...at(.5), 4);
+                return { e, text, kind: "curve", at, n: [fx, fy], d: `M${f(s0[0])} ${f(s0[1])} Q${f(c[0])} ${f(c[1])} ${f(en[0])} ${f(en[1])}` };
+            }
             if (has(e.to, e.from) || blocker) {
                 // two-way: bend each arrow to its own side so they don't overlap
                 const t0 = .42, bend = blocker ? Math.max(46, len * .2) : Math.min(46, len * .22);
@@ -417,6 +511,6 @@
 
     window.CRAMLET = Object.assign(window.CRAMLET || {}, {
         automata: { runDFA, accepts, strings, eclose, move, runNFA, acceptsNFA, subsetConstruction, render, highlight, layout, stateLabel,
-            parseRegex, regexText, postorder, regexLang, byLength, regexToNFA },
+            parseRegex, regexText, postorder, regexLang, byLength, regexToNFA, regexNFASteps },
     });
 })();
