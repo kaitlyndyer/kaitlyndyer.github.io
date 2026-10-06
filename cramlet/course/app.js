@@ -102,8 +102,21 @@
         ).join("");
     }
 
+    // From the latest practice exam: concepts scored under 70% get a badge, and their page gets a banner.
+    function examMiss(id) {
+        const R = CRAMLET.exam && CRAMLET.exam.latest(COURSE);
+        if (!R) return null;
+        const mine = R.items.filter(x => x.concept === id);
+        if (!mine.length) return null;
+        const earned = mine.reduce((a, x) => a + x.earned, 0), max = mine.reduce((a, x) => a + x.max, 0);
+        return earned / max < 0.7 ? { earned, max, secs: [...new Set(mine.filter(x => x.earned < x.max && x.sec).map(x => x.sec))], missed: mine.filter(x => x.earned < x.max).length } : null;
+    }
     function statusBadge(id) {
         const st = saved.status[id];
+        if (examMiss(id)) return `<span class="exam-badge" title="Missed on your last practice exam">exam</span>` + statusBadge2(st);
+        return statusBadge2(st);
+    }
+    function statusBadge2(st) {
         if (st === "got") return `<span class="status got" title="Marked: got it">${icon("check")}</span>`;
         if (st === "review") return `<span class="status review" title="Marked: review again">${icon("arrow-clockwise")}</span>`;
         return "";
@@ -152,7 +165,10 @@
     function renderNav(activeId) {
         if (activeId !== undefined) nav.dataset.active = activeId;
         const current = nav.dataset.active || "";
-        nav.innerHTML = S.groups.map(g => `
+        nav.innerHTML = (CRAMLET.exam ? `
+            <a class="nav-item exam-link${current === "exam" ? " active" : ""}" href="#/exam" style="--c:var(--brand)">
+                <span class="nav-icon">${icon("list-checks")}</span><span class="nav-label">Practice exam</span>
+            </a>` : "") + S.groups.map(g => `
             <div class="nav-group">
                 <div class="nav-group-title">${icon(g.icon)} ${esc(g.title)}</div>
                 ${g.concepts.map(c => `
@@ -179,7 +195,10 @@
                     <h1>${esc(S.course.title)}</h1>
                     <p>${esc(S.course.tagline)}</p>
                     <p class="hero-meta">${allConcepts.length} concepts · Lectures ${lecs[0]}–${lecs[lecs.length - 1]} · ${ready} ready so far</p>
-                    <button class="btn primary" type="button" data-focus-search>${icon("magnifying-glass")} Search the notes</button>
+                    <div class="hero-actions">
+                        <button class="btn primary" type="button" data-focus-search>${icon("magnifying-glass")} Search the notes</button>
+                        ${CRAMLET.exam ? `<a class="btn" href="#/exam">${icon("list-checks")} Take a practice exam</a>` : ""}
+                    </div>
                 </div>
                 <div class="ring" style="--pct:${pct}" role="img" aria-label="${got} of ${allConcepts.length} concepts marked got it">
                     <div class="ring-inner"><b>${got}</b><span>of ${allConcepts.length}<br>got it</span></div>
@@ -242,6 +261,7 @@
                     </div>
                 </div>
 
+                ${(() => { const m = examMiss(id); return m ? `<div class="callout warn done exam-banner">${icon("warning", "callout-ic")}<div class="callout-body"><span class="callout-label">From your last practice exam</span>You got ${m.earned} of ${m.max} points here (${m.missed} question${m.missed > 1 ? "s" : ""} missed).${m.secs.length ? ` Review: ${m.secs.map(s => { const sec = d.details.find(x => x.id === s); return sec ? `<a href="#/c/${id}/details/${s}">${esc(sec.title)}</a>` : ""; }).filter(Boolean).join(", ")}.` : ""} Then try the <a href="#/c/${id}/practice">Practice</a> tab.</div></div>` : ""; })()}
                 <div class="one-liner"><span class="one-liner-label">In one sentence</span>${d.oneLiner}</div>
 
                 <div class="tabs" role="tablist" aria-label="${esc(c.title)} sections">
@@ -755,7 +775,12 @@
     function route() {
         setKeyHandler(null);
         const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
-        if (parts[0] === "c" && parts[1]) {
+        if (parts[0] !== "exam") document.body.classList.remove("exam-focus");
+        if (parts[0] === "exam" && CRAMLET.exam) {
+            renderNav("exam");
+            CRAMLET.exam.render(main, { S, COURSE, esc, icon, codeBlock, highlight, conceptById, allConcepts }, parts);
+            document.title = "Practice exam · " + S.course.title + " · cramlet";
+        } else if (parts[0] === "c" && parts[1]) {
             renderNav(parts[1]);
             renderConcept(parts[1], parts[2] || "summary", parts[3]);
             const c = conceptById[parts[1]];

@@ -184,6 +184,12 @@
                 if (parts.review) { why.push("you marked it “Review again”"); score += 3; }
                 if (parts.best && parts.best.right / parts.best.total < 0.7) { why.push(`best quiz ${parts.best.right}/${parts.best.total}`); score += 2; }
                 if (seen && Date.now() - seen > WEEK && m < 0.8) { why.push(`not opened in ${Math.round((Date.now() - seen) / 86400000)} days`); score += 1; }
+                const exam = (read(`cramlet.exam.${course.id}.history`) || []).slice(-1)[0];
+                const mine = exam ? exam.items.filter(x => x.concept === info.id) : [];
+                if (mine.length) {
+                    const got = mine.reduce((a, x) => a + x.earned, 0), max = mine.reduce((a, x) => a + x.max, 0);
+                    if (got / max < 0.7) { why.unshift(`${got}/${max} on your last practice exam`); score += 4; }
+                }
                 if (score) out.push({ course, info, why, score, tab: parts.best && parts.best.right / parts.best.total < 0.7 ? "practice" : "summary" });
             });
         });
