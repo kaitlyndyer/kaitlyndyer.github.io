@@ -59,7 +59,9 @@
         }
         const marks = ids.map(id => (id[0] === "d" ? "bad" : "place"));
         let pos = 0;
-        slots.forEach(slot => { slot.forEach((_, t) => { const id = ids[pos + t]; if (id && slot.includes(id)) marks[pos + t] = "ok"; }); pos += slot.length; });
+        // Lines with identical text (like two "}") are interchangeable.
+        const text = id => (id && id[0] === "s" ? q.lines[+id.slice(1)] : null);
+        slots.forEach(slot => { slot.forEach((_, t) => { const id = ids[pos + t]; if (id && (slot.includes(id) || slot.some(s => text(s) === text(id)))) marks[pos + t] = "ok"; }); pos += slot.length; });
         const ok = marks.filter(m => m === "ok").length, bad = marks.filter(m => m === "bad").length;
         return { marks, frac: Math.max(0, (ok - bad) / n), perfect: ok === n && ids.length === n };
     }
@@ -281,7 +283,7 @@
                 } else if (q.type === "design") {
                     body = (q.code ? codeBlock(q.code) : "") + opts(q.options) + `<label class="q-sub" for="why">Why? Justify your choice in one or two sentences.</label><textarea id="why" class="text-in" rows="3" data-why>${esc(a.why || "")}</textarea>`;
                 } else if (q.type === "write") {
-                    body = `<textarea class="code-in big" rows="16" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Your code" placeholder="Write your code here. No autocomplete, just like on paper.">${esc(a.code !== undefined ? a.code : (q.starter || ""))}</textarea><p class="muted">Tab inserts four spaces.</p>`;
+                    body = (q.code ? codeBlock(q.code) : "") + `<textarea class="code-in big" rows="16" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Your code" placeholder="Write your code here. No autocomplete, just like on paper.">${esc(a.code !== undefined ? a.code : (q.starter || ""))}</textarea><p class="muted">Tab inserts four spaces.</p>`;
                 }
                 $(".exam-q").innerHTML = `
                     ${head}

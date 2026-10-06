@@ -61,3 +61,46 @@ System.out.println("done");`,
     explain: "The compiler only lets you call methods that the <b>declared</b> type has. <code>IoTDevice</code> has no <code>setBrightness</code>, so this doesn’t compile, even though the object is a <code>Light</code>. You’d need a cast: <code>((Light) d).setBrightness(80)</code>.",
   },
 ]);
+
+// ---------- Batch 1 (lectures 1–2) ----------
+registerExam("polymorphism", [
+  {
+    id: "trace-loop", type: "trace", lec: [2], sec: "uniform",
+    q: "What does this print?",
+    code: `class Fan implements IoTDevice {
+    public String identify() { return "Fan"; }
+}
+class Light implements IoTDevice {
+    public String identify() { return "Light"; }
+}
+
+IoTDevice[] devices = { new Fan(), new Light(), new Fan() };
+for (IoTDevice d : devices) {
+    System.out.print(d.identify() + " ");
+}`,
+    out: { kind: "output", text: "Fan Light Fan" },
+    explain: "Each call dispatches to the object’s own class, in array order. (Trailing spaces don’t matter in your answer.)",
+  },
+  {
+    id: "trace-overload-device", type: "trace", lec: [3], sec: "overloading",
+    q: "What does this print?",
+    code: `static void greet(IoTDevice d) { System.out.println("device"); }
+static void greet(Light l)     { System.out.println("light"); }
+
+IoTDevice x = new Light("desk", 50);
+Light y = new Light("lamp", 70);
+greet(x);
+greet(y);`,
+    out: { kind: "output", text: "device\nlight" },
+    explain: "Overloads are picked at compile time by the <b>declared</b> type. <code>x</code> is declared <code>IoTDevice</code>, so <code>greet(IoTDevice)</code> runs even though it holds a <code>Light</code>.",
+  },
+  {
+    id: "trace-bad-cast", type: "trace", lec: [2], sec: "lookup",
+    q: "What happens? (<code>Fan</code> and <code>Light</code> both implement <code>IoTDevice</code>; neither extends the other.)",
+    code: `IoTDevice d = new Fan("fan", 40);
+Light l = (Light) d;
+System.out.println("cast worked");`,
+    out: { kind: "exception" },
+    explain: "It compiles, because an <code>IoTDevice</code> <i>might</i> be a <code>Light</code>. But at runtime the object is a <code>Fan</code>, so the cast throws a <code>ClassCastException</code>. A cast can’t change what an object really is.",
+  },
+]);
