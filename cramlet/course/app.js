@@ -498,6 +498,28 @@
         let pos = 0;
         let results = {}; // question index -> true/false
 
+        // A quiz left part-way is saved, so Exit (or closing the page) can pick up where you were.
+        const states = saved.quizState = saved.quizState || {};
+        const keep = () => { states[concept.id] = { pool, pos, results, n: questions.length }; save(); };
+        const forget = () => { delete states[concept.id]; save(); };
+
+        function drawResume(st) {
+            const right = Object.values(st.results).filter(Boolean).length;
+            area.innerHTML = `
+                <div class="quiz-end quiz-resume">
+                    <div class="end-buddy"></div>
+                    <h3>Pick up where you left off?</h3>
+                    <p>You stopped at question ${st.pos + 1} of ${st.pool.length}${st.pos ? ` with ${right} right so far` : ""}.</p>
+                    <div class="end-actions">
+                        <button type="button" class="btn primary" data-resume>${icon("arrow-clockwise")} Resume</button>
+                        <button type="button" class="btn" data-restart>Start over</button>
+                    </div>
+                </div>`;
+            buddy.react(area.querySelector(".end-buddy"), "happy", "bounce");
+            area.querySelector("[data-resume]").addEventListener("click", () => { pool = st.pool; pos = st.pos; results = st.results; draw(); });
+            area.querySelector("[data-restart]").addEventListener("click", () => { forget(); draw(); });
+        }
+
         function draw() {
             if (pos >= pool.length) return drawEnd();
             const qi = pool[pos];
@@ -526,6 +548,7 @@
                         <span>Question ${pos + 1} of ${pool.length}</span>
                         <div class="bar"><div style="width:${(pos / pool.length) * 100}%"></div></div>
                         ${lectureChips(q.lec || [], true)}
+                        <button type="button" class="btn ghost small quiz-exit" data-exit title="Leave the quiz. Your place is saved.">${icon("x-circle")} Exit</button>
                     </div>
                     <div class="question">${q.q}</div>
                     ${body}
@@ -558,10 +581,12 @@
                 progress.award("answer", `${COURSE}:${progress.idFor(q.q)}`, { correct: right, at: fb });
                 if (CRAMLET.exam) { CRAMLET.exam.recordAnswer(COURSE, bankId(q), right, `quiz:${SESSION}`, concept.id); renderNav(); }
             }));
-            area.querySelector("[data-next]").addEventListener("click", () => { pos++; draw(); });
+            area.querySelector("[data-next]").addEventListener("click", () => { pos++; keep(); draw(); });
+            area.querySelector("[data-exit]").addEventListener("click", () => { keep(); location.hash = `#/c/${concept.id}/summary`; });
         }
 
         function drawEnd() {
+            forget();
             const missed = pool.filter(qi => !results[qi]);
             const right = pool.length - missed.length;
             const perfect = missed.length === 0;
@@ -592,7 +617,9 @@
             }
         }
 
-        draw();
+        const st = states[concept.id];
+        if (st && st.n === questions.length && st.pos > 0 && st.pos < st.pool.length) drawResume(st);
+        else draw();
     }
 
     // ---------- Interactive class hierarchy ----------
