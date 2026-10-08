@@ -60,6 +60,10 @@
         perfect: ["{name} is so proud of you!"],
         good: ["Great work! Almost all of them."],
         keepGoing: ["{name} believes in you. Let’s try the missed ones."],
+        examGreat: ["{name} is doing a happy dance. You crushed it!", "{name} knew you could do it!", "Wow! {name} wants to frame this score."],
+        examGood: ["Solid exam! {name} is proud of you.", "Nice work. Just a few to review, and you’ve got this.", "{name} gives this exam two thumbs up."],
+        examOkay: ["Good practice! {name} picked out what to review below.", "You’re getting there. {name} is cheering you on.", "Every miss now is one less surprise on the real exam."],
+        examLow: ["Tough one! {name} is right here with you. Let’s review and try again.", "Don’t worry. {name} thinks the missed deck will help a lot.", "That’s what practice is for. {name} believes in you!"],
     };
     const say = kind => pick(LINES[kind]).replace("{name}", nameOf());
 

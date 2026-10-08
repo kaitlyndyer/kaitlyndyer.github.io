@@ -240,8 +240,16 @@ System.out.println(rooms);`,
   },
   {
     id: "trace-treeset-ties", type: "trace", lec: [3, 6], sec: "ordering",
-    q: "Same <code>Room</code> class (natural order by <code>area</code>). What does this print?",
-    code: `Set<Room> s = new TreeSet<>();
+    q: "<code>Room</code>’s natural order compares only <code>area</code>. What does this print?",
+    code: `class Room implements Comparable<Room> {
+    final String name;
+    final int area;
+    Room(String name, int area) { this.name = name; this.area = area; }
+    public int compareTo(Room o) { return Integer.compare(area, o.area); }
+    public String toString() { return name; }
+}
+
+Set<Room> s = new TreeSet<>();
 s.add(new Room("den", 12));
 s.add(new Room("nook", 12));
 s.add(new Room("hall", 30));
@@ -318,5 +326,39 @@ Collections.sort(books, new [[3]]());`,
     options: ["Return 0", "Return a negative number", "Throw a <code>NullPointerException</code>", "Return false"],
     answer: 2,
     explain: "Unlike <code>equals</code> (which returns false for null), <code>compareTo</code> specifies exceptions: null → <code>NullPointerException</code>, an unexpected type → <code>ClassCastException</code>.",
+  },
+]);
+
+// ---------- Batch 6 (exam-style multiple choice) ----------
+registerExam("contracts", [
+  {
+    id: "mc6-rounded-hash", type: "mc", lec: [6], sec: "hashcode",
+    q: "<code>Reading.equals</code> treats two readings as equal when their temperatures <b>round</b> to the same whole number. What must <code>hashCode</code> do?",
+    options: ["Hash the exact temperature", "Hash the rounded temperature, so equal readings get equal hash codes", "Return a random number", "Nothing; hashCode is independent of equals"],
+    answer: 1,
+    explain: "Equal objects must have equal hash codes, so hashCode has to see the values the same way equals does.",
+  },
+  {
+    id: "mc6-compareto-less", type: "mc", lec: [6], sec: "ordering",
+    q: "A teammate’s <code>Room.compareTo</code> returns <code>-7</code> when the first room is smaller and <code>12</code> when it’s larger. Is that allowed?",
+    options: ["No, it must return exactly -1, 0, or 1", "Yes: only the sign matters (negative, zero, positive)", "No, compareTo must return a boolean", "Only if the rooms are also equal"],
+    answer: 1,
+    explain: "The Comparable contract only fixes the sign. Callers should test <code>&lt; 0</code>, <code>== 0</code>, <code>&gt; 0</code>, never <code>== -1</code>.",
+  },
+
+  {
+    id: "mc6-override-both", type: "mc", lec: [6], sec: "hashcode",
+    q: "<code>Room</code> overrides <code>equals</code> (same name ⇒ equal) but keeps Object’s <code>hashCode</code>. What goes wrong with <code>Set&lt;Room&gt; rooms = new HashSet&lt;&gt;()</code>?",
+    options: ["It won’t compile", "Two equal rooms usually get different hash codes, so the set can store both and contains() can miss", "HashSet ignores equals entirely, so nothing changes", "Every add throws an exception"],
+    answer: 1,
+    explain: "Hash collections look in the bucket chosen by hashCode, then use equals. Equal objects must have equal hash codes, so override them together.",
+  },
+
+  {
+    id: "mc6-tostring-default", type: "mc", lec: [6], sec: "tostring",
+    q: "Without overriding <code>toString</code>, what does <code>System.out.println(light)</code> print?",
+    options: ["All of the object’s fields", "The class name and a hash code, like <code>DimmableLight@1b6d3586</code>", "Nothing", "A compile error"],
+    answer: 1,
+    explain: "Object’s default toString isn’t very informative, which is why it’s worth overriding.",
   },
 ]);

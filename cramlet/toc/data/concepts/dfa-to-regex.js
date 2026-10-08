@@ -19,6 +19,12 @@ const START0_END1 = {
 };
 
 // A small GNFA (labels are regular expressions) for the quiz.
+// The general "remove q_kill" step: R1 in, R2 loop, R3 out, R4 the direct arrow.
+const QUIZ_RIP = {
+  states: { "qᵢ": [0, 130], "qₖᵢₗₗ": [170, 20], "qⱼ": [340, 130] }, accept: [], alphabet: [],
+  delta: { "qᵢ": { "R₁": ["qₖᵢₗₗ"], "R₄": ["qⱼ"] }, "qₖᵢₗₗ": { "R₂": ["qₖᵢₗₗ"], "R₃": ["qⱼ"] } },
+};
+
 const QUIZ_GNFA = {
   states: { s: [0, 100], q1: [160, 100], f: [320, 100] }, start: "s", accept: ["f"], alphabet: [],
   delta: { s: { "ε": ["q1"] }, q1: { "0": ["q1"], "1": ["f"] } },
@@ -154,7 +160,8 @@ registerConcept({
     {
       type: "mc",
       lec: [3],
-      q: "When you remove q<sub>kill</sub>, what is the new label for the arrow q<sub>i</sub> → q<sub>j</sub>?",
+      q: "In this piece of a GNFA, R<sub>1</sub> labels q<sub>i</sub> → q<sub>kill</sub>, R<sub>2</sub> is q<sub>kill</sub>’s self-loop, R<sub>3</sub> labels q<sub>kill</sub> → q<sub>j</sub>, and R<sub>4</sub> labels the direct arrow q<sub>i</sub> → q<sub>j</sub>. After removing q<sub>kill</sub>, what is the new label on q<sub>i</sub> → q<sub>j</sub>?",
+      machine: QUIZ_RIP,
       options: ["R<sub>1</sub>R<sub>2</sub>R<sub>3</sub> ∪ R<sub>4</sub>", "R<sub>1</sub>(R<sub>2</sub>)*R<sub>3</sub> ∪ R<sub>4</sub>", "(R<sub>1</sub> ∪ R<sub>3</sub>)*R<sub>4</sub>", "R<sub>4</sub>(R<sub>2</sub>)*"],
       answer: 1,
       explain: "Enter q<sub>kill</sub> (R<sub>1</sub>), loop any number of times ((R<sub>2</sub>)*), leave for q<sub>j</sub> (R<sub>3</sub>), or skip it with the direct arrow (∪ R<sub>4</sub>).",

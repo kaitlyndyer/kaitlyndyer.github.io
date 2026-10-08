@@ -170,7 +170,7 @@ class Light(IoTDevice):
     },
     {
       type: "bug", lec: [1],
-      q: "We added a Thermostat to Design 1. Which line had to change in <b>existing</b> code?",
+      q: "In Lecture 1’s Design 1 (devices are plain dicts, and one function handles every type), we added a Thermostat. Which line had to be added to <b>existing</b> code?",
       lines: [
         "def identifyDevice(device: dict):",
         "    if isLight(device):",

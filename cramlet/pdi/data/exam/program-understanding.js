@@ -159,7 +159,7 @@ System.out.println(average(new int[] {40, 90, 75}, new boolean[] {true, false, t
   },
   {
     id: "trace-avg-zero", type: "trace", lec: [5], sec: "data",
-    q: "Same <code>average</code> method as before. What happens?",
+    q: "What happens?",
     code: `static int average(int[] levels, boolean[] connected) {
     int total = 0;
     int count = 0;
@@ -475,5 +475,30 @@ run -> run    // recursion`,
     options: ["Start with the entry point you’re trying to understand", "Include every method in the whole program", "Expand selectively along the path you’re investigating", "Mark recursion clearly"],
     answers: [0, 2, 3],
     explain: "Sketch by hand, start from the entry point, and follow only the path you care about. Drawing everything buries the part you need.",
+  },
+]);
+
+// ---------- Batch 6 (exam-style multiple choice) ----------
+registerExam("program-understanding", [
+  {
+    id: "mc6-dead-code", type: "mc", lec: [5], sec: "control",
+    q: "What is <b>dead code</b>?",
+    options: ["Code with a bug in it", "Code on a path that can never execute", "Code that was commented out", "Code that throws an exception"],
+    answer: 1,
+    explain: "Control-flow analysis finds paths that can never be taken, like an <code>else if (b &gt; 80)</code> after <code>if (b &gt; 50)</code>.",
+  },
+  {
+    id: "mc6-uninit", type: "mc", lec: [5], sec: "data",
+    q: "“Where is this variable assigned, where is it read, and could it be used before it’s initialized?” These are questions of:",
+    options: ["Control-flow analysis", "Data-flow analysis", "A sequence diagram", "Code style"],
+    answer: 1,
+    explain: "Data flow tracks how values move and change through a program.",
+  },
+  {
+    id: "mc6-recursion-check", type: "mc", lec: [5], sec: "combined",
+    q: "When reviewing a recursive method, what should you check first to rule out infinite recursion?",
+    options: ["That it has a Javadoc comment", "That every call makes progress toward a base case that will be reached", "That it returns void", "That it’s static"],
+    answer: 1,
+    explain: "For example, <code>countdown(n - 2)</code> with base case <code>n == 0</code> skips 0 for odd n.",
   },
 ]);

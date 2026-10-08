@@ -133,7 +133,7 @@ registerConcept({
     {
       type: "mc",
       lec: [3],
-      q: "Which NFA does the construction give for <b>ε</b>?",
+      q: "In the regex → NFA construction, what NFA does the base case give for the regular expression <b>ε</b>?",
       options: ["One state that is the start and accepts", "One state that doesn’t accept", "Two states joined by an ε-arrow, the second accepting", "No states at all"],
       answer: 0,
       explain: "ε is the language {ε}: the NFA must accept without reading anything, so its start state accepts. (One non-accepting state is the NFA for ∅.)",

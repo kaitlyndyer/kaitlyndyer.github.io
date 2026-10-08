@@ -1,0 +1,83 @@
+// Exam questions for Coupling & Cohesion (lecture 8). See ../../../course/exam.js for the format.
+registerExam("coupling-cohesion", [
+  {
+    id: "mc-report-hub", type: "mc", lec: [8], sec: "exposing",
+    q: "<code>printCount(DeviceHub hub)</code> only ever calls <code>hub.getDevices().size()</code>. What is the main problem with this design?",
+    options: ["It’s slower than passing an int", "It’s coupled to all of <code>DeviceHub</code>, so testing it means building a whole hub", "It breaks the equals contract", "It has low cohesion because it prints"],
+    answer: 1,
+    explain: "Ask for only what you need (the count or the list). Less coupling, and much easier to test.",
+  },
+  {
+    id: "mc-least-coupled", type: "mc", lec: [8], sec: "concrete",
+    q: "Which parameter type couples <code>addDevices</code> to the <b>least</b> likely-to-change module?",
+    options: ["<code>MyDeviceList devices</code> (a custom class the team edits often)", "<code>ArrayList&lt;Light&gt; devices</code>", "<code>List&lt;IoTDevice&gt; devices</code>", "<code>Light[] lights, Fan[] fans</code>"],
+    answer: 2,
+    explain: "Depend on interfaces (<code>IoTDevice</code>) and standard, stable modules (<code>List</code>), not concrete or frequently changing classes.",
+  },
+  {
+    id: "mc-exposed-field", type: "mc", lec: [8], sec: "exposing",
+    q: "<code>DeviceHub</code> exposes <code>public static List&lt;IoTDevice&gt; devices</code>, and three classes loop over it. The team switches to a <code>Map</code>. What happens?",
+    options: ["Nothing; the change is internal", "All three classes must change, because they depended on an exposed implementation detail", "Only <code>DeviceHub</code> recompiles", "The Map is converted automatically"],
+    answer: 1,
+    explain: "Exposing internals invites coupling. Keep the representation private behind methods.",
+  },
+  {
+    id: "mc-logic-coupling", type: "mc", lec: [8], sec: "logic",
+    q: "<code>ecoMode()</code> loops over <code>IoTDevice</code>s with an <code>instanceof Light</code> / <code>instanceof Fan</code> chain. The team adds a <code>Heater</code>. What is the problem?",
+    options: ["Nothing; the data is typed as IoTDevice", "<code>ecoMode()</code> must change too, and nothing warns the <code>Heater</code> author", "Heater can’t implement IoTDevice", "instanceof is a compile error on interfaces"],
+    answer: 1,
+    explain: "That’s logic coupling: the hub’s logic depends on every device type, so changes cascade and are found late.",
+  },
+  {
+    id: "mc-low-cohesion", type: "mc", lec: [8], sec: "cohesion",
+    q: "A <code>DeviceManager</code> class schedules devices, sends email alerts, and parses config files. What is the main problem?",
+    options: ["Each method is too short", "Several unrelated jobs live together, so the class changes for many unrelated reasons and edits for one job risk the others", "It depends on too few other classes", "It should be split into records"],
+    answer: 1,
+    explain: "That’s low cohesion. A module with multiple purposes changes more often, and it’s harder to find where a change belongs.",
+  },
+
+  {
+    id: "mc-cohesion-def", type: "mc", lec: [8], sec: "cohesion",
+    q: "Which best describes a <b>highly cohesive</b> module?",
+    options: ["It depends on many other modules", "It has one specific purpose and is as self-sufficient as possible", "It contains every utility method in the project", "It has only private methods"],
+    answer: 1,
+    explain: "One purpose, fulfilled fully.",
+  },
+  {
+    id: "mc-most-cohesive", type: "mc", lec: [8], sec: "evolution",
+    q: "Which design for devices is the <b>most cohesive</b>?",
+    options: ["Records for Light and Fan, plus one <code>DeviceOperations</code> class with every operation", "Records for Light and Fan, plus <code>LightOperations</code> and <code>FanOperations</code>", "A <code>Light</code> class that holds its own data and its own operations (turnOn, setPower, identify)", "One <code>Devices</code> class with a switch on a type string"],
+    answer: 2,
+    explain: "Combining a device’s data with its operations means only <code>Light</code> changes for light changes, and no existing class changes for new devices.",
+  },
+  {
+    id: "mc-count-not-enough", type: "mc", lec: [8], sec: "coupling",
+    q: "Two designs each have 5 dependencies. Design A depends on <code>List</code> and interfaces; Design B depends on custom classes that change weekly. Which is true?",
+    options: ["They have identical coupling", "B is riskier: coupling also depends on how likely each dependency is to change", "A is riskier because interfaces change often", "Coupling only matters above 10 dependencies"],
+    answer: 1,
+    explain: "Coupling is more than a count. Ask how likely each dependency is to cause harm.",
+  },
+  {
+    id: "mc-changeability-combo", type: "mc", lec: [8], sec: "cohesion",
+    q: "Which combination best promotes changeability?",
+    options: ["High coupling, high cohesion", "Low coupling, high cohesion, and good information hiding", "Low coupling, low cohesion", "High coupling and public fields"],
+    answer: 1,
+    explain: "The lecture’s summary: high cohesion, low coupling, good information hiding.",
+  },
+  {
+    id: "design-utility", type: "design", lec: [8], sec: "evolution",
+    q: "<code>DeviceOperations</code> has <code>turnOnLight</code>, <code>turnOnFan</code>, <code>identifyLight</code>, <code>identifyFan</code>, … and changes almost every sprint. What’s the best refactor?",
+    options: ["Split it alphabetically into two classes", "Move each operation into its device class, so <code>Light</code> owns its data and behavior", "Make all its methods static", "Add more comments"],
+    answer: 1,
+    model: "<code>DeviceOperations</code> is a low-cohesion “house for orphaned operations”: it changes whenever any device, any operation, or the ID format changes. Putting each device’s operations with its data gives <b>high cohesion</b>: light changes touch only <code>Light</code>, and a new device type is a new class with no edits elsewhere.",
+    explain: "One purpose per module, fulfilled fully.",
+  },
+  {
+    id: "design-hub-interface", type: "design", lec: [8], sec: "concrete",
+    q: "<code>DeviceHub</code> has <code>addLights(Light[])</code> and <code>addFans(Fan[])</code>, and breaks whenever Light or Fan change. What should it do instead?",
+    options: ["Add an <code>addThermostats</code> method too", "Take <code>List&lt;IoTDevice&gt;</code>, depending only on the interface", "Copy the Light and Fan code into the hub", "Make Light and Fan final"],
+    answer: 1,
+    model: "Depending on the concrete classes couples the hub to their implementations, which change often. Depending on the <code>IoTDevice</code> <b>interface</b> (and the standard <code>List</code>) means Light/Fan changes that keep their public spec can’t break the hub, and new device types need no new methods.",
+    explain: "Depend on interfaces, and on modules unlikely to change.",
+  },
+]);

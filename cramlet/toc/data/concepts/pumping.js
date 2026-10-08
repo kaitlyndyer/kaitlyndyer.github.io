@@ -177,7 +177,7 @@ registerConcept({
     {
       type: "mc",
       lec: [4],
-      q: "You pick w = 0<sup>p</sup>1<sup>p</sup> for L = {0<sup>n</sup>1<sup>n</sup>}. What do you know about y?",
+      q: "In a pumping-lemma proof for L = {0<sup>n</sup>1<sup>n</sup>}, you pick w = 0<sup>p</sup>1<sup>p</sup>. For any split w = xyz allowed by the lemma, what do you know about y?",
       options: ["y contains at least one 1", "y is all 0s", "y = 01", "Nothing; it could be anything"],
       answer: 1,
       explain: "|xy| ≤ p, and the first p symbols of w are all 0s, so y is made of 0s only (and |y| &gt; 0).",
@@ -193,10 +193,10 @@ registerConcept({
     {
       type: "mc",
       lec: [4],
-      q: "For L = {0<sup>i</sup>1<sup>j</sup> | i &gt; j} with w = 0<sup>p+1</sup>1<sup>p</sup>, which i wins?",
+      q: "For L = {0<sup>m</sup>1<sup>n</sup> | m &gt; n} with w = 0<sup>p+1</sup>1<sup>p</sup>, which pumping exponent i is guaranteed to give a string <b>outside</b> L for every allowed split?",
       options: ["i = 0", "i = 1", "i = 2", "Any i ≥ 2"],
       answer: 0,
-      explain: "y is all 0s. Pumping up adds 0s, which keeps i &gt; j. Pumping down (i = 0) removes at least one 0, leaving at most p 0s and p 1s, so the string is no longer in L.",
+      explain: "y is all 0s. Pumping up adds 0s, which keeps m &gt; n. Pumping down (i = 0) removes at least one 0, leaving at most p 0s and p 1s, so the string is no longer in L.",
     },
     {
       type: "tf",
@@ -216,7 +216,7 @@ registerConcept({
     {
       type: "mc",
       lec: [4],
-      q: "In the pumping lemma for L = {1<sup>n</sup> | n is prime}, with w = 1<sup>q</sup> (q prime, q ≥ p), why does i = q + 1 win?",
+      q: "In the pumping-lemma proof for L = {1<sup>n</sup> | n is prime}, with w = 1<sup>q</sup> (q prime, q ≥ p), why is xy<sup>q+1</sup>z always outside L?",
       options: ["Because q + 1 is even", "Because the new length is q(|y| + 1), which has two factors that are each at least 2", "Because y becomes empty", "Because the string gets shorter"],
       answer: 1,
       explain: "xy<sup>q+1</sup>z has length q + q|y| = q(|y| + 1). Since q ≥ 2 and |y| + 1 ≥ 2, that number is composite, so the string isn’t in L.",

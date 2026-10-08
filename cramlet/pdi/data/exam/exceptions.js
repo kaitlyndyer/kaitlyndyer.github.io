@@ -116,3 +116,36 @@ public Scanner open(String path) [[2]] FileNotFoundException {
     explain: "Parse, validate, then return. (If <code>s</code> isn’t a number at all, <code>Integer.parseInt</code> already throws a <code>NumberFormatException</code>.)",
   },
 ]);
+
+// ---------- Batch 6 (exam-style multiple choice) ----------
+registerExam("exceptions", [
+  {
+    id: "mc6-checked-diff", type: "mc", lec: [2], sec: "types",
+    q: "<code>loadRooms()</code> opens a file and can throw <code>FileNotFoundException</code>. <code>setBrightness()</code> can throw <code>IllegalArgumentException</code>. Which statement is correct?",
+    options: ["Callers of loadRooms must catch the exception or declare it with throws; callers of setBrightness don’t have to", "Both must be declared with throws", "Neither can be caught", "IllegalArgumentException is checked because it’s about arguments"],
+    answer: 0,
+    explain: "FileNotFoundException is a <b>checked</b> exception (the compiler enforces handling). IllegalArgumentException extends RuntimeException, so it’s <b>unchecked</b>.",
+  },
+
+  {
+    id: "mc6-catch-order", type: "mc", lec: [2], sec: "catching",
+    q: "A <code>try</code> has <code>catch (Exception e)</code> followed by <code>catch (IllegalArgumentException e)</code>. What happens?",
+    options: ["The second catch handles IllegalArgumentException", "Compile error: the second catch can never be reached", "Both catches run", "The order doesn’t matter"],
+    answer: 1,
+    explain: "<code>Exception</code> already catches every IllegalArgumentException, so the more specific catch must come first.",
+  },
+  {
+    id: "mc6-finally", type: "mc", lec: [2], sec: "catching",
+    q: "When does a <code>finally</code> block run?",
+    options: ["Only when an exception is thrown", "Only when no exception is thrown", "After the try (and any catch), whether or not an exception happened", "Only if the method returns void"],
+    answer: 2,
+    explain: "That’s why it’s used for cleanup, like closing resources.",
+  },
+  {
+    id: "mc6-recipe", type: "mc", lec: [2], sec: "recipe",
+    q: "Which order matches the lecture’s recipe for handling errors?",
+    options: ["Throw first, then try to prevent", "Prevent the error if you can, else recover locally if it makes sense, else throw", "Always catch everything", "Print an error and continue"],
+    answer: 1,
+    explain: "Throwing is the last resort, but silently ignoring a problem is never the answer.",
+  },
+]);

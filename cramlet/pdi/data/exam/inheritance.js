@@ -96,3 +96,43 @@ d.turnOn();`,
     explain: "<code>super(name)</code> has to be the first statement. Then validate before assigning, so an invalid object is never created.",
   },
 ]);
+
+// ---------- Batch 6 (exam-style multiple choice) ----------
+registerExam("inheritance", [
+  {
+    id: "mc6-substitutable", type: "mc", lec: [2], sec: "is-a",
+    q: "A method <code>dimAll(List&lt;Light&gt; lights)</code> was written and tested using plain <code>Light</code> objects. Later, <code>NightLight extends Light</code> is added. What should be true of NightLight?",
+    options: ["dimAll should keep working correctly when the list contains NightLights", "dimAll must be rewritten to check for NightLight", "NightLight may change what setBrightness means, since it’s a new class", "NightLight must copy every method from Light unchanged"],
+    answer: 0,
+    explain: "Substitutability (the Liskov Substitution Principle): a subclass object must work anywhere its parent is expected. It can change <i>how</i> things are done, but must keep the parent’s promises.",
+  },
+
+  {
+    id: "mc6-lsp-break", type: "mc", lec: [2], sec: "is-a",
+    q: "<code>Light.setBrightness(b)</code> promises to accept 0–100. A subclass <code>NightLight</code> overrides it to throw for anything above 30. What’s wrong?",
+    options: ["Nothing; subclasses can add any rules", "Code that works with any Light can now break when given a NightLight, so it isn’t a safe substitute", "Overriding setters isn’t allowed", "It should be a static method"],
+    answer: 1,
+    explain: "A subclass that accepts less than its parent promises breaks substitutability (Liskov).",
+  },
+  {
+    id: "mc6-is-a", type: "mc", lec: [2], sec: "is-a",
+    q: "Which relationship is the best fit for <b>inheritance</b>?",
+    options: ["A <code>Thermostat</code> has a <code>TemperatureSensor</code>", "A <code>Fan</code> is an <code>IoTDevice</code>", "A <code>House</code> has many <code>Rooms</code>", "A <code>Light</code> uses a <code>Logger</code>"],
+    answer: 1,
+    explain: "Inheritance models “is-a”. “Has-a” relationships are fields.",
+  },
+  {
+    id: "mc6-super-first", type: "mc", lec: [2], sec: "abstraction",
+    q: "In a subclass constructor, where must <code>super(name)</code> go?",
+    options: ["Anywhere in the constructor", "It must be the first statement", "After the fields are assigned", "In a separate init() method"],
+    answer: 1,
+    explain: "The parent part of the object is set up before the subclass’s own code runs.",
+  },
+  {
+    id: "mc6-duplication", type: "mc", lec: [2], sec: "rules",
+    q: "<code>Light</code>, <code>Fan</code>, and <code>Thermostat</code> each have identical <code>name</code> fields and <code>identifyPrefix()</code> methods. What does the lecture recommend?",
+    options: ["Leave the copies; they’re small", "Move the shared parts up into a common (abstract) base class", "Make all three classes final", "Put the method in a utility class"],
+    answer: 1,
+    explain: "Avoid duplication by moving shared parts up, as with <code>BaseIoTDevice</code>.",
+  },
+]);

@@ -194,7 +194,7 @@ registerConcept({
     {
       type: "mc",
       lec: [2],
-      q: "Same NFA. Starting from {q<sub>0</sub>, q<sub>1</sub>, q<sub>4</sub>}, which set do you get after reading <b>1</b>?",
+      q: "For this NFA, you are in the set of states {q<sub>0</sub>, q<sub>1</sub>, q<sub>4</sub>}. Which set are you in after reading <b>1</b> (including any ε-arrows)?",
       machine: NFA_ENDS_00_OR_11,
       options: ["{q<sub>1</sub>, q<sub>4</sub>}", "{q<sub>1</sub>, q<sub>4</sub>, q<sub>5</sub>}", "{q<sub>4</sub>, q<sub>5</sub>}", "{q<sub>0</sub>, q<sub>1</sub>, q<sub>4</sub>, q<sub>5</sub>}"],
       answer: 1,

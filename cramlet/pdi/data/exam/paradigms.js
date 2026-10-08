@@ -37,3 +37,21 @@ registerExam("paradigms", [
     explain: "The entry point is <code>public static void main(String[] args)</code>. It’s <code>static</code> because no <code>App</code> object exists yet when the program starts.",
   },
 ]);
+
+// ---------- Batch 6 (exam-style multiple choice) ----------
+registerExam("paradigms", [
+  {
+    id: "mc6-new-types", type: "mc", lec: [1], sec: "which",
+    q: "The set of operations is stable, but new <b>kinds of devices</b> are added every month. Which design isolates that change best?",
+    options: ["Separate data plus functions with a branch per device type", "Object-oriented: each device class implements the operations", "Global variables", "One big switch statement"],
+    answer: 1,
+    explain: "With OO, a new device is one new class. With separate functions, every function needs a new branch.",
+  },
+  {
+    id: "mc6-python-identify", type: "mc", lec: [1], sec: "design1",
+    q: "<code>identify(device)</code> uses <code>if isLight … elif isFan … elif isThermostat</code>. What is the main downside as devices are added?",
+    options: ["It runs out of memory", "Every new device type means editing this function (and every other one like it)", "Python doesn’t allow elif chains", "It can’t be tested"],
+    answer: 1,
+    explain: "Behavior is spread across functions by type. OO moves it into each type instead.",
+  },
+]);

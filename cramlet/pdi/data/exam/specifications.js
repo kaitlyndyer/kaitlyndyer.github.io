@@ -21,7 +21,7 @@ registerExam("specifications", [
   },
   {
     id: "design-first-needed", type: "design", lec: [6], sec: "general",
-    q: "Now a client <b>relies on</b> getting the first matching index (it highlights the earliest event). Is “Returns an index of arr that contains target” still a good spec?",
+    q: "The spec for <code>search(arr, target)</code> says “Returns an index of arr that contains target.” A client <b>relies on</b> getting the first matching index (it highlights the earliest event). Is the spec still good enough?",
     options: ["Yes, general specs are always better", "No: it isn’t restrictive enough. Say “the smallest index” (or “first”)", "No: it should describe the loop", "Yes, but rename the method"],
     answer: 1,
     model: "Generality has to be balanced against restrictiveness. If clients truly need the first occurrence, the spec must promise it: “Returns the <b>smallest</b> index of arr that contains target.” That’s still behavioral, not a description of the loop.",
@@ -105,5 +105,39 @@ public int sum(int[] arr) { ... }`,
  * @throws NoSuchElementException if no device has that name
  */`,
     explain: "Say <i>what</i> it returns (behavioral), promise “first” because clients rely on it (restrictive), and cover the no-match case with <code>@throws</code>.",
+  },
+]);
+
+// ---------- Batch 6 (exam-style multiple choice) ----------
+registerExam("specifications", [
+  {
+    id: "mc6-criteria-not", type: "mc", lec: [6], sec: "why",
+    q: "A reviewer critiques a Javadoc spec. Which comment is <b>not</b> about one of the three qualities of a good specification?",
+    options: ["“It doesn’t say what happens when the list is empty.”", "“It forces a for-loop when any approach would do.”", "“The second sentence just repeats the first and confuses me.”", "“It should name the developer who wrote the method.”"],
+    answer: 3,
+    explain: "The three qualities are restrictive (cover all inputs), general (don’t over-constrain the implementation), and clear. Authorship isn’t part of a behavioral spec.",
+  },
+
+  {
+    id: "mc6-more-general", type: "mc", lec: [6], sec: "general",
+    q: "Two specs for <code>int maxBrightness(List&lt;Light&gt; lights)</code>:<br>Spec A: “Sets best to 0, loops from index 0 to the end, replacing best whenever a brighter light is found, then returns best.”<br>Spec B: “Returns the highest brightness of any light in lights.”<br>What’s the key difference?",
+    options: ["B describes the result, so any correct way of finding the maximum is allowed; A dictates one algorithm", "A is better because it explains the algorithm", "B is less restrictive about which value is returned", "They allow exactly the same implementations"],
+    answer: 0,
+    explain: "A is operational: it rules out correct implementations (looping backward, using streams…). B is behavioral and more general. (Both still need to say what happens for an empty list!)",
+  },
+
+  {
+    id: "mc6-not-restrictive", type: "mc", lec: [6], sec: "restrictive",
+    q: "“Returns the largest brightness in the list.” What makes this spec <b>not restrictive enough</b>?",
+    options: ["It’s too short", "It doesn’t say what happens for an empty or null list", "It mentions brightness", "It uses the word “largest”"],
+    answer: 1,
+    explain: "Without that, throwing, returning 0, or returning -1 would all “meet” the spec.",
+  },
+  {
+    id: "mc6-ambiguity-cost", type: "mc", lec: [6], sec: "debt",
+    q: "Why is it better to fix an ambiguous spec early?",
+    options: ["Specs can’t be changed after release", "Fixing ambiguity in the spec is far cheaper than fixing different interpretations in deployed code", "Ambiguous specs don’t compile", "It makes the code run faster"],
+    answer: 1,
+    explain: "That’s specification debt: harmless at first, a liability as the system grows.",
   },
 ]);
