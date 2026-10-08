@@ -165,3 +165,52 @@ pre.mini { margin: 0; font: 500 13.5px/1.5 var(--font-code); white-space: pre-wr
 .parsons-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 8px 0 0; font-size: 12.5px; font-weight: 700; color: var(--muted); }
 .parsons-key .k { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: -6px; }
 .parsons-key .k.ok { background: #1f9d63; } .parsons-key .k.place { background: #e6a93a; } .parsons-key .k.bad { background: #d64545; }
+
+/* ---------- Exam sim, guesses, and the missed deck ---------- */
+.exam-types-title { margin-top: 14px; }
+.exam-pace { margin-left: auto; font: 800 12.5px var(--font-body); color: var(--good); padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--good) 12%, transparent); }
+.exam-pace:empty { display: none; }
+.exam-pace.behind { color: var(--warn-ink); background: color-mix(in srgb, var(--warn) 18%, transparent); }
+.exam-pace:not(:empty) + .exam-clock { margin-left: 0; }
+.q-marks { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.q-marks .flagged { color: var(--warn-ink); border-color: var(--warn); }
+.res-time { font: 600 12.5px var(--font-code); color: var(--muted); margin-right: 10px; font-variant-numeric: tabular-nums; }
+.exam-link:has(+ .deck-link) { margin-bottom: 6px; }
+.deck-link { border-style: solid; }
+.deck-count { margin-left: auto; font: 800 11px var(--font-body); color: var(--brand); background: color-mix(in srgb, var(--brand) 14%, var(--paper)); border-radius: 999px; padding: 1px 8px; }
+.deck-dots { display: inline-flex; gap: 3px; vertical-align: middle; margin-left: 6px; }
+.deck-dots i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--good); }
+.deck-dots i.on { background: var(--good); }
+.deck-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 12px; }
+.deck-filter .side-title { margin: 0 6px 0 0; }
+.deck-chip input { position: absolute; opacity: 0; pointer-events: none; }
+.deck-chip span { display: inline-block; padding: 4px 11px; border-radius: 999px; border: 1.5px solid var(--line); font: 700 12.5px var(--font-body); color: var(--muted); cursor: pointer; }
+.deck-chip input:checked + span { border-color: var(--brand); color: var(--brand); background: color-mix(in srgb, var(--brand) 10%, transparent); }
+.deck-chip input:focus-visible + span { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* The study buddy on the results page */
+.exam-hero.res.with-buddy { grid-template-columns: 120px minmax(0, 1fr) 150px; }
+.res-buddy { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.res-buddy .end-buddy { width: 110px; height: 110px; }
+.res-buddy .buddy-say { font-size: 13.5px; max-width: 150px; }
+@media (max-width: 760px) {
+    .exam-hero.res.with-buddy { grid-template-columns: 1fr; }
+}
+
+/* Review page before submitting */
+.map-review { flex-basis: 100%; margin: 8px auto 0; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 10px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); font: 700 12.5px var(--font-body); color: var(--ink-2); cursor: pointer; }
+.map-review.cur, .map-review:hover { border-color: var(--brand); color: var(--brand); }
+.review-title { margin: 4px 0 2px; font: 800 22px var(--font-display, var(--font-body)); }
+.review-list { display: grid; gap: 6px; margin: 14px 0 6px; }
+.rev-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 12px; align-items: center; text-align: left; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
+.rev-row:hover { border-color: var(--brand); }
+.rev-row.open { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--surface)); }
+.rev-n { font: 800 14px var(--font-code); color: var(--muted); text-align: center; }
+.rev-main { display: grid; gap: 3px; min-width: 0; }
+.rev-q { font-size: 14px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rev-a { font-size: 13.5px; color: var(--ink); overflow-wrap: anywhere; }
+.rev-a code { font-size: 12.5px; }
+.rev-none { color: var(--warn-ink); font-weight: 700; }
+.rev-tags { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.rev-tags .tag svg { width: 12px; height: 12px; vertical-align: -2px; }
+@media (max-width: 600px) { .rev-row { grid-template-columns: 24px minmax(0, 1fr); } .rev-tags { grid-column: 2; justify-content: flex-start; } }

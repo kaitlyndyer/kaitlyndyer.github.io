@@ -66,3 +66,14 @@ public String format(@[[2]] String prefix, String value) { ... }`,
     explain: "Any reference can be null at runtime. Nullness annotations plus a checker move that error to compile time.",
   },
 ]);
+
+// ---------- Batch 6 (exam-style multiple choice) ----------
+registerExam("nullness", [
+  {
+    id: "mc6-nullable-mark", type: "mc", lec: [6], sec: "setup",
+    q: "In a <code>@NullMarked</code> package, a parameter <code>String nickname</code> is allowed to be null. What should you write?",
+    options: ["Nothing; everything may be null", "<code>@Nullable String nickname</code>", "<code>@NonNull String nickname</code>", "<code>final String nickname</code>"],
+    answer: 1,
+    explain: "@NullMarked makes everything non-null by default, so only nullable types need annotating.",
+  },
+]);

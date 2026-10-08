@@ -189,3 +189,35 @@ while (it.[[2]]()) {
     explain: "<code>values()</code> gives just the temperatures. Writing <code>int t</code> auto-unboxes each <code>Integer</code>.",
   },
 ]);
+
+// ---------- Batch 6 (exam-style multiple choice) ----------
+registerExam("collections", [
+  {
+    id: "mc6-set-for", type: "mc", lec: [3], sec: "sets",
+    q: "You need to check quickly whether a device ID has already reported in today, and each ID should be stored once. Which structure fits best?",
+    options: ["<code>ArrayList&lt;String&gt;</code>", "<code>HashSet&lt;String&gt;</code>", "<code>LinkedList&lt;String&gt;</code>", "<code>String[]</code>"],
+    answer: 1,
+    explain: "Sets store unique elements and are optimized for <code>contains</code>. Lists would need a linear search and allow duplicates.",
+  },
+  {
+    id: "mc6-arraylist-vs-linked", type: "mc", lec: [3], sec: "lists",
+    q: "When is <code>LinkedList</code> a better choice than <code>ArrayList</code>?",
+    options: ["When you mostly read elements by index", "When you mostly add and remove at the ends", "When you need sorted order", "When you need unique elements"],
+    answer: 1,
+    explain: "ArrayList has fast random access; LinkedList has fast insertion/removal at either end.",
+  },
+  {
+    id: "mc6-hashset-needs", type: "mc", lec: [3, 6], sec: "sets",
+    q: "A <code>HashSet&lt;Room&gt;</code> keeps duplicate rooms even though <code>Room</code> overrides <code>equals</code>. What is the most likely cause?",
+    options: ["HashSet doesn’t use equals", "<code>Room</code> doesn’t override <code>hashCode</code> consistently with equals", "Rooms must be Comparable", "HashSet only works with Strings"],
+    answer: 1,
+    explain: "Hash-based sets use hashCode to find the bucket, then equals. Equal objects must have equal hash codes.",
+  },
+  {
+    id: "mc6-map-keys", type: "mc", lec: [3], sec: "maps",
+    q: "What happens when you <code>put</code> a key that’s already in a <code>Map</code>?",
+    options: ["The map now has two entries with that key", "The new value replaces the old one", "An exception is thrown", "The put is ignored"],
+    answer: 1,
+    explain: "Keys are unique, which is why a map’s key set behaves like a Set.",
+  },
+]);

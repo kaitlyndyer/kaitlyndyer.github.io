@@ -89,6 +89,9 @@
 
     // ---------- Small utilities ----------
 
+    const SESSION = Date.now(); // one study session per page load (the missed deck counts right answers per session)
+    const shuffle = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(x => x[1]);
+
     const esc = s => String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
     const stripTags = html => html
         .replace(/<\/?(p|li|ul|ol|h\d|div|br)\b[^>]*>/gi, " ")
@@ -168,7 +171,10 @@
         nav.innerHTML = (CRAMLET.exam ? `
             <a class="nav-item exam-link${current === "exam" ? " active" : ""}" href="#/exam" style="--c:var(--brand)">
                 <span class="nav-icon">${icon("list-checks")}</span><span class="nav-label">Practice exam</span>
-            </a>` : "") + S.groups.map(g => `
+            </a>${(() => { const n = CRAMLET.exam.deckCount(COURSE); return n ? `
+            <a class="nav-item exam-link deck-link${current === "missed" ? " active" : ""}" href="#/exam/missed" style="--c:var(--brand)">
+                <span class="nav-icon">${icon("cards")}</span><span class="nav-label">Missed deck</span><span class="deck-count">${n}</span>
+            </a>` : ""; })()}` : "") + S.groups.map(g => `
             <div class="nav-group">
                 <div class="nav-group-title">${icon(g.icon)} ${esc(g.title)}</div>
                 ${g.concepts.map(c => `
@@ -484,6 +490,10 @@
 
     function mountQuiz(area, questions, concept) {
         setKeyHandler(null);
+        // Same id the exam bank uses for this quiz question, so misses land in the shared missed deck.
+        const bankId = q => `${concept.id}/quiz/${progress.idFor(q.q + (q.code || "") + (q.lines || []).join(""))}`;
+        // Shuffle multiple-choice options each time a question is shown (true/false keeps its order).
+        const fixedOrder = list => list.some(o => /\b(all|none) of the above\b|\b(both|either|neither) [A-D] (and|or|nor) [A-D]\b|^\s*[A-D] and [A-D]\b/i.test(stripTags(o)));
         let pool = questions.map((_, i) => i);
         let pos = 0;
         let results = {}; // question index -> true/false
@@ -493,6 +503,7 @@
             const qi = pool[pos];
             const q = questions[qi];
             const options = q.type === "tf" ? ["True", "False"] : q.options;
+            const order = q.type === "mc" && !fixedOrder(options) ? shuffle(options.map((_, k) => k)) : (options || []).map((_, k) => k); // bug questions have no options
 
             let body;
             if (q.type === "bug") {
@@ -504,8 +515,8 @@
                 body = `${q.code ? codeBlock(q.code) : ""}
                 ${q.machine && CRAMLET.automata ? `<div class="quiz-machine">${CRAMLET.automata.render(q.machine)}</div>` : ""}
                 <div class="options">
-                    ${options.map((o, k) => `<button type="button" class="option" data-pick="${k}">
-                        <span class="opt-letter">${"ABCD"[k]}</span><span>${o}</span></button>`).join("")}
+                    ${order.map((k, pos) => `<button type="button" class="option" data-pick="${k}">
+                        <span class="opt-letter">${"ABCDEFG"[pos]}</span><span>${options[k]}</span></button>`).join("")}
                 </div>`;
             }
 
@@ -545,6 +556,7 @@
                 next.querySelector("button").focus(); // may scroll, so place the sparkles and crumbs after this
                 if (right) celebrate(btn);
                 progress.award("answer", `${COURSE}:${progress.idFor(q.q)}`, { correct: right, at: fb });
+                if (CRAMLET.exam) { CRAMLET.exam.recordAnswer(COURSE, bankId(q), right, `quiz:${SESSION}`, concept.id); renderNav(); }
             }));
             area.querySelector("[data-next]").addEventListener("click", () => { pos++; draw(); });
         }
@@ -777,7 +789,7 @@
         const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
         if (parts[0] !== "exam") document.body.classList.remove("exam-focus");
         if (parts[0] === "exam" && CRAMLET.exam) {
-            renderNav("exam");
+            renderNav(parts[1] === "missed" || parts[1] === "mistakes" ? "missed" : "exam");
             CRAMLET.exam.render(main, { S, COURSE, esc, icon, codeBlock, highlight, conceptById, allConcepts }, parts);
             document.title = "Practice exam · " + S.course.title + " · cramlet";
         } else if (parts[0] === "c" && parts[1]) {

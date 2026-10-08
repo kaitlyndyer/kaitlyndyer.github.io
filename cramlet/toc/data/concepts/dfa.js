@@ -232,7 +232,7 @@ registerConcept({
     {
       type: "mc",
       lec: [1],
-      q: "Same machine, but now <b>q<sub>0</sub></b> is the only accept state. What is L(M)?",
+      q: "This is the “ends in 1” DFA with the accept state moved: now <b>q<sub>0</sub></b> is the only accept state. What is L(M)?",
       machine: DFA_ENDS1_FLIPPED,
       options: ["Strings that end in 0", "Strings that end in 0, plus the empty string", "Strings that end in 1", "Every string"],
       answer: 1,

@@ -19,6 +19,8 @@ window.STUDY = {
     4: "Goals of Design",
     5: "Program Understanding",
     6: "Specifications & Common Contracts",
+    7: "Code Readability",
+    8: "Changeability: Modularity, Coupling & Cohesion",
   },
 
   groups: [
@@ -61,6 +63,18 @@ window.STUDY = {
         { id: "specifications", title: "Writing Specifications", icon: "note-pencil", color: "#d99a00", lectures: [6] },
         { id: "nullness", title: "Nullness & JSpecify", icon: "prohibit", color: "#c56a1a", lectures: [6] },
         { id: "contracts", title: "equals, hashCode & compareTo", icon: "handshake", color: "#b8862d", lectures: [6] },
+      ],
+    },
+    {
+      id: "changeable",
+      title: "Readable & Changeable Code",
+      icon: "lightbulb",
+      concepts: [
+        { id: "readable-code", title: "Style & Naming", icon: "note", color: "#14a37f", lectures: [7] },
+        { id: "concise-java", title: "Records & Pattern Matching", icon: "sparkle", color: "#0e9bb5", lectures: [7] },
+        { id: "lambdas", title: "Lambdas & Functional Interfaces", icon: "lambda", color: "#8a5cf6", lectures: [7] },
+        { id: "information-hiding", title: "Modularity & Information Hiding", icon: "lock", color: "#d0527a", lectures: [8] },
+        { id: "coupling-cohesion", title: "Coupling & Cohesion", icon: "venn", color: "#e2763a", lectures: [8] },
       ],
     },
     {

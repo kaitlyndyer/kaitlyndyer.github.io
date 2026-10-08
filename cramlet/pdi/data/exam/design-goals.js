@@ -141,7 +141,7 @@ registerExam("design-goals", [
   },
   {
     id: "fill-test-average", type: "fill", lec: [2, 4], sec: "change-test",
-    q: "Now that <code>averageBrightness</code> is testable, fill in the blanks of a JUnit test for it.",
+    q: "<code>Lighting.averageBrightness(List&lt;Light&gt; lights)</code> takes its input as a parameter and returns the average. Fill in the blanks of a JUnit test for it.",
     code: `[[1]]
 void averageOfTwoLights() {
     List<Light> lights = List.of(new Light("a", 40), new Light("b", 80));
@@ -186,7 +186,7 @@ void emptyListThrows() {
     q: "According to lecture, why do design goals still matter when AI writes a lot of the code?",
     options: ["To prompt AI well and check its output, you need to understand the codebase", "Unreadable code leads to slow understanding or over-reliance on AI", "Code that’s hard to change means repeated regeneration, and each version needs verifying again", "AI-generated code doesn’t need testing"],
     answers: [0, 1, 2],
-    explain: "AI code still needs to be understood, verified, and changed by people. The last option is the opposite of the lecture’s point.",
+    explain: "AI code still needs to be understood, verified, and changed by people. “AI-generated code doesn’t need testing” is the opposite of the lecture’s point.",
   },
   {
     id: "tf-tests-pass", type: "tf", lec: [4], sec: "non-functional",
@@ -213,5 +213,23 @@ void emptyListThrows() {
     options: ["Automated tests", "Reading the code once at the end", "Adding print statements", "Manual testing before each release"],
     answer: 0,
     explain: "Automated tests rerun every time anything changes, so you find breakage right away. Documentation, meanwhile, captures what the intended function is.",
+  },
+]);
+
+// ---------- Batch 6 (exam-style multiple choice) ----------
+registerExam("design-goals", [
+  {
+    id: "mc6-untestable", type: "mc", lec: [4], sec: "change-test",
+    q: "A method reads its input from <code>System.in</code> and prints its result. It works perfectly. What is the main problem?",
+    options: ["It’s functionally incorrect", "It’s hard to test automatically, because a test can’t easily supply input or check output", "Printing is slower than returning", "It violates the equals contract"],
+    answer: 1,
+    explain: "Take input as parameters and return the result; then tests can call it directly.",
+  },
+  {
+    id: "mc6-not-nonfunctional", type: "mc", lec: [4], sec: "non-functional",
+    q: "Which is <b>not</b> a non-functional design goal from the lecture?",
+    options: ["Readability", "Changeability", "Returning the correct result", "Testability"],
+    answer: 2,
+    explain: "Returning the correct result is functional correctness.",
   },
 ]);

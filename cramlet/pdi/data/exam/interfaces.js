@@ -129,3 +129,36 @@ public class Fan implements Switchable {
     explain: "Interface methods are implicitly <code>public</code> and abstract, so the implementations must be <code>public</code>. <code>@Override</code> makes the compiler check that each one really matches the interface.",
   },
 ]);
+
+// ---------- Batch 6 (exam-style multiple choice) ----------
+registerExam("interfaces", [
+  {
+    id: "mc6-why-abstract", type: "mc", lec: [2], sec: "base-class",
+    q: "<code>BaseIoTDevice</code> stores the name and on/off state that every device shares, but each device describes itself differently in <code>identify()</code>. What does declaring <code>BaseIoTDevice</code> <code>abstract</code> accomplish?",
+    options: ["It lets the class hold shared code while forcing each device to supply identify(), and nobody can create a bare BaseIoTDevice", "It hides the class from other packages", "It makes every field final", "It allows the class to extend two parents"],
+    answer: 0,
+    explain: "An abstract class is a partial blueprint: real shared code, plus abstract methods subclasses must implement. Since it’s incomplete, <code>new BaseIoTDevice(…)</code> isn’t allowed.",
+  },
+
+  {
+    id: "mc6-interface-vs-abstract", type: "mc", lec: [2], sec: "three-kinds",
+    q: "Which is a key difference between an interface and an abstract class?",
+    options: ["A class can implement many interfaces but extend only one class", "Interfaces can have constructors", "Abstract classes can’t have fields", "Interfaces can be instantiated"],
+    answer: 0,
+    explain: "Single inheritance of classes, multiple implementation of interfaces. That’s why capabilities like Switchable are interfaces.",
+  },
+  {
+    id: "mc6-isp", type: "mc", lec: [6], sec: "isp",
+    q: "Which design follows the Interface Segregation Principle best?",
+    options: ["One big <code>SmartDevice</code> interface with every method any device might need", "Small interfaces like <code>Switchable</code> and <code>Dimmable</code>, each device implementing only what applies", "No interfaces at all", "An interface per method name, shared by all devices"],
+    answer: 1,
+    explain: "Clients should only see the methods relevant to them; a thermostat shouldn’t be forced to implement turnOff.",
+  },
+  {
+    id: "mc6-skeletal", type: "mc", lec: [2], sec: "skeletal",
+    q: "What is a <b>skeletal implementation</b> (like <code>AbstractList</code>) for?",
+    options: ["Preventing anyone from implementing the interface", "Providing most of an interface’s methods so implementers only write a few", "Making an interface sealed", "Replacing the interface entirely"],
+    answer: 1,
+    explain: "An abstract class that implements the interface does the repetitive work; you fill in the core methods.",
+  },
+]);

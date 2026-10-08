@@ -142,7 +142,7 @@ registerConcept({
     {
       type: "mc",
       lec: [2],
-      q: "Which DFA states are accept states?",
+      q: "In the subset construction (NFA → DFA), which of the new DFA’s states are accept states?",
       options: ["Sets contained in F", "Sets that contain at least one NFA accept state", "Sets that contain every NFA accept state", "Only the set F itself"],
       answer: 1,
       explain: "The NFA accepts if <b>some</b> run ends in an accept state, so a set accepts as soon as it contains <b>one</b> accept state: F′ = { S | S ∩ F ≠ ∅ }.",

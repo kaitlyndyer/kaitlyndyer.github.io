@@ -73,3 +73,36 @@ void rejectsBrightnessOver100() {
     explain: "Put the code that should throw inside the lambda. If it doesn’t throw, or throws a different type, <code>assertThrows</code> fails the test.",
   },
 ]);
+
+// ---------- Batch 6 (exam-style multiple choice) ----------
+registerExam("tooling", [
+  {
+    id: "mc6-portable", type: "mc", lec: [2], sec: "two-steps",
+    q: "A teammate on Linux sends you <code>Thermostat.class</code>, and it runs fine on your Mac without recompiling. What makes that possible?",
+    options: ["The .class file contains Linux machine code that macOS translates", "It contains platform-independent bytecode, and your Mac’s JVM runs it", "javac secretly compiled it for every operating system", "Java source code is embedded in the .class file and reinterpreted"],
+    answer: 1,
+    explain: "That’s “write once, run anywhere”: javac produces bytecode, and each platform supplies its own JVM.",
+  },
+
+  {
+    id: "mc6-jdk-jre", type: "mc", lec: [2], sec: "ecosystem",
+    q: "Which statement best describes the JDK?",
+    options: ["Only the virtual machine that runs bytecode", "The development kit: tools like <code>javac</code> plus everything needed to run Java", "A build tool like Gradle", "A testing library"],
+    answer: 1,
+    explain: "The JDK is for developing (it includes the compiler); running Java needs the JRE/JVM, which the JDK includes.",
+  },
+  {
+    id: "mc6-before-each", type: "mc", lec: [2], sec: "junit",
+    q: "Why put setup code in a <code>@BeforeEach</code> method instead of in a field initializer shared by all tests?",
+    options: ["It runs faster", "Each test gets a fresh object, so one test can’t affect another", "JUnit forbids fields", "It makes the tests run in alphabetical order"],
+    answer: 1,
+    explain: "Independent tests are reliable tests: <code>@BeforeEach</code> resets state before every test.",
+  },
+  {
+    id: "mc6-gradlew", type: "mc", lec: [2], sec: "gradle",
+    q: "What’s the main purpose of the <code>gradlew</code> wrapper script checked into a project?",
+    options: ["It formats the code", "It lets anyone build the project with the right Gradle version without installing Gradle first", "It replaces javac", "It stores the project’s dependencies"],
+    answer: 1,
+    explain: "The wrapper downloads and runs the Gradle version the project expects, so every machine builds the same way.",
+  },
+]);

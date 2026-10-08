@@ -209,3 +209,43 @@ Box<[[3]]> b = new Box<>();`,
     explain: "Prefer primitives when you can. Use wrappers when a generic type requires them.",
   },
 ]);
+
+// ---------- Batch 6 (exam-style multiple choice) ----------
+registerExam("types-generics", [
+  {
+    id: "mc6-static-typing", type: "mc", lec: [3], sec: "generics",
+    q: "<code>Light l = new Fan(\"attic\", 2);</code> is rejected before the program ever runs, because a Fan isn’t a Light. Which property of Java is at work?",
+    options: ["Types are checked by the compiler, before the program runs", "Types are only checked when that line executes", "Any object with the right method names is accepted", "The JVM guesses the intended type"],
+    answer: 0,
+    explain: "Java is statically typed: assignments are checked at compile time against the declared types. In a dynamically typed language like Python, the mistake would only surface when the code runs.",
+  },
+
+  {
+    id: "mc6-raw-why", type: "mc", lec: [3], sec: "raw",
+    q: "Why does Java still allow raw types like <code>List list = new ArrayList();</code>?",
+    options: ["They’re faster than generic types", "For backward compatibility with code written before generics (Java 5)", "Because they’re type-safe", "So lists can hold primitives"],
+    answer: 1,
+    explain: "Raw types exist only for old code. They skip type checking, which is why this course treats their warnings as errors.",
+  },
+  {
+    id: "mc6-pass-by-value", type: "mc", lec: [3], sec: "pass-by-value",
+    q: "Which statement about Java method arguments is true?",
+    options: ["Objects are passed by reference, primitives by value", "Everything is passed by value; for objects, the value copied is the reference", "Everything is passed by reference", "Only final variables can be passed"],
+    answer: 1,
+    explain: "That’s why mutating an object through a parameter is visible to the caller, but reassigning the parameter isn’t.",
+  },
+  {
+    id: "mc6-generics-benefit", type: "mc", lec: [3], sec: "problem",
+    q: "What problem do generics solve compared with a list that stores <code>Object</code>?",
+    options: ["Lists of Object can’t be iterated", "The compiler can reject wrong element types, instead of a ClassCastException at runtime", "Generic lists use less memory", "Object lists can only hold strings"],
+    answer: 1,
+    explain: "With <code>List&lt;Light&gt;</code>, adding a Fan is a compile error. With a list of Object, the mistake shows up later as a bad cast.",
+  },
+  {
+    id: "mc6-eq-ref", type: "mc", lec: [3], sec: "two-types",
+    q: "For two reference variables <code>a</code> and <code>b</code>, what does <code>a == b</code> check?",
+    options: ["Whether they hold equal values", "Whether they point to the same object", "Whether they have the same type", "Whether their hash codes match"],
+    answer: 1,
+    explain: "Use <code>equals</code> for value equality.",
+  },
+]);

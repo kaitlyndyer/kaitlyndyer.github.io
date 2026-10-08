@@ -184,7 +184,7 @@
                 if (parts.review) { why.push("you marked it “Review again”"); score += 3; }
                 if (parts.best && parts.best.right / parts.best.total < 0.7) { why.push(`best quiz ${parts.best.right}/${parts.best.total}`); score += 2; }
                 if (seen && Date.now() - seen > WEEK && m < 0.8) { why.push(`not opened in ${Math.round((Date.now() - seen) / 86400000)} days`); score += 1; }
-                const exam = (read(`cramlet.exam.${course.id}.history`) || []).slice(-1)[0];
+                const exam = (read(`cramlet.exam.${course.id}.history`) || []).filter(x => x.length !== "deck").slice(-1)[0];
                 const mine = exam ? exam.items.filter(x => x.concept === info.id) : [];
                 if (mine.length) {
                     const got = mine.reduce((a, x) => a + x.earned, 0), max = mine.reduce((a, x) => a + x.max, 0);
@@ -194,16 +194,25 @@
             });
         });
         out.sort((a, b) => b.score - a.score);
+        // Missed decks (wrong exam and quiz answers waiting to be retaken), one row per course.
+        const decks = COURSES.map(course => ({ course, n: Object.keys(read(`cramlet.exam.${course.id}.missed`) || read(`cramlet.exam.${course.id}.mistakes`) || {}).length })).filter(d => d.n);
+        const deckRows = decks.map(d => `
+                    <a class="ritem" href="${d.course.url}#/exam/missed" style="--c:var(--brand)">
+                        <span class="stripe"></span>
+                        <span class="rtext"><b>Missed deck</b><span class="why">${esc(d.course.title)} · ${d.n} question${d.n > 1 ? "s" : ""} to retake</span></span>
+                        <span class="rbtn">Retake</span>
+                    </a>`).join("");
         return `
             <section class="dash-card">
                 <div class="dlabel"><span>Needs review</span>${out.length > 4 ? `<span>${out.length - 4} more</span>` : ""}</div>
+                ${deckRows ? `<div class="review">${deckRows}</div>` : ""}
                 ${out.length ? `<div class="review">${out.slice(0, 4).map(r => `
                     <a class="ritem" href="${r.course.url}#/c/${r.info.id}/${r.tab}" style="--c:${r.info.color}">
                         <span class="stripe"></span>
                         <span class="rtext"><b>${esc(r.info.title)}</b><span class="why">${esc(r.course.title)} · ${r.why.map(esc).join(" · ").replace(/^./, ch => ch.toUpperCase())}</span></span>
                         <span class="rbtn">Review</span>
                     </a>`).join("")}</div>`
-                    : `<p class="dash-note">Nothing to review right now. Concepts show up here when you mark them “Review again,” score under 70% on a quiz, or haven’t opened them in a week.</p>`}
+                    : deckRows ? "" : `<p class="dash-note">Nothing to review right now. Concepts show up here when you mark them “Review again,” score under 70% on a quiz, or haven’t opened them in a week.</p>`}
             </section>`;
     }
 

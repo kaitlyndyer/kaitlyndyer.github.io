@@ -207,7 +207,18 @@ registerConcept({
     },
     {
       type: "mc", lec: [5],
-      q: "In <code>activateAreaScene</code>, what happens when <code>findScene</code> returns <code>null</code>?",
+      q: "In this method, what happens when <code>findScene</code> returns <code>null</code>?",
+      code: `public void activateAreaScene(Area area, String sceneName) {
+    Scene scene = findScene(sceneName);
+    if (scene != null) {
+        scene.activate();
+        if (area.hasCascadeEnabled()) {
+            for (Area child : area.getChildren()) {
+                activateAreaScene(child, sceneName);
+            }
+        }
+    }
+}`,
       options: ["It throws a NullPointerException", "It fails silently: nothing is logged or reported", "It activates a default scene", "It retries forever"],
       answer: 1,
       explain: "The <code>if (scene != null)</code> just skips everything, so the caller never learns something went wrong.",

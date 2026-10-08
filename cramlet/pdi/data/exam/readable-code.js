@@ -1,0 +1,67 @@
+// Exam questions for Style & Naming (lecture 7). See ../../../course/exam.js for the format.
+registerExam("readable-code", [
+  {
+    id: "mc-style-tools", type: "mc", lec: [7], sec: "style",
+    q: "A team wants every file formatted the same way without arguing about it in code review. What does the lecture suggest?",
+    options: ["Ask everyone to be careful", "Enforce the style automatically with tools like Spotless/google-java-format and Checkstyle", "Let each developer use their own style", "Only format code before releases"],
+    answer: 1,
+    explain: "Style is easy to enforce automatically, so it doesn’t depend on people remembering.",
+  },
+  {
+    id: "mc-style-not", type: "mc", lec: [7], sec: "style",
+    q: "Which of these is <b>not</b> something a code style guide typically mandates?",
+    options: ["Indentation and spacing", "Braces around one-line <code>if</code> bodies", "Which algorithm to use for sorting", "Documentation format"],
+    answer: 2,
+    explain: "Style covers how code looks (spacing, optional syntax, docs). Algorithm choice is a design decision.",
+  },
+  {
+    id: "mc-synonyms", type: "mc", lec: [7], sec: "consistency",
+    q: "A class has <code>getBrightness()</code>, <code>setLevel(int)</code>, and a field named <code>intensity</code>, all for the same value. What is the main readability problem?",
+    options: ["The names are too long", "Different words for one concept make readers wonder if they’re different things", "Getters should never be named <code>get…</code>", "Fields must match method names exactly by law"],
+    answer: 1,
+    explain: "Same word ⇒ same concept. Pick one word (here, brightness) and use it everywhere.",
+  },
+  {
+    id: "mc-lexicon", type: "mc", lec: [7], sec: "consistency",
+    q: "What is a <b>lexicon</b> in the context of naming?",
+    options: ["A tool that renames variables automatically", "A documented mapping from domain concepts to the canonical words used in the code", "A list of Java keywords", "A dictionary of abbreviations everyone should use"],
+    answer: 1,
+    explain: "It records which word means which concept, which is especially valuable on big teams and long-lived projects.",
+  },
+  {
+    id: "mc-unit-noise", type: "mc", lec: [7], sec: "name-molds",
+    q: "In a codebase where <b>every</b> temperature is in Kelvin, a teammate names variables <code>targetTempKelvin</code>, <code>currentTempKelvin</code>, and so on. What does the lecture say?",
+    options: ["Good: units should always be in names", "The unit is mostly noise here, since nothing else could be meant", "Units must be in comments, never names", "Kelvin should be written as K"],
+    answer: 1,
+    explain: "Units in names earn their place when units are mixed (Kelvin vs. mired) and confusion is possible.",
+  },
+  {
+    id: "mc-scope-length", type: "mc", lec: [7], sec: "length",
+    q: "Which is the best example of matching name length to scope?",
+    options: ["<code>for (Light l : lights)</code> in a two-line loop, and a field named <code>startupColorTemperature</code>", "A public method named <code>f()</code>", "A loop variable named <code>theCurrentLightBeingProcessedInThisLoop</code>", "All names exactly the same length"],
+    answer: 0,
+    explain: "Short scopes can use short names; names read far from their definition need to be descriptive.",
+  },
+  {
+    id: "mc-name-molds-order", type: "mc", lec: [7], sec: "name-molds",
+    q: "Which order matches the name-mold method?",
+    options: ["Choose the words → select the concepts → construct the name", "Select the concepts → choose the words → construct the name", "Construct the name → select the concepts → choose the words", "Pick a casing style → choose a length → select the words"],
+    answer: 1,
+    explain: "Decide what the name must convey, then which words express it, then how to put them together.",
+  },
+  {
+    id: "mc-bus-factor", type: "mc", lec: [7], sec: "over-time",
+    q: "Only the two original authors can understand a project’s code. Which risk is this?",
+    options: ["Hyrum’s Law", "A bus-factor problem: the project depends on a few people", "A compile-time error", "Low coupling"],
+    answer: 1,
+    explain: "Readable code lets others take over, which cuts onboarding cost and keeps a project alive.",
+  },
+  {
+    id: "design-casing", type: "design", lec: [7], sec: "consistency",
+    q: "Half a project uses <code>colorTemperatureTarget</code> and the other half uses <code>targetColorTemperature</code>. What should the team do?",
+    options: ["Nothing; both are camelCase", "Pick one word order (modifier-first or modifier-last) and apply it everywhere", "Switch everything to snake_case", "Add a comment explaining both"],
+    answer: 1,
+    model: "Step 3 of the name molds is to construct names with a <b>consistent</b> word order. Mixing orders makes readers stop to check whether two names mean different things. Consistency matters more than which order you choose.",
+    explain: "Consistency reduces cognitive load.",
+  },
+]);

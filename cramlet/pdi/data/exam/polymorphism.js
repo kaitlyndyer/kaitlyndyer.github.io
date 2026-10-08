@@ -104,3 +104,35 @@ System.out.println("cast worked");`,
     explain: "It compiles, because an <code>IoTDevice</code> <i>might</i> be a <code>Light</code>. But at runtime the object is a <code>Fan</code>, so the cast throws a <code>ClassCastException</code>. A cast can’t change what an object really is.",
   },
 ]);
+
+// ---------- Batch 6 (exam-style multiple choice) ----------
+registerExam("polymorphism", [
+  {
+    id: "mc6-dispatch", type: "mc", lec: [2], sec: "lookup",
+    q: "<code>IoTDevice d = new Fan();</code> then <code>d.identify();</code>. Which <code>identify()</code> runs?",
+    options: ["IoTDevice’s, because that’s the declared type", "Fan’s, chosen at runtime from the actual object", "Whichever was defined first", "It doesn’t compile"],
+    answer: 1,
+    explain: "Dynamic dispatch picks the method from the object’s actual class at runtime.",
+  },
+  {
+    id: "mc6-declared-limits", type: "mc", lec: [2], sec: "lookup",
+    q: "<code>IoTDevice d = new DimmableLight(\"desk\");</code>. Why doesn’t <code>d.setBrightness(40)</code> compile?",
+    options: ["DimmableLight has no setBrightness", "The compiler only allows methods of the declared type, IoTDevice", "setBrightness is private", "Dynamic dispatch is disabled"],
+    answer: 1,
+    explain: "The declared type decides what you may call; the actual type decides which version runs.",
+  },
+  {
+    id: "mc6-overload-when", type: "mc", lec: [3], sec: "overloading",
+    q: "When is the choice between overloaded methods like <code>read()</code> and <code>read(byte[] b)</code> made?",
+    options: ["At runtime, from the object’s actual type", "At compile time, from the argument types", "Randomly", "By the JVM on first call"],
+    answer: 1,
+    explain: "Overloading is resolved at compile time; overriding is resolved at runtime.",
+  },
+  {
+    id: "mc6-uniform", type: "mc", lec: [2], sec: "uniform",
+    q: "What is the main benefit of polymorphism in a loop like <code>for (IoTDevice d : devices) d.turnOn();</code>?",
+    options: ["It runs faster than separate loops", "The same code works for every device type, including ones added later", "It prevents NullPointerExceptions", "It makes the devices immutable"],
+    answer: 1,
+    explain: "Callers treat all devices uniformly; each class supplies its own behavior.",
+  },
+]);

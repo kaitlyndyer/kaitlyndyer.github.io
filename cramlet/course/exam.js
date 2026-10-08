@@ -14,6 +14,13 @@
 //   design { q, options, answer, model, explain }                  pick (1 pt) + justification you check yourself (1 pt)
 //   write  { q, starter?, rubric: [{ text, re? }], model, explain } write code; the rubric is partly checked automatically
 //
+// Modes: "mixed" uses every type above; "mc" (multiple choice only) uses mc + design questions, all 1 point,
+// with no written justification. Answer options are shuffled per exam (E.perm), but answers are stored and
+// graded by the question's original option index, so shuffling never changes grading.
+//
+// Missed deck: every exam or concept-quiz question you miss (or only guessed) goes in the deck, and it
+// leaves once you answer it right in DECK_WINS different sessions in a row.
+//
 // Everything is saved in this browser: the exam in progress (so a refresh can't lose it), past results, and seen questions.
 (function () {
     "use strict";
@@ -30,9 +37,25 @@
     const sectionOf = type => SECTIONS.find(s => s.types.includes(type));
     const LENGTHS = {
         full: { name: "Full exam", minutes: 120, mix: { choice: 9, trace: 7, bug: 4, fill: 4, parsons: 4, design: 3, write: 4 } },
+        sim: { name: "Exam length", minutes: 60, mix: { choice: 12, trace: 4, bug: 2, fill: 2, parsons: 1, design: 3, write: 1 } },
         half: { name: "Half exam", minutes: 60, mix: { choice: 5, trace: 4, bug: 2, fill: 2, parsons: 2, design: 1, write: 2 } },
         quick: { name: "Quick check", minutes: 0, mix: { choice: 4, trace: 2, bug: 1, fill: 1, parsons: 1, design: 1, write: 0 } },
+        deck: { name: "Missed deck", minutes: 0, mix: {}, hidden: true },
     };
+    const countOf = L => Object.values(L.mix).reduce((a, b) => a + b, 0);
+    const MC_TYPES = ["mc", "design"]; // the "multiple choice only" pool: one right answer out of a few options
+    const DECK_WINS = 2;               // right answers, in different sessions, needed to leave the missed deck
+    const stripTags = t => String(t || "").replace(/<[^>]+>/g, "");
+    // Options that refer to other options ("all of the above", "both A and B") must keep their order.
+    const fixedOrder = list => (list || []).some(o => /\b(all|none) of the above\b|\b(both|either|neither) [A-D] (and|or|nor) [A-D]\b|^\s*[A-D] and [A-D]\b/i.test(stripTags(o)));
+    function makePerms(qs) {
+        const perm = {};
+        qs.forEach(q => {
+            if (q.options && ["mc", "design", "multi"].includes(q.type) && !fixedOrder(q.options)) perm[q.id] = shuffle(q.options.map((_, k) => k));
+            if (q.fixes && !fixedOrder(q.fixes)) perm[q.id + "#fix"] = shuffle(q.fixes.map((_, k) => k));
+        });
+        return perm;
+    }
 
     const bank = {}; // conceptId → extra exam questions
     let awayKey = null;
@@ -42,7 +65,8 @@
     const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* ignore */ } };
     const shuffle = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(x => x[1]);
 
-    function pointsOf(q) {
+    function pointsOf(q, mode) {
+        if (mode === "mc" && MC_TYPES.includes(q.type)) return 1;
         return { mc: 1, tf: 1, multi: 2, bug: q.fixes ? 2 : 1, trace: 2, fill: (q.blanks || []).length, parsons: 3, design: 2, write: (q.rubric || []).length }[q.type] || 1;
     }
 
@@ -67,8 +91,8 @@
     }
 
     // Returns { earned, max, auto: true|false, detail }
-    function grade(q, a, self) {
-        const max = pointsOf(q);
+    function grade(q, a, self, mode) {
+        const max = pointsOf(q, mode);
         a = a || {};
         switch (q.type) {
             case "mc": return { earned: a.pick === q.answer ? 1 : 0, max };
@@ -88,7 +112,9 @@
                 return { earned: got, max };
             }
             case "parsons": { const g = parsonsGrade(q, a.order || []); return { earned: Math.round(g.frac * max * 2) / 2, max, detail: g }; }
-            case "design": return { earned: (a.pick === q.answer ? 1 : 0) + (self && self.reason ? 1 : 0), max, needsSelf: true };
+            case "design":
+                if (mode === "mc") return { earned: a.pick === q.answer ? 1 : 0, max };
+                return { earned: (a.pick === q.answer ? 1 : 0) + (self && self.reason ? 1 : 0), max, needsSelf: true };
             case "write": {
                 const checks = (q.rubric || []).map((r, i) => (self && self.items && i in self.items ? !!self.items[i] : autoFound(r, a.code)));
                 return { earned: checks.filter(Boolean).length, max, needsSelf: true, checks };
@@ -102,11 +128,39 @@
         try { return new RegExp(item.re, item.flags || "m").test(code); } catch (e) { return false; }
     }
 
+    // ---------- Missed deck ----------
+    const deckKey = course => `cramlet.exam.${course}.missed`;
+    function readDeck(course) {
+        const d = read(deckKey(course), null);
+        if (d) return d;
+        // First run: start from the old mistake log.
+        const old = read(`cramlet.exam.${course}.mistakes`, {}), out = {};
+        Object.entries(old).forEach(([id, m]) => { out[id] = { at: m.at || Date.now(), concept: m.concept, wins: [] }; });
+        return out;
+    }
+    // ok = answered fully right (and not just guessed). session = which sitting this was, e.g. "exam:<time>".
+    function recordAnswer(course, id, ok, session, concept) {
+        const d = readDeck(course);
+        if (!ok) d[id] = { at: Date.now(), concept: concept || (d[id] || {}).concept, wins: [], misses: ((d[id] || {}).misses || 0) + 1 };
+        else if (d[id]) {
+            const wins = d[id].wins || [];
+            if (!wins.includes(session)) wins.push(session);
+            d[id].wins = wins;
+            if (wins.length >= DECK_WINS) delete d[id];
+        }
+        write(deckKey(course), d);
+    }
+    const deckCount = course => Object.keys(readDeck(course)).length;
+
     // ---------- The exam page ----------
     function render(main, ctx, parts) {
         const { S, COURSE, esc, icon, codeBlock, highlight, conceptById, allConcepts } = ctx;
         const KEY = `cramlet.exam.${COURSE}`;
         const lectures = Object.keys(S.lectures).map(Number);
+
+        // What a question shows above its answer area: an automaton diagram (ToC) and/or a code block.
+        const machineOf = q => (q.machine && CRAMLET.automata ? `<div class="quiz-machine">${CRAMLET.automata.render(q.machine)}</div>` : "");
+        const media = q => machineOf(q) + (q.code ? codeBlock(q.code) : "");
 
         function poolFor(lecs) {
             const pool = [];
@@ -120,10 +174,22 @@
         }
 
         // Pick questions for each section, spreading them across concepts and preferring ones not seen recently.
-        function build(lengthId, lecs) {
+        function build(lengthId, lecs, mode) {
             const L = LENGTHS[lengthId], pool = poolFor(lecs), seen = read(`${KEY}.seen`, {});
             const used = new Set(), perConcept = {};
             const out = [];
+            // Multiple choice only: one pool, spread across concepts, then in lecture order like a real exam.
+            if (mode === "mc") {
+                const cands = shuffle(pool.filter(q => MC_TYPES.includes(q.type)));
+                const want = countOf(L);
+                while (out.length < want && cands.length) {
+                    cands.sort((x, y) => ((perConcept[x.concept] || 0) - (perConcept[y.concept] || 0)) || ((seen[x.id] || 0) - (seen[y.id] || 0)));
+                    const q = cands.shift();
+                    out.push(q); perConcept[q.concept] = (perConcept[q.concept] || 0) + 1;
+                }
+                const order = allConcepts.map(c => c.id);
+                return out.sort((x, y) => (Math.min(...x.lec) - Math.min(...y.lec)) || (order.indexOf(x.concept) - order.indexOf(y.concept)));
+            }
             let carry = 0;
             SECTIONS.forEach(sec => {
                 let want = (L.mix[sec.id] || 0) + (sec.id === "choice" ? 0 : 0);
@@ -156,34 +222,48 @@
             document.body.classList.remove("exam-focus");
             const active = exam(), hist = history();
             const counts = lecs => { const p = poolFor(lecs); return SECTIONS.map(s => [s, p.filter(q => s.types.includes(q.type)).length]); };
+            const prefs = read(`${KEY}.prefs`, {});
+            const deckN = deckCount(COURSE);
             main.innerHTML = `
                 <div class="exam-start">
                     <div class="exam-hero">
                         <div><h1>${icon("list-checks")} Practice exam</h1>
                         <p>A closed-book exam drawn fresh from ${esc(S.course.title)}’s question bank. Notes, search, and hints are hidden until you submit. Most questions are graded automatically; for written code and design answers you check your work against a model answer.</p></div>
                     </div>
-                    ${active ? `<div class="callout key done exam-resume">${icon("hourglass-medium", "callout-ic")}<div class="callout-body"><span class="callout-label">Exam in progress</span>You have a ${esc(LENGTHS[active.length].name.toLowerCase())} that isn’t finished. <button type="button" class="btn primary small" data-act="resume">Continue it</button> <button type="button" class="btn ghost small" data-act="discard">Throw it away</button></div></div>` : ""}
+                    ${active ? `<div class="callout key done exam-resume">${icon("hourglass-medium", "callout-ic")}<div class="callout-body"><span class="callout-label">Exam in progress</span>You have ${active.length === "deck" ? "a missed-deck retake" : `a ${esc(LENGTHS[active.length].name.toLowerCase())}`} that isn’t finished. <button type="button" class="btn primary small" data-act="resume">Continue it</button> <button type="button" class="btn ghost small" data-act="discard">Throw it away</button></div></div>` : ""}
                     <div class="exam-setup">
                         <div class="side-box"><div class="side-title">Length</div>
-                            <div class="exam-lengths">${Object.entries(LENGTHS).map(([id, L], i) => {
-                                const n = Object.values(L.mix).reduce((a, b) => a + b, 0);
-                                return `<label class="exam-len"><input type="radio" name="exam-len" value="${id}" ${i === 0 ? "checked" : ""}><span><b>${L.name}</b><small>${n} questions · ${L.minutes ? `${L.minutes} minutes` : "no timer"}</small></span></label>`;
+                            <div class="exam-lengths">${Object.entries(LENGTHS).filter(([, L]) => !L.hidden).map(([id, L], i) => {
+                                const on = prefs.length ? prefs.length === id : i === 0;
+                                return `<label class="exam-len"><input type="radio" name="exam-len" value="${id}" ${on ? "checked" : ""}><span><b>${L.name}</b><small>${countOf(L)} questions · ${L.minutes ? `${L.minutes} minutes` : "no timer"}</small></span></label>`;
                             }).join("")}</div>
+                            <div class="side-title exam-types-title">Question types</div>
+                            <div class="exam-lengths">
+                                <label class="exam-len"><input type="radio" name="exam-mode" value="mixed" ${prefs.mode !== "mc" ? "checked" : ""}><span><b>Mixed</b><small>Trace, find the bug, fill in, build, design, and write code</small></span></label>
+                                <label class="exam-len"><input type="radio" name="exam-mode" value="mc" ${prefs.mode === "mc" ? "checked" : ""}><span><b>Multiple choice only</b><small>One answer from A–D, every question worth the same</small></span></label>
+                            </div>
                         </div>
                         <div class="side-box"><div class="side-title">Lectures</div>
                             <div class="exam-lecs">${lectures.map(n => `<label class="exam-lec"><input type="checkbox" value="${n}" checked><span><b>L${n}</b> ${esc(S.lectures[n])}</span></label>`).join("")}</div>
                         </div>
                     </div>
                     <div class="exam-bank"></div>
-                    <div class="build-actions"><button type="button" class="btn primary" data-act="start">${icon("hourglass-medium")} Start the exam</button></div>
-                    ${hist.length ? `<div class="side-box"><div class="side-title">Past exams</div><ol class="exam-hist">${hist.slice().reverse().map((h, i) => `<li><button type="button" class="hist-link" data-hist="${hist.length - 1 - i}"><b>${Math.round(h.pct)}%</b> ${esc(LENGTHS[h.length].name)} · ${new Date(h.at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</button></li>`).join("")}</ol></div>` : ""}
+                    <div class="build-actions"><button type="button" class="btn primary" data-act="start">${icon("hourglass-medium")} Start the exam</button>${deckN ? `<a class="btn" href="#/exam/missed">${icon("cards")} Missed deck · ${deckN}</a>` : ""}</div>
+                    ${hist.length ? `<div class="side-box"><div class="side-title">Past exams</div><ol class="exam-hist">${hist.slice().reverse().map((h, i) => `<li><button type="button" class="hist-link" data-hist="${hist.length - 1 - i}"><b>${Math.round(h.pct)}%</b> ${esc(LENGTHS[h.length].name)}${h.mode === "mc" ? " · multiple choice" : ""} · ${new Date(h.at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</button></li>`).join("")}</ol></div>` : ""}
                 </div>`;
             const selLecs = () => [...main.querySelectorAll(".exam-lec input:checked")].map(x => +x.value);
+            const selMode = () => main.querySelector('[name="exam-mode"]:checked').value;
             const drawBank = () => {
-                const c = counts(selLecs()), total = c.reduce((a, [, n]) => a + n, 0);
+                const lecs = selLecs();
+                if (selMode() === "mc") {
+                    const n = poolFor(lecs).filter(q => MC_TYPES.includes(q.type)).length, per = countOf(LENGTHS[main.querySelector('[name="exam-len"]:checked').value]);
+                    main.querySelector(".exam-bank").innerHTML = `<p class="muted">${n} multiple-choice questions in the bank for these lectures${n >= per * 2 ? `, enough for about ${Math.floor(n / per)} exams without repeats` : ""}.</p>`;
+                    return;
+                }
+                const c = counts(lecs), total = c.reduce((a, [, n]) => a + n, 0);
                 main.querySelector(".exam-bank").innerHTML = `<p class="muted">${total} questions in the bank for these lectures: ${c.filter(([, n]) => n).map(([s, n]) => `${n} ${s.name.toLowerCase()}`).join(" · ")}.</p>`;
             };
-            main.querySelectorAll(".exam-lec input").forEach(x => x.addEventListener("change", drawBank));
+            main.querySelectorAll(".exam-lec input, [name=exam-mode], [name=exam-len]").forEach(x => x.addEventListener("change", drawBank));
             drawBank();
             main.querySelector(".exam-start").addEventListener("click", e => {
                 const t = e.target.closest("button");
@@ -194,10 +274,11 @@
                 else if (t.dataset.act === "start") {
                     const lecs = selLecs();
                     if (!lecs.length) return;
-                    const length = main.querySelector('[name="exam-len"]:checked').value;
-                    const qs = build(length, lecs);
+                    const length = main.querySelector('[name="exam-len"]:checked').value, mode = selMode();
+                    write(`${KEY}.prefs`, { length, mode });
+                    const qs = build(length, lecs, mode);
                     const L = LENGTHS[length];
-                    saveExam({ length, lecs, ids: qs.map(q => q.id), answers: {}, flags: [], at: Date.now(), deadline: L.minutes ? Date.now() + L.minutes * 60000 : 0, away: 0, cur: 0 });
+                    saveExam({ length, mode, lecs, ids: qs.map(q => q.id), perm: makePerms(qs), answers: {}, flags: [], guess: [], t: {}, at: Date.now(), deadline: L.minutes ? Date.now() + L.minutes * 60000 : 0, away: 0, cur: 0 });
                     location.hash = "#/exam/take";
                 }
             });
@@ -213,13 +294,19 @@
             document.body.classList.add("exam-focus");
             const Q = byId(), qs = E.ids.map(id => Q[id]).filter(Boolean);
             const answered = i => { const a = E.answers[qs[i].id]; return !!a && Object.values(a).some(v => (Array.isArray(v) ? v.length : v !== "" && v !== undefined && v !== null)); };
+            const mcMode = E.mode === "mc", plainMap = mcMode || E.length === "deck";
+            const secName = q => (mcMode ? "Multiple choice" : sectionOf(q.type).name);
+            // Time spent on each question (for the results page). Time away from the page isn't counted on resume.
+            const leaveQ = X => { const id = qs[X.cur] && qs[X.cur].id; if (!id) return; X.t = X.t || {}; X.t[id] = (X.t[id] || 0) + Math.min(Date.now() - (X.tAt || Date.now()), 20 * 60000); X.tAt = Date.now(); };
+            E.tAt = Date.now(); saveExam(E);
 
             main.innerHTML = `
                 <div class="exam-take">
                     <div class="exam-bar">
-                        <span class="exam-title">${icon("list-checks")} ${esc(LENGTHS[E.length].name)}</span>
+                        <span class="exam-title">${icon(E.length === "deck" ? "cards" : "list-checks")} ${esc(LENGTHS[E.length].name)}${mcMode ? " · multiple choice" : ""}</span>
+                        <span class="exam-pace" aria-live="off"></span>
                         <span class="exam-clock" aria-live="off"></span>
-                        <button type="button" class="btn primary small" data-act="submit">Submit exam</button>
+                        <button type="button" class="btn primary small" data-act="review">Review &amp; submit</button>
                     </div>
                     <div class="exam-body">
                         <nav class="exam-map" aria-label="Questions"></nav>
@@ -232,9 +319,10 @@
                 let html = "", last = null;
                 qs.forEach((q, i) => {
                     const sec = sectionOf(q.type);
-                    if (sec !== last) { html += `<div class="map-sec">${esc(sec.name)}</div>`; last = sec; }
+                    if (!plainMap && sec !== last) { html += `<div class="map-sec">${esc(sec.name)}</div>`; last = sec; }
                     html += `<button type="button" class="map-q${answered(i) ? " done" : ""}${E.flags.includes(i) ? " flag" : ""}${i === E.cur ? " cur" : ""}" data-go="${i}" aria-label="Question ${i + 1}">${i + 1}</button>`;
                 });
+                html += `<button type="button" class="map-review${E.review ? " cur" : ""}" data-act="review">${icon("list-checks")} Review</button>`;
                 $(".exam-map").innerHTML = html;
             }
             function store(patch) {
@@ -245,18 +333,61 @@
                 drawMap();
             }
 
+            // A one-line summary of an answer, for the review page.
+            function brief(q, a = {}) {
+                const cut = (t, n = 70) => { t = stripTags(t).replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
+                const letterOf = (k, key = q.id) => { const o = (E.perm || {})[key]; return "ABCDEFG"[o ? o.indexOf(k) : k]; };
+                if (q.type === "mc" || q.type === "design") return a.pick === undefined ? "" : `<b>${letterOf(a.pick)}.</b> ${esc(cut(q.options[a.pick]))}${q.type === "design" && !mcMode ? (a.why ? " · reason written" : " · <i>no reason yet</i>") : ""}`;
+                if (q.type === "tf") return a.pick === undefined ? "" : a.pick === 0 ? "True" : "False";
+                if (q.type === "multi") return (a.picks || []).length ? a.picks.map(k => letterOf(k)).sort().join(", ") : "";
+                if (q.type === "bug") return a.line === undefined ? "" : `Line ${a.line + 1}${q.fixes ? (a.fix === undefined ? " · <i>no fix picked</i>" : ` · fix ${letterOf(a.fix, q.id + "#fix")}`) : ""}`;
+                if (q.type === "trace") return (a.kind || "output") === "output" ? (a.text ? `<code>${esc(cut(a.text.split("\n").join(" ⏎ "), 50))}</code>` : "") : a.kind === "compile" ? "Compile error" : "Runtime exception";
+                if (q.type === "fill") return (a.blanks || []).some(Boolean) ? (a.blanks || []).map((b, k) => `<code>${esc(b || "—")}</code>`).join(" · ") : "";
+                if (q.type === "parsons") return (a.order || []).length ? `${a.order.length} line${a.order.length > 1 ? "s" : ""} placed` : "";
+                if (q.type === "write") { const n = (a.code || "").split("\n").filter(l => l.trim()).length; return n ? `${n} line${n > 1 ? "s" : ""} of code` : ""; }
+                return "";
+            }
+
+            function drawReview() {
+                const open = qs.filter((_, k) => !answered(k)).length;
+                $(".exam-q").innerHTML = `
+                    <div class="q-head"><span class="q-sec">Review</span><span class="q-num">${qs.length - open} of ${qs.length} answered${E.flags.length ? ` · ${E.flags.length} flagged` : ""}${(E.guess || []).length ? ` · ${E.guess.length} guessed` : ""}</span></div>
+                    <h2 class="review-title">Review your answers</h2>
+                    <p class="muted">Click any question to go back and change it. When you’re happy, submit the exam.</p>
+                    <div class="review-list">${qs.map((q, k) => {
+                        const b = brief(q, E.answers[q.id]);
+                        const tags = (E.flags.includes(k) ? `<span class="tag in">${icon("push-pin")} flagged</span>` : "") + ((E.guess || []).includes(q.id) ? `<span class="tag in">${icon("shuffle")} guessed</span>` : "");
+                        return `<button type="button" class="rev-row${answered(k) ? "" : " open"}" data-go="${k}">
+                            <span class="rev-n">${k + 1}</span>
+                            <span class="rev-main"><span class="rev-q">${esc(stripTags(q.q).replace(/\s+/g, " ").slice(0, 110))}${stripTags(q.q).length > 110 ? "…" : ""}</span>
+                            <span class="rev-a">${b || `<span class="rev-none">Not answered</span>`}</span></span>
+                            <span class="rev-tags">${tags}</span>
+                        </button>`;
+                    }).join("")}</div>
+                    <div class="q-nav">
+                        <button type="button" class="btn" data-go="${qs.length - 1}">← Back to questions</button>
+                        <button type="button" class="btn primary" data-act="submit">${icon("check")} Submit exam</button>
+                    </div>`;
+                drawMap();
+            }
+
             function drawQ() {
-                const i = E.cur, q = qs[i], a = E.answers[q.id] || {}, sec = sectionOf(q.type);
-                const head = `<div class="q-head"><span class="q-sec">${esc(sec.name)}</span><span class="q-num">Question ${i + 1} of ${qs.length} · ${pointsOf(q)} pt${pointsOf(q) > 1 ? "s" : ""}</span></div>`;
+                if (E.review) return drawReview();
+                const i = E.cur, q = qs[i], a = E.answers[q.id] || {}, pts = pointsOf(q, E.mode);
+                const head = `<div class="q-head"><span class="q-sec">${esc(secName(q))}</span><span class="q-num">Question ${i + 1} of ${qs.length} · ${pts} pt${pts > 1 ? "s" : ""}</span></div>`;
                 let body = "";
                 // attr: which answer field the buttons set (pick, toggle for select-all, fix for bug fixes)
-                const opts = (list, attr = "pick") => `<div class="options">${list.map((o, k) => {
-                    const on = attr === "toggle" ? (a.picks || []).includes(k) : a[attr] === k;
-                    return `<button type="button" class="option${on ? " picked" : ""}" data-${attr}="${k}" aria-pressed="${on}"><span class="opt-letter">${attr === "toggle" ? (on ? "✓" : "") : "ABCDEFG"[k]}</span><span>${o}</span></button>`;
-                }).join("")}</div>`;
-                if (q.type === "mc") body = (q.code ? codeBlock(q.code) : "") + opts(q.options);
-                else if (q.type === "tf") body = opts(["True", "False"]);
-                else if (q.type === "multi") body = `<p class="muted">Select every correct answer.</p>` + opts(q.options, "toggle");
+                // Options appear in this exam's shuffled order, but each button still carries its original index.
+                const opts = (list, attr = "pick") => {
+                    const order = ((E.perm || {})[attr === "fix" ? q.id + "#fix" : q.id]) || list.map((_, k) => k);
+                    return `<div class="options">${order.map((k, pos) => {
+                        const o = list[k], on = attr === "toggle" ? (a.picks || []).includes(k) : a[attr] === k;
+                        return `<button type="button" class="option${on ? " picked" : ""}" data-${attr}="${k}" aria-pressed="${on}"><span class="opt-letter">${attr === "toggle" ? (on ? "✓" : "") : "ABCDEFG"[pos]}</span><span>${o}</span></button>`;
+                    }).join("")}</div>`;
+                };
+                if (q.type === "mc") body = media(q) + opts(q.options);
+                else if (q.type === "tf") body = media(q) + opts(["True", "False"]);
+                else if (q.type === "multi") body = media(q) + `<p class="muted">Select every correct answer.</p>` + opts(q.options, "toggle");
                 else if (q.type === "bug") {
                     body = `<div class="bug-code" role="group" aria-label="Code lines">${q.lines.map((ln, k) => `<button type="button" class="bug-line${a.line === k ? " picked" : ""}" data-line="${k}"><span class="ln">${k + 1}</span><code>${highlight(ln) || "&nbsp;"}</code></button>`).join("")}</div>`;
                     if (q.fixes) body += `<p class="q-sub">Which change fixes it?</p>` + opts(q.fixes, "fix");
@@ -281,18 +412,21 @@
                         <div class="side-box"><div class="side-title">Your code</div>${order.length ? `<ol class="mine">${order.map((id, k) => `<li><span class="mnum">${k + 1}</span><span class="mtext"><code class="pcode">${esc(code(id))}</code></span><span class="mctl"><button type="button" class="ctl small" data-up="${k}" ${k ? "" : "disabled"} aria-label="Move up">↑</button><button type="button" class="ctl small" data-down="${k}" ${k < order.length - 1 ? "" : "disabled"} aria-label="Move down">↓</button><button type="button" class="ctl small" data-out="${k}" aria-label="Remove">✕</button></span></li>`).join("")}</ol>` : `<p class="muted">Click lines on the left to build the code. Some lines don’t belong.</p>`}</div>
                     </div>`;
                 } else if (q.type === "design") {
-                    body = (q.code ? codeBlock(q.code) : "") + opts(q.options) + `<label class="q-sub" for="why">Why? Justify your choice in one or two sentences.</label><textarea id="why" class="text-in" rows="3" data-why>${esc(a.why || "")}</textarea>`;
+                    body = media(q) + opts(q.options) + (mcMode ? "" : `<label class="q-sub" for="why">Why? Justify your choice in one or two sentences.</label><textarea id="why" class="text-in" rows="3" data-why>${esc(a.why || "")}</textarea>`);
                 } else if (q.type === "write") {
-                    body = (q.code ? codeBlock(q.code) : "") + `<textarea class="code-in big" rows="16" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Your code" placeholder="Write your code here. No autocomplete, just like on paper.">${esc(a.code !== undefined ? a.code : (q.starter || ""))}</textarea><p class="muted">Tab inserts four spaces.</p>`;
+                    body = media(q) + `<textarea class="code-in big" rows="16" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Your code" placeholder="Write your code here. No autocomplete, just like on paper.">${esc(a.code !== undefined ? a.code : (q.starter || ""))}</textarea><p class="muted">Tab inserts four spaces.</p>`;
                 }
                 $(".exam-q").innerHTML = `
                     ${head}
-                    <div class="question">${q.q}</div>
+                    <div class="question">${q.q}</div>${["bug", "trace", "fill", "parsons"].includes(q.type) ? machineOf(q) : ""}
                     ${body}
                     <div class="q-nav">
                         <button type="button" class="btn" data-act="prev" ${i ? "" : "disabled"}>← Previous</button>
-                        <button type="button" class="btn ghost${E.flags.includes(i) ? " flagged" : ""}" data-act="flag">${icon("push-pin")} ${E.flags.includes(i) ? "Flagged" : "Flag for later"}</button>
-                        <button type="button" class="btn primary" data-act="${i < qs.length - 1 ? "next" : "submit"}">${i < qs.length - 1 ? "Next →" : "Submit exam"}</button>
+                        <span class="q-marks">
+                            <button type="button" class="btn ghost${E.flags.includes(i) ? " flagged" : ""}" data-act="flag">${icon("push-pin")} ${E.flags.includes(i) ? "Flagged" : "Flag for later"}</button>
+                            <button type="button" class="btn ghost${(E.guess || []).includes(q.id) ? " flagged" : ""}" data-act="guess" title="A right guess still goes in your missed deck">${icon("shuffle")} ${(E.guess || []).includes(q.id) ? "Marked as a guess" : "I guessed"}</button>
+                        </span>
+                        <button type="button" class="btn primary" data-act="${i < qs.length - 1 ? "next" : "review"}">${i < qs.length - 1 ? "Next →" : "Review answers →"}</button>
                     </div>`;
                 drawMap();
             }
@@ -303,6 +437,14 @@
                 const E2 = exam();
                 if (!E2) { clearInterval(timer); return; }
                 if (!E2.deadline) { const m = Math.floor((Date.now() - E2.at) / 60000); el.textContent = `${m} min so far`; return; }
+                // Pace: where you'd be if every question took the same share of the time.
+                const pace = $(".exam-pace");
+                if (pace) {
+                    const expected = Math.min(qs.length, Math.floor((Date.now() - E2.at) / ((E2.deadline - E2.at) / qs.length)));
+                    const done = qs.filter((_, k) => answered(k)).length, behind = expected - done;
+                    pace.textContent = behind > 0 ? `${behind} behind pace` : "On pace";
+                    pace.classList.toggle("behind", behind > 1);
+                }
                 const left = Math.max(0, E2.deadline - Date.now());
                 const h = Math.floor(left / 3600000), m = Math.floor(left / 60000) % 60, s = Math.floor(left / 1000) % 60;
                 el.textContent = `${h ? h + ":" : ""}${String(m).padStart(h ? 2 : 1, "0")}:${String(s).padStart(2, "0")} left`;
@@ -315,7 +457,7 @@
                 $(".exam-q").insertAdjacentHTML("afterbegin", `<div class="callout warn done exam-confirm">${icon("warning", "callout-ic")}<div class="callout-body"><span class="callout-label">Submit the exam?</span>${open ? `${open} question${open > 1 ? "s are" : " is"} unanswered. ` : ""}${flagged ? `${flagged} ${flagged > 1 ? "are" : "is"} flagged. ` : ""}You can’t change answers after this.
                     <div class="build-actions"><button type="button" class="btn primary small" data-act="really">Yes, submit</button><button type="button" class="btn ghost small" data-act="cancel">Keep working</button></div></div></div>`);
             }
-            function finish() { clearInterval(timer); E = exam(); E.done = Date.now(); saveExam(E); location.hash = "#/exam/check"; }
+            function finish() { clearInterval(timer); E = exam(); if (!E.review) leaveQ(E); E.done = Date.now(); saveExam(E); location.hash = "#/exam/check"; }
 
             main.querySelector(".exam-take").addEventListener("click", e => {
                 const t = e.target.closest("button");
@@ -323,11 +465,13 @@
                 const d = t.dataset;
                 E = exam();
                 const q = qs[E.cur], a = E.answers[q.id] || {};
-                if (d.go !== undefined) { E.cur = +d.go; saveExam(E); drawQ(); }
-                else if (d.act === "prev") { E.cur--; saveExam(E); drawQ(); }
-                else if (d.act === "next") { E.cur++; saveExam(E); drawQ(); }
+                if (d.go !== undefined) { if (E.review) { E.review = false; E.tAt = Date.now(); } else leaveQ(E); E.cur = +d.go; saveExam(E); drawQ(); window.scrollTo(0, 0); }
+                else if (d.act === "review") { if (!E.review) leaveQ(E); E.review = true; saveExam(E); drawQ(); window.scrollTo(0, 0); }
+                else if (d.act === "prev") { leaveQ(E); E.cur--; saveExam(E); drawQ(); }
+                else if (d.act === "next") { leaveQ(E); E.cur++; saveExam(E); drawQ(); }
+                else if (d.act === "guess") { const g = E.guess || []; E.guess = g.includes(q.id) ? g.filter(x => x !== q.id) : [...g, q.id]; saveExam(E); drawQ(); }
                 else if (d.act === "flag") { E.flags = E.flags.includes(E.cur) ? E.flags.filter(x => x !== E.cur) : [...E.flags, E.cur]; saveExam(E); drawQ(); }
-                else if (d.act === "submit") { if (!main.querySelector(".exam-confirm")) confirmSubmit(); }
+                else if (d.act === "submit") { if (!main.querySelector(".exam-confirm")) { confirmSubmit(); window.scrollTo(0, 0); } }
                 else if (d.act === "really") finish();
                 else if (d.act === "cancel") main.querySelector(".exam-confirm").remove();
                 else if (d.pick !== undefined) { store({ pick: +d.pick }); drawQ(); }
@@ -378,7 +522,7 @@
             const E = exam();
             if (!E) { location.hash = "#/exam"; return; }
             const Q = byId(), qs = E.ids.map(id => Q[id]).filter(Boolean);
-            const toCheck = qs.map((q, i) => ({ q, i })).filter(({ q }) => q.type === "write" || q.type === "design");
+            const toCheck = qs.map((q, i) => ({ q, i })).filter(({ q }) => q.type === "write" || (q.type === "design" && E.mode !== "mc"));
             E.self = E.self || {};
             if (!toCheck.length) return finalize();
             main.innerHTML = `
@@ -390,17 +534,17 @@
                         if (q.type === "design") return `
                             <section class="detail check-q" data-q="${esc(q.id)}">
                                 <h3>Question ${i + 1} <span class="q-sec">Design decision</span></h3>
-                                <div class="question">${q.q}</div>
+                                <div class="question">${q.q}</div>${media(q)}
                                 <p><b>You picked:</b> ${a.pick === undefined ? "<i>nothing</i>" : q.options[a.pick]} ${a.pick === q.answer ? `<span class="tag ok">correct</span>` : `<span class="tag in">not the best choice</span>`}</p>
                                 <p><b>Your reason:</b> ${a.why ? esc(a.why) : "<i>none</i>"}</p>
                                 <div class="callout tip done">${icon("lightbulb", "callout-ic")}<div class="callout-body"><span class="callout-label">Model answer</span><b>${q.options[q.answer]}.</b> ${q.model}</div></div>
                                 <label class="self-item"><input type="checkbox" data-reason="${esc(q.id)}" ${E.self[q.id] && E.self[q.id].reason ? "checked" : ""}> My reason makes the same main point as the model answer.</label>
                             </section>`;
-                        const g = grade(q, a, E.self[q.id]);
+                        const g = grade(q, a, E.self[q.id], E.mode);
                         return `
                             <section class="detail check-q" data-q="${esc(q.id)}">
                                 <h3>Question ${i + 1} <span class="q-sec">Write the code</span></h3>
-                                <div class="question">${q.q}</div>
+                                <div class="question">${q.q}</div>${media(q)}
                                 <div class="side-by-side">
                                     <div><div class="side-title">Your code</div><div class="codeblock"><pre><code>${a.code ? esc(a.code) : "<i>(empty)</i>"}</code></pre></div></div>
                                     <div><div class="side-title">Model answer</div>${codeBlock(q.model)}</div>
@@ -432,17 +576,15 @@
         function finalize() {
             const E = exam(), Q = byId(), qs = E.ids.map(id => Q[id]).filter(Boolean);
             const items = qs.map(q => {
-                const g = grade(q, E.answers[q.id], (E.self || {})[q.id]);
-                return { id: q.id, concept: q.concept, lec: q.lec, sec: q.sec || null, type: q.type, earned: g.earned, max: g.max };
+                const g = grade(q, E.answers[q.id], (E.self || {})[q.id], E.mode);
+                return { id: q.id, concept: q.concept, lec: q.lec, sec: q.sec || null, type: q.type, earned: g.earned, max: g.max, guessed: (E.guess || []).includes(q.id), ms: (E.t || {})[q.id] || 0 };
             });
             const earned = items.reduce((a, x) => a + x.earned, 0), max = items.reduce((a, x) => a + x.max, 0);
-            const result = { at: E.at, done: E.done || Date.now(), length: E.length, lecs: E.lecs, away: E.away || 0, earned, max, pct: (earned / max) * 100, items, answers: E.answers, self: E.self || {} };
+            const result = { at: E.at, done: E.done || Date.now(), length: E.length, mode: E.mode || "mixed", perm: E.perm || {}, lecs: E.lecs, away: E.away || 0, earned, max, pct: (earned / max) * 100, items, answers: E.answers, self: E.self || {} };
             const hist = history(); hist.push(result); write(`${KEY}.history`, hist.slice(-20));
             const seen = read(`${KEY}.seen`, {}); E.ids.forEach(id => { seen[id] = Date.now(); }); write(`${KEY}.seen`, seen);
-            // Missed questions go to the mistake log.
-            const log = read(`${KEY}.mistakes`, {});
-            items.forEach(x => { if (x.earned < x.max) log[x.id] = { at: Date.now(), concept: x.concept }; else delete log[x.id]; });
-            write(`${KEY}.mistakes`, log);
+            // Missed (or only guessed) questions go in the missed deck; right answers count toward leaving it.
+            items.forEach(x => recordAnswer(COURSE, x.id, x.earned >= x.max && !x.guessed, `exam:${E.at}`, x.concept));
             localStorage.removeItem(`${KEY}.active`);
             if (CRAMLET.progress) CRAMLET.progress.award("quiz", `${COURSE}:exam:${E.at}`, {});
             location.hash = `#/exam/results/${hist.slice(-20).length - 1}`;
@@ -463,8 +605,9 @@
             const bar = (label, g, color) => { const p = g.max ? (g.earned / g.max) * 100 : 0; return `<div class="part"><span>${label}</span><div class="bar"><div style="width:${p}%;background:${color || "var(--brand)"}"></div></div><span class="num">${Math.round(p)}%</span></div>`; };
             const plan = Object.entries(byConcept).map(([cid, g]) => ({ c: conceptById[cid], g, lost: g.max - g.earned })).filter(x => x.lost > 0 && x.c).sort((a, b) => b.lost - a.lost);
             const secTitle = (cid, sec) => { const d = S.content[cid]; const s = d && (d.details || []).find(x => x.id === sec); return s ? s.title : null; };
+            const letter = (q, k) => { const o = (R.perm || {})[q.id]; return "ABCDEFG"[o ? o.indexOf(k) : k] + ") "; };
             const yours = (q, a = {}) => {
-                if (q.type === "mc" || q.type === "design") return a.pick === undefined ? "<i>no answer</i>" : q.options[a.pick];
+                if (q.type === "mc" || q.type === "design") return a.pick === undefined ? "<i>no answer</i>" : letter(q, a.pick) + q.options[a.pick];
                 if (q.type === "tf") return a.pick === undefined ? "<i>no answer</i>" : a.pick === 0 ? "True" : "False";
                 if (q.type === "multi") return (a.picks || []).length ? a.picks.map(k => q.options[k]).join("; ") : "<i>no answer</i>";
                 if (q.type === "bug") return a.line === undefined ? "<i>no answer</i>" : `line ${a.line + 1}${q.fixes ? `, fix: ${a.fix === undefined ? "<i>none</i>" : q.fixes[a.fix]}` : ""}`;
@@ -486,7 +629,7 @@
                 return "";
             };
             const model = q => {
-                if (q.type === "mc" || q.type === "design") return q.options[q.answer];
+                if (q.type === "mc" || q.type === "design") return letter(q, q.answer) + q.options[q.answer];
                 if (q.type === "tf") return q.answer ? "True" : "False";
                 if (q.type === "multi") return q.answers.map(k => q.options[k]).join("; ");
                 if (q.type === "bug") return `line ${q.answer + 1}: <code>${esc(q.lines[q.answer].trim())}</code>${q.fixes ? `. Fix: ${q.fixes[q.fix]}` : ""}`;
@@ -496,15 +639,25 @@
                 if (q.type === "write") return codeBlock(q.model);
                 return "";
             };
+            // Timing: on a timed exam each question's fair share is minutes ÷ questions; twice that is "slow".
+            const L = LENGTHS[R.length] || {}, share = L.minutes ? (L.minutes * 60000) / R.items.length : 0;
+            const mmss = ms => `${Math.floor(ms / 60000)}:${String(Math.round(ms / 1000) % 60).padStart(2, "0")}`;
+            const slow = x => share && x.ms > share * 2;
+            const timed = R.items.filter(x => x.ms), avg = timed.length ? timed.reduce((a, x) => a + x.ms, 0) / timed.length : 0;
+            // The study buddy reacts to the score.
+            const mood = R.pct >= 85 ? { face: "cheer", anim: "party", line: "examGreat" }
+                : R.pct >= 70 ? { face: "happy", anim: "bounce", line: "examGood" }
+                : R.pct >= 50 ? { face: "idle", anim: "bounce", line: "examOkay" }
+                : { face: "oops", anim: "wobble", line: "examLow" };
             const qCard = (x, n) => {
                 const q = Q[x.id];
                 if (!q) return "";
                 const a = R.answers[x.id] || {}, c = conceptById[x.concept];
                 const full = x.earned >= x.max, none = x.earned === 0;
                 return `<details class="res-q ${full ? "full" : none ? "zero" : "part-cred"}"${full ? "" : " open"}>
-                    <summary><span class="res-n">${n}</span><span class="res-what"><b>${esc(c ? c.title : x.concept)}</b> · ${esc(sectionOf(q.type).name)}</span><span class="res-pts">${x.earned}/${x.max}</span></summary>
+                    <summary><span class="res-n">${n}</span><span class="res-what"><b>${esc(c ? c.title : x.concept)}</b> · ${esc(R.mode === "mc" ? "Multiple choice" : sectionOf(q.type).name)}${x.guessed ? ` <span class="tag in">guessed</span>` : ""}${slow(x) ? ` <span class="tag in">slow</span>` : ""}</span>${x.ms ? `<span class="res-time">${mmss(x.ms)}</span>` : ""}<span class="res-pts">${x.earned}/${x.max}</span></summary>
                     <div class="question">${q.q}</div>
-                    ${q.code && q.type !== "trace" && q.type !== "fill" ? codeBlock(q.code) : ""}${q.type === "trace" ? codeBlock(q.code) : ""}
+                    ${machineOf(q)}${q.code && q.type !== "fill" ? codeBlock(q.code) : ""}
                     ${q.type === "bug" ? `<div class="bug-code">${q.lines.map((ln, k) => `<div class="bug-line${k === q.answer ? " correct" : k === a.line ? " wrong" : ""}"><span class="ln">${k + 1}</span><code>${highlight(ln) || "&nbsp;"}</code></div>`).join("")}</div>` : ""}
                     <div class="res-ans"><div><div class="side-title">Your answer</div>${yours(q, a)}</div><div><div class="side-title">Model answer</div>${model(q)}</div></div>
                     ${q.explain ? `<div class="callout tip done">${icon("lightbulb", "callout-ic")}<div class="callout-body"><span class="callout-label">Why</span>${q.explain}</div></div>` : ""}
@@ -513,11 +666,13 @@
             };
             main.innerHTML = `
                 <div class="exam-results">
-                    <div class="exam-hero res">
+                    <div class="exam-hero res${CRAMLET.buddy ? " with-buddy" : ""}">
                         <div class="score-ring" style="--p:${Math.round(R.pct)}"><span>${Math.round(R.pct)}%</span></div>
                         <div><h1>${R.pct >= 85 ? "Great exam!" : R.pct >= 70 ? "Solid work." : "Good practice. Here’s what to review."}</h1>
-                        <p>${R.earned} of ${R.max} points · ${esc(LENGTHS[R.length].name)} · ${Math.max(1, Math.round((R.done - R.at) / 60000))} minutes${prev ? ` · last time ${Math.round(prev.pct)}% (${R.pct >= prev.pct ? "+" : ""}${Math.round(R.pct - prev.pct)})` : ""}${R.away ? ` · you left the exam page ${R.away} time${R.away > 1 ? "s" : ""}` : ""}</p>
-                        <div class="build-actions"><a class="btn primary" href="#/exam">${icon("arrow-clockwise")} Take another exam</a><a class="btn" href="#/exam/mistakes">${icon("list-checks")} Mistake log</a></div></div>
+                        <p>${R.earned} of ${R.max} points · ${esc(LENGTHS[R.length].name)}${R.mode === "mc" ? " · multiple choice" : ""} · ${Math.max(1, Math.round((R.done - R.at) / 60000))} minutes${prev ? ` · last time ${Math.round(prev.pct)}% (${R.pct >= prev.pct ? "+" : ""}${Math.round(R.pct - prev.pct)})` : ""}${R.away ? ` · you left the exam page ${R.away} time${R.away > 1 ? "s" : ""}` : ""}</p>
+                        ${avg ? `<p class="muted">Average ${mmss(avg)} per question${share ? ` (the time limit allows ${mmss(share)})` : ""}${(() => { const g = R.items.filter(x => x.guessed).length; return g ? ` · ${g} marked as ${g > 1 ? "guesses, which go" : "a guess, which goes"} in your missed deck` : ""; })()}.</p>` : ""}
+                        <div class="build-actions"><a class="btn primary" href="#/exam">${icon("arrow-clockwise")} Take another exam</a><a class="btn" href="#/exam/missed">${icon("cards")} Missed deck · ${deckCount(COURSE)}</a></div></div>
+                        ${CRAMLET.buddy ? `<div class="res-buddy"><div class="end-buddy"></div><p class="buddy-say">${esc(CRAMLET.buddy.say(mood.line))}</p></div>` : ""}
                     </div>
                     <div class="run-side">
                         <div class="side-box"><div class="side-title">Score by lecture</div><div class="parts">${Object.keys(byLec).sort((a, b) => a - b).map(l => bar(`L${l}`, byLec[l])).join("")}</div></div>
@@ -534,41 +689,65 @@
                     <h2 class="panel-title">Every question</h2>
                     <div class="res-list">${R.items.map((x, n) => qCard(x, n + 1)).join("")}</div>
                 </div>`;
+            if (CRAMLET.buddy) CRAMLET.buddy.react(main.querySelector(".res-buddy .end-buddy"), mood.face, mood.anim);
         }
 
-        // ---------- Mistake log ----------
-        function drawMistakes() {
+        // ---------- Missed deck ----------
+        function drawMissed() {
             document.body.classList.remove("exam-focus");
-            const log = read(`${KEY}.mistakes`, {}), Q = byId();
-            const list = Object.entries(log).map(([id, m]) => ({ id, ...m, q: Q[id] })).filter(x => x.q).sort((a, b) => a.at - b.at);
-            main.innerHTML = `
-                <div class="exam-start">
-                    <h1>${icon("list-checks")} Mistake log</h1>
-                    <p>Every exam question you didn’t get full marks on. Getting it right on a later exam removes it. <b>Redo</b> starts a short exam made only of these.</p>
-                    ${list.length ? `<div class="build-actions"><button type="button" class="btn primary" data-act="redo">${icon("arrow-clockwise")} Redo ${Math.min(10, list.length)} mistakes</button><a class="btn" href="#/exam">Back to exams</a></div>
-                    <ol class="mistakes">${list.map(x => { const c = conceptById[x.concept]; return `<li style="--c:${c ? c.color : "var(--brand)"}"><span class="stripe"></span><span><b>${esc(c ? c.title : x.concept)}</b> · ${esc(sectionOf(x.q.type).name)}<br><span class="muted">${esc(String(x.q.q).replace(/<[^>]+>/g, "").slice(0, 120))}</span></span></li>`; }).join("")}</ol>`
-                    : `<p class="muted">No mistakes logged yet. Take an exam first.</p><a class="btn" href="#/exam">Back to exams</a>`}
-                </div>`;
-            const redo = main.querySelector('[data-act="redo"]');
-            if (redo) redo.addEventListener("click", () => {
-                const ids = list.slice(0, 10).map(x => x.id);
-                saveExam({ length: "quick", lecs: lectures, ids, answers: {}, flags: [], at: Date.now(), deadline: 0, away: 0, cur: 0 });
-                location.hash = "#/exam/take";
-            });
+            const deck = readDeck(COURSE), Q = byId();
+            const all = Object.entries(deck).map(([id, m]) => ({ id, ...m, q: Q[id] })).filter(x => x.q);
+            const lecsIn = [...new Set(all.flatMap(x => x.q.lec))].filter(l => lectures.includes(l)).sort((x, y) => x - y);
+            const pick = read(`${KEY}.deckLecs`, null);
+            let chosen = (pick || lecsIn).filter(l => lecsIn.includes(l));
+            if (!chosen.length) chosen = lecsIn;
+            const draw = () => {
+                const list = all.filter(x => x.q.lec.some(l => chosen.includes(l))).sort((x, y) => (Math.min(...x.q.lec) - Math.min(...y.q.lec)) || (x.at - y.at));
+                const n = list.length;
+                main.innerHTML = `
+                    <div class="exam-start">
+                        <div class="exam-hero"><div>
+                            <h1>${icon("cards")} Missed deck</h1>
+                            <p>Every question you’ve missed on a practice exam or a concept quiz, plus right answers you marked as guesses. Retakes come in a new shuffled order with shuffled options. A question leaves the deck after you get it right in <b>${DECK_WINS} different sessions</b> in a row; a miss starts it over.</p>
+                        </div></div>
+                        ${all.length ? `
+                        <div class="build-actions">
+                            ${n ? [10, 25].filter(k => k < n).map(k => `<button type="button" class="btn${k === 10 ? " primary" : ""}" data-redo="${k}">${icon("shuffle")} Retake ${k}</button>`).join("") + `<button type="button" class="btn${n <= 10 ? " primary" : ""}" data-redo="${n}">${icon("arrow-clockwise")} Retake all ${n}</button>` : `<span class="muted">No missed questions in these lectures.</span>`}
+                            <a class="btn ghost" href="#/exam">Back to exams</a>
+                        </div>
+                        <div class="deck-filter"><span class="side-title">Lectures</span>${lecsIn.map(l => `<label class="deck-chip" title="${esc(S.lectures[l])}"><input type="checkbox" value="${l}" ${chosen.includes(l) ? "checked" : ""}><span>L${l} · ${all.filter(x => x.q.lec.includes(l)).length}</span></label>`).join("")}</div>
+                        <ol class="mistakes">${list.map(x => {
+                            const c = conceptById[x.concept || x.q.concept], wins = (x.wins || []).length;
+                            return `<li style="--c:${c ? c.color : "var(--brand)"}"><span class="stripe"></span><span><b>${esc(c ? c.title : x.q.concept)}</b> · ${esc(sectionOf(x.q.type).name)} <span class="deck-dots" title="${wins} of ${DECK_WINS} sessions right">${Array.from({ length: DECK_WINS }, (_, k) => `<i class="${k < wins ? "on" : ""}"></i>`).join("")}</span><br><span class="muted">${esc(stripTags(x.q.q).slice(0, 140))}</span></span></li>`;
+                        }).join("")}</ol>`
+                        : `<p class="muted">Your deck is empty. Questions you miss on exams and concept quizzes will show up here.</p><a class="btn" href="#/exam">Back to exams</a>`}
+                    </div>`;
+                main.querySelectorAll(".deck-chip input").forEach(cb => cb.addEventListener("change", () => {
+                    chosen = [...main.querySelectorAll(".deck-chip input:checked")].map(x => +x.value);
+                    write(`${KEY}.deckLecs`, chosen);
+                    draw();
+                }));
+                main.querySelectorAll("[data-redo]").forEach(btn => btn.addEventListener("click", () => {
+                    const qs = shuffle(list).slice(0, +btn.dataset.redo).map(x => x.q);
+                    saveExam({ length: "deck", mode: "mixed", lecs: chosen, ids: qs.map(q => q.id), perm: makePerms(qs), answers: {}, flags: [], guess: [], t: {}, at: Date.now(), deadline: 0, away: 0, cur: 0 });
+                    location.hash = "#/exam/take";
+                }));
+            };
+            draw();
         }
 
         if (parts[1] === "take") drawTake();
         else if (parts[1] === "check") drawCheck();
         else if (parts[1] === "results") drawResults(+parts[2]);
-        else if (parts[1] === "mistakes") drawMistakes();
+        else if (parts[1] === "missed" || parts[1] === "mistakes") drawMissed();
         else drawStart();
     }
 
     // Latest exam result for a course, for concept badges and the dashboard.
     function latest(course) {
-        const h = read(`cramlet.exam.${course}.history`, []);
+        const h = read(`cramlet.exam.${course}.history`, []).filter(x => x.length !== "deck"); // retakes aren't a fair sample
         return h[h.length - 1] || null;
     }
 
-    window.CRAMLET = Object.assign(window.CRAMLET || {}, { exam: { render, latest, SECTIONS, LENGTHS, grade, pointsOf } });
+    window.CRAMLET = Object.assign(window.CRAMLET || {}, { exam: { render, latest, SECTIONS, LENGTHS, grade, pointsOf, recordAnswer, deckCount } });
 })();
