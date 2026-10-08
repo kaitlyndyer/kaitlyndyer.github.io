@@ -38,7 +38,7 @@
     const LENGTHS = {
         full: { name: "Full exam", minutes: 120, mix: { choice: 9, trace: 7, bug: 4, fill: 4, parsons: 4, design: 3, write: 4 } },
         sim: { name: "Exam length", minutes: 60, mix: { choice: 12, trace: 4, bug: 2, fill: 2, parsons: 1, design: 3, write: 1 } },
-        half: { name: "Half exam", minutes: 60, mix: { choice: 5, trace: 4, bug: 2, fill: 2, parsons: 2, design: 1, write: 2 } },
+        half: { name: "Half exam", minutes: 60, hidden: true, mix: { choice: 5, trace: 4, bug: 2, fill: 2, parsons: 2, design: 1, write: 2 } },
         quick: { name: "Quick check", minutes: 0, mix: { choice: 4, trace: 2, bug: 1, fill: 1, parsons: 1, design: 1, write: 0 } },
         deck: { name: "Missed deck", minutes: 0, mix: {}, hidden: true },
     };
@@ -127,6 +127,8 @@
         if (!item.re || !code) return false;
         try { return new RegExp(item.re, item.flags || "m").test(code); } catch (e) { return false; }
     }
+
+    const clockText = ms => { ms = Math.max(0, ms); const h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60, s = Math.floor(ms / 1000) % 60; return `${h ? h + ":" : ""}${String(m).padStart(h ? 2 : 1, "0")}:${String(s).padStart(2, "0")}`; };
 
     // ---------- Missed deck ----------
     const deckKey = course => `cramlet.exam.${course}.missed`;
@@ -230,11 +232,16 @@
                         <div><h1>${icon("list-checks")} Practice exam</h1>
                         <p>A closed-book exam drawn fresh from ${esc(S.course.title)}’s question bank. Notes, search, and hints are hidden until you submit. Most questions are graded automatically; for written code and design answers you check your work against a model answer.</p></div>
                     </div>
-                    ${active ? `<div class="callout key done exam-resume">${icon("hourglass-medium", "callout-ic")}<div class="callout-body"><span class="callout-label">Exam in progress</span>You have ${active.length === "deck" ? "a missed-deck retake" : `a ${esc(LENGTHS[active.length].name.toLowerCase())}`} that isn’t finished. <button type="button" class="btn primary small" data-act="resume">Continue it</button> <button type="button" class="btn ghost small" data-act="discard">Throw it away</button></div></div>` : ""}
+                    ${active ? `<div class="callout key done exam-resume">${icon("hourglass-medium", "callout-ic")}<div class="callout-body"><span class="callout-label">Exam in progress</span>You have an unfinished ${(() => {
+                        const paused = active.pausedAt ? (active.deadline ? `paused with ${clockText(active.deadline - active.pausedAt)} left` : "paused") : "";
+                        const bits = active.length === "deck" ? [paused] : [esc(LENGTHS[active.length].name), active.mode === "mc" ? "multiple choice" : "", paused];
+                        const info = bits.filter(Boolean).join(", ");
+                        return (active.length === "deck" ? "missed-deck retake" : "practice exam") + (info ? ` (${info})` : "");
+                    })()}. <button type="button" class="btn primary small" data-act="resume">Continue it</button> <button type="button" class="btn ghost small" data-act="discard">Throw it away</button></div></div>` : ""}
                     <div class="exam-setup">
                         <div class="side-box"><div class="side-title">Length</div>
                             <div class="exam-lengths">${Object.entries(LENGTHS).filter(([, L]) => !L.hidden).map(([id, L], i) => {
-                                const on = prefs.length ? prefs.length === id : i === 0;
+                                const on = prefs.length && !(LENGTHS[prefs.length] || {}).hidden ? prefs.length === id : i === 0;
                                 return `<label class="exam-len"><input type="radio" name="exam-len" value="${id}" ${on ? "checked" : ""}><span><b>${L.name}</b><small>${countOf(L)} questions · ${L.minutes ? `${L.minutes} minutes` : "no timer"}</small></span></label>`;
                             }).join("")}</div>
                             <div class="side-title exam-types-title">Question types</div>
@@ -306,6 +313,8 @@
                         <span class="exam-title">${icon(E.length === "deck" ? "cards" : "list-checks")} ${esc(LENGTHS[E.length].name)}${mcMode ? " · multiple choice" : ""}</span>
                         <span class="exam-pace" aria-live="off"></span>
                         <span class="exam-clock" aria-live="off"></span>
+                        <button type="button" class="btn ghost small exam-pause-btn" data-act="pause" title="Pause the exam (the timer stops)">${icon("hourglass-medium")} Pause</button>
+                        <button type="button" class="btn ghost small" data-act="exit" title="Save your answers and leave. Continue any time from the exam page.">Save &amp; exit</button>
                         <button type="button" class="btn primary small" data-act="review">Review &amp; submit</button>
                     </div>
                     <div class="exam-body">
@@ -371,7 +380,33 @@
                 drawMap();
             }
 
+            // Pausing freezes the timer: on resume the deadline moves later by however long you were away.
+            function pause() {
+                E = exam();
+                if (!E.pausedAt) { if (!E.review) leaveQ(E); E.pausedAt = Date.now(); saveExam(E); }
+            }
+            function resume() {
+                E = exam();
+                if (E.pausedAt) {
+                    if (E.deadline) E.deadline += Date.now() - E.pausedAt;
+                    delete E.pausedAt; E.tAt = Date.now(); saveExam(E);
+                }
+                drawQ(); tick();
+            }
+            function drawPaused() {
+                const open = qs.filter((_, k) => !answered(k)).length;
+                $(".exam-q").innerHTML = `
+                    <div class="exam-paused">
+                        <div class="paused-ic">${icon("hourglass-medium")}</div>
+                        <h2>Exam paused</h2>
+                        <p>${E.deadline ? `The timer is stopped with <b>${clockText(E.deadline - E.pausedAt)}</b> left. ` : ""}${qs.length - open} of ${qs.length} questions answered. Your answers are saved, even if you close this page.</p>
+                        <div class="build-actions"><button type="button" class="btn primary" data-act="resume">${icon("arrow-clockwise")} Resume</button><button type="button" class="btn" data-act="exit">Save &amp; exit</button></div>
+                    </div>`;
+                drawMap();
+            }
+
             function drawQ() {
+                if (E.pausedAt) return drawPaused();
                 if (E.review) return drawReview();
                 const i = E.cur, q = qs[i], a = E.answers[q.id] || {}, pts = pointsOf(q, E.mode);
                 const head = `<div class="q-head"><span class="q-sec">${esc(secName(q))}</span><span class="q-num">Question ${i + 1} of ${qs.length} · ${pts} pt${pts > 1 ? "s" : ""}</span></div>`;
@@ -436,6 +471,8 @@
                 if (!el) { clearInterval(timer); return; }
                 const E2 = exam();
                 if (!E2) { clearInterval(timer); return; }
+                $(".exam-pause-btn") && ($(".exam-pause-btn").disabled = !!E2.pausedAt);
+                if (E2.pausedAt) { el.textContent = E2.deadline ? `${clockText(E2.deadline - E2.pausedAt)} · paused` : "Paused"; el.classList.remove("low"); const pace = $(".exam-pace"); if (pace) pace.textContent = ""; return; }
                 if (!E2.deadline) { const m = Math.floor((Date.now() - E2.at) / 60000); el.textContent = `${m} min so far`; return; }
                 // Pace: where you'd be if every question took the same share of the time.
                 const pace = $(".exam-pace");
@@ -465,6 +502,10 @@
                 const d = t.dataset;
                 E = exam();
                 const q = qs[E.cur], a = E.answers[q.id] || {};
+                if (d.act === "pause") { pause(); drawQ(); tick(); return; }
+                if (d.act === "resume") { resume(); return; }
+                if (d.act === "exit") { pause(); clearInterval(timer); location.hash = "#/exam"; return; }
+                if (E.pausedAt) return;
                 if (d.go !== undefined) { if (E.review) { E.review = false; E.tAt = Date.now(); } else leaveQ(E); E.cur = +d.go; saveExam(E); drawQ(); window.scrollTo(0, 0); }
                 else if (d.act === "review") { if (!E.review) leaveQ(E); E.review = true; saveExam(E); drawQ(); window.scrollTo(0, 0); }
                 else if (d.act === "prev") { leaveQ(E); E.cur--; saveExam(E); drawQ(); }
@@ -511,7 +552,7 @@
             document.addEventListener("visibilitychange", () => {
                 if (leavingPage || !document.hidden || !location.hash.startsWith("#/exam/take")) return;
                 const E = read(awayKey, null);
-                if (E && !E.done) { E.away = (E.away || 0) + 1; write(awayKey, E); }
+                if (E && !E.done && !E.pausedAt) { E.away = (E.away || 0) + 1; write(awayKey, E); }
             });
         }
         awayKey = `${KEY}.active`;
