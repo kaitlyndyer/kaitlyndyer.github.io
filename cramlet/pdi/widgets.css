@@ -1,0 +1,82 @@
+/* Program Design & Implementation widgets (widgets.js). Shared player parts are in ../course/player.css.
+   Colors come from ../brand.css tokens; --c is the current concept's accent color. */
+
+.runner { display: grid; gap: 14px; }
+.runner .pick-row { margin-bottom: 0; }
+.runner .diagram { padding: 10px; border-radius: 16px; background: var(--surface-2); }
+.runner .diagram svg { display: block; width: 100%; height: auto; }
+
+/* ---------- Running code + call stack (side boxes) ---------- */
+.run-code-head { font-size: 13.5px; margin-bottom: 6px; overflow-wrap: anywhere; }
+.run-code {
+    margin: 0; padding: 10px 0; border-radius: 12px; background: var(--code-bg); color: var(--code-ink);
+    font: 500 12.5px/1.65 var(--font-code); overflow-x: auto;
+}
+.run-code code { background: none; padding: 0; color: inherit; font: inherit; }
+.run-code .ln-row { display: inline-block; min-width: 100%; padding: 0 12px; box-sizing: border-box; }
+.run-code .ln-row.now { background: color-mix(in srgb, var(--c) 38%, transparent); box-shadow: inset 3px 0 0 var(--c); }
+.run-code .ln-row.now.err { background: color-mix(in srgb, var(--bad) 45%, transparent); box-shadow: inset 3px 0 0 var(--bad); }
+.call-stack { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; max-height: 260px; overflow-y: auto; }
+.call-stack li {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 6px 10px; border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--line); font-size: 13px; color: var(--ink-2);
+}
+.call-stack li code { background: none; padding: 0; font-size: 12.5px; overflow-wrap: anywhere; }
+.call-stack li small { color: var(--muted); font-weight: 700; }
+.call-stack li.top { border: 2px solid var(--c); color: var(--ink); background: color-mix(in srgb, var(--c) 10%, var(--surface)); }
+.call-stack li.err { border-color: var(--bad); }
+.call-stack .err-tag { color: var(--bad) !important; }
+
+/* ---------- Call graph ---------- */
+.cg-info { margin: -4px 0 0; font-size: 14.5px; min-height: 1.5em; }
+.cg-node { cursor: pointer; }
+.cg-box { fill: var(--surface); stroke: var(--line); stroke-width: 2; transition: fill .2s, stroke .2s; }
+.cg-node:hover .cg-box, .cg-node:focus-visible .cg-box { stroke: var(--c); }
+.cg-node:focus-visible { outline: none; }
+.cg-cls { font: 700 12px var(--font-body); fill: var(--muted); }
+.cg-name { font: 600 13.5px var(--font-code); fill: var(--ink); }
+.cg-node.on .cg-box { fill: color-mix(in srgb, var(--c) 12%, var(--surface)); stroke: color-mix(in srgb, var(--c) 55%, var(--line)); }
+.cg-node.now .cg-box { fill: color-mix(in srgb, var(--c) 24%, var(--surface)); stroke: var(--c); stroke-width: 3; }
+.cg-node.err .cg-box { fill: color-mix(in srgb, var(--bad) 16%, var(--surface)); stroke: var(--bad); stroke-width: 3; }
+.cg-node.picked .cg-box { stroke-dasharray: 6 4; stroke: var(--ink-2); }
+.cg-depth rect { fill: var(--c); }
+.cg-depth text { font: 800 12px var(--font-body); fill: #fff; }
+.cg-edge { fill: none; stroke: color-mix(in srgb, var(--muted) 60%, var(--surface)); stroke-width: 2; transition: stroke .2s; }
+.cg-edge.used { stroke: var(--muted); }
+.cg-edge.rec { stroke: var(--bad); stroke-width: 2.5; }
+.cg-edge.hot, .cg-edge.back { stroke: var(--c); stroke-width: 3.5; stroke-dasharray: 8 6; animation: cg-flow .6s linear infinite; }
+.cg-edge.back { animation-direction: reverse; }
+.cg-edge.errback { stroke: var(--bad); }
+@keyframes cg-flow { to { stroke-dashoffset: -14; } }
+@media (prefers-reduced-motion: reduce) { .cg-edge.hot, .cg-edge.back { animation: none; } }
+.cg-arrow path { fill: color-mix(in srgb, var(--muted) 60%, var(--surface)); }
+.cg-arrow.hot path { fill: var(--c); }
+.cg-arrow.rec path { fill: var(--bad); }
+.cg-count rect { fill: var(--surface); stroke: var(--line); }
+.cg-count text { font: 800 12px var(--font-body); fill: var(--ink-2); }
+
+/* ---------- Sequence diagram ---------- */
+.sq-diagram { padding: 0 !important; overflow: hidden; }
+.sq-scroll { max-height: 470px; overflow: auto; padding: 4px 10px; scroll-behavior: smooth; }
+.sq-scroll svg { width: auto !important; max-width: none; }
+.sq-head rect { fill: var(--surface); stroke: var(--c); stroke-width: 2; }
+.sq-head text { font: 700 14px var(--font-code); fill: var(--ink); }
+.sq-life { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 5; opacity: .6; }
+.sq-bar { fill: color-mix(in srgb, var(--c) 22%, var(--surface)); stroke: color-mix(in srgb, var(--c) 70%, var(--line)); stroke-width: 1.5; }
+.sq-bar.open { fill: color-mix(in srgb, var(--c) 40%, var(--surface)); }
+.sq-msg path { fill: none; stroke: var(--ink-2); stroke-width: 1.6; }
+.sq-msg text { font: 600 12.5px var(--font-code); fill: var(--ink-2); }
+.sq-msg.return path, .sq-msg.unwind path { stroke-dasharray: 6 4; }
+.sq-msg.unwind path, .sq-msg.throw path { stroke: var(--bad); }
+.sq-msg.unwind text, .sq-msg.throw text { fill: var(--bad); font-weight: 700; }
+.sq-msg.throw .sq-x { stroke-width: 3.5; stroke-dasharray: none; }
+.sq-msg.now path { stroke: var(--c); stroke-width: 2.6; }
+.sq-msg.now text { fill: var(--ink); font-weight: 800; }
+.sq-msg.now.unwind path, .sq-msg.now.throw path { stroke: var(--bad); }
+.sq-msg.now.unwind text, .sq-msg.now.throw text { fill: var(--bad); }
+.sq-head-solid { fill: var(--ink-2); }
+.sq-head-open { fill: none; stroke: var(--ink-2); stroke-width: 1.6; }
+.sq-loop { fill: color-mix(in srgb, var(--c) 4%, transparent); stroke: color-mix(in srgb, var(--c) 55%, var(--line)); stroke-width: 1.5; }
+.sq-loop-tab path { fill: color-mix(in srgb, var(--c) 12%, var(--surface)); stroke: color-mix(in srgb, var(--c) 55%, var(--line)); stroke-width: 1.5; }
+.sq-loop-tab text { font: 700 11.5px var(--font-code); fill: color-mix(in srgb, var(--c) 70%, var(--deep)); }
+.sq-empty { font: 600 14px var(--font-body); fill: var(--muted); }

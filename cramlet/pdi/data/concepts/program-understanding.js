@@ -1,3 +1,95 @@
+(function () {
+// ---------- The night-scene program, for the call-graph and sequence-diagram widgets (pdi/widgets.js) ----------
+// Our own version of the lecture's smart-home scene example. Line numbers in each step point into these methods.
+const METHODS = {
+  "Client.activateNighttime": { cls: "Client", name: "activateNighttime()", x: 12, y: 110, code: [
+    "void activateNighttime() {",
+    "    AreaScene.activate(house, \"night\");",
+    "}"] },
+  "AreaScene.activate": { cls: "AreaScene", name: "activate(area, name)", x: 232, y: 110, code: [
+    "static void activate(Area area, String name) {",
+    "    Scene scene = area.scenes.get(name);",
+    "    scene.activate();",
+    "    for (Area child : area.getChildren()) {",
+    "        activate(child, name);   // recursive call",
+    "    }",
+    "}"] },
+  "Scene.activate": { cls: "Scene", name: "activate()", x: 452, y: 30, code: [
+    "void activate() {",
+    "    for (Device d : devices) {",
+    "        d.setState(Setting.DIM);",
+    "    }",
+    "}"] },
+  "Device.setState": { cls: "Device", name: "setState(setting)", x: 672, y: 30, code: [
+    "void setState(Setting s) {",
+    "    this.setting = s;",
+    "}"] },
+  "Area.getChildren": { cls: "Area", name: "getChildren()", x: 452, y: 190, code: [
+    "List<Area> getChildren() {",
+    "    return children;",
+    "}"] },
+};
+const EDGES = [
+  { from: "Client.activateNighttime", to: "AreaScene.activate" },
+  { from: "AreaScene.activate", to: "Scene.activate" },
+  { from: "Scene.activate", to: "Device.setState" },
+  { from: "AreaScene.activate", to: "Area.getChildren" },
+  { from: "AreaScene.activate", to: "AreaScene.activate", recursive: true },
+];
+
+// Runs activateNighttime on an area tree and records every call, return, and exception as a step.
+// areas: { name: { scene: bool, devices: [..], children: [..] } }. limit: max recursion depth (StackOverflowError past it).
+function nightRun(areas, root, limit = 50) {
+  const steps = [], loops = [];
+  let depth = 0;
+  const list = xs => xs.length === 1 ? xs[0] : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
+  function activate(name, from, line, say) {
+    steps.push({ kind: "call", from, to: "AreaScene.activate", line, args: `${name}, "night"`, short: `activate(${name})`, say });
+    depth++;
+    if (depth > limit) {
+      steps.push({ kind: "throw", error: "StackOverflowError", line: 1, say: `The call stack is full! Every activation is still waiting on the next one, so Java throws a <b>StackOverflowError</b>. (Real Java gets thousands of calls deep first; we stopped early.)` });
+      return false;
+    }
+    const a = areas[name];
+    if (!a.scene) {
+      steps.push({ kind: "throw", error: "NullPointerException", line: 2, say: `${name} has no "night" scene, so <code>scene</code> is <code>null</code> and <code>scene.activate()</code> throws a <b>NullPointerException</b>.` });
+      return false;
+    }
+    steps.push({ kind: "call", from: "AreaScene.activate", to: "Scene.activate", line: 2, args: "", short: "activate()", say: `Found ${name}’s night scene. Activate it.` });
+    const d0 = steps.length;
+    a.devices.forEach(dev => {
+      steps.push({ kind: "call", from: "Scene.activate", to: "Device.setState", line: 2, args: "DIM", short: "setState(DIM)", who: dev, say: `Dim the ${dev}.` });
+      steps.push({ kind: "return", say: `The ${dev} is dimmed. <code>setState</code> returns nothing (void).` });
+    });
+    if (a.devices.length > 1) loops.push({ from: d0, to: steps.length - 1, label: "for each device" });
+    steps.push({ kind: "return", say: `${name}’s scene is done. Back in <b>AreaScene.activate</b> for ${name}.` });
+    steps.push({ kind: "call", from: "AreaScene.activate", to: "Area.getChildren", line: 3, args: "", short: "getChildren()", say: `Which areas are inside ${name}?` });
+    steps.push({ kind: "return", value: `[${a.children.join(", ")}]`, say: a.children.length ? `${name} contains ${list(a.children)}. Loop over ${a.children.length > 1 ? "them" : "it"}.` : `${name} has no child areas, so the loop body never runs.` });
+    const loop = a.children.length ? { from: steps.length, to: null, label: "for each child", owner: depth } : null;
+    if (loop) loops.push(loop);
+    for (const c of a.children)
+      if (!activate(c, "AreaScene.activate", 4, `<b>Recursion!</b> AreaScene.activate calls <b>itself</b>, this time for ${c}.`)) return false;
+    if (loop) loop.to = steps.length - 1;
+    depth--;
+    steps.push({ kind: "return", say: depth ? `Done with ${name}. Return to the activation that’s still waiting on it.` : `Done with ${name} and everything inside it. Back in <b>Client.activateNighttime</b>: the whole house is in night mode.`, done: !depth });
+    return true;
+  }
+  if (!activate(root, "Client.activateNighttime", 1, `The client asks for the night scene on the whole ${root}.`)) {
+    const err = steps[steps.length - 1].error;
+    for (let i = depth; i >= 1; i--) {
+      steps.push({ kind: "unwind", error: err, say: i > 1 ? `Nothing catches the ${err}, so this activation ends too and the exception moves up to its caller.` : `Nothing catches it in <b>activateNighttime</b> either, so the exception escapes and the program crashes.`, done: i === 1 });
+      // The exception leaves a "for each child" loop when it pops the child activation inside it.
+      loops.forEach(f => { if (f.to === null && f.owner === i - 1) f.to = steps.length - 1; });
+    }
+  }
+  return { steps, loops };
+}
+const HOUSE = {
+  House: { scene: true, devices: ["porch light"], children: ["Upstairs", "Downstairs"] },
+  Upstairs: { scene: true, devices: ["bedroom lamp", "hall light"], children: [] },
+  Downstairs: { scene: true, devices: ["kitchen light"], children: [] },
+};
+
 registerConcept({
   id: "program-understanding",
   oneLiner:
@@ -83,7 +175,17 @@ registerConcept({
           <li><b>Add direct calls</b> as arrows.</li>
           <li><b>Expand selectively.</b> Follow the path you’re investigating, not every possible call.</li>
           <li><b>Mark recursion</b> clearly.</li>
-        </ol>`,
+        </ol>
+        <p class="callout try">Step through a real run below. Watch the call stack grow and shrink, and see how many times each call happens. Click a method to see what it calls and what calls it.</p>`,
+      widget: "call-graph",
+      config: {
+        methods: METHODS, edges: EDGES, entry: "Client.activateNighttime",
+        scenarios: [
+          { id: "house", name: "Night mode for the house", run: nightRun(HOUSE, "House") },
+          { id: "cycle", name: "Bug: an area inside itself", note: "Here someone put House inside Downstairs by mistake, so the areas form a loop.",
+            run: nightRun({ House: { scene: true, devices: ["porch light"], children: ["Downstairs"] }, Downstairs: { scene: true, devices: ["kitchen light"], children: ["House"] } }, "House", 4) },
+        ],
+      },
     },
     {
       id: "sequence",
@@ -100,7 +202,18 @@ registerConcept({
           <li>Follow the control flow: <b>each call becomes an arrow</b>.</li>
           <li>Show returns with <b>dashed arrows</b>.</li>
           <li>Add notes for key state changes.</li>
-        </ol>`,
+        </ol>
+        <p class="callout try">Build a sequence diagram one message at a time. Each call is a solid arrow, each return is a dashed arrow, and the bars show which objects are busy.</p>`,
+      widget: "sequence-diagram",
+      config: {
+        methods: METHODS, entry: "Client.activateNighttime",
+        lifelines: ["Client", "AreaScene", "Scene", "Device", "Area"],
+        scenarios: [
+          { id: "upstairs", name: "Night mode for the house", run: nightRun({ House: { scene: true, devices: ["porch light"], children: ["Upstairs"] }, Upstairs: HOUSE.Upstairs }, "House") },
+          { id: "npe", name: "Bug: a missing scene", note: "Here Upstairs has no \"night\" scene. Where does the chain break?",
+            run: nightRun({ House: { scene: true, devices: ["porch light"], children: ["Upstairs"] }, Upstairs: { scene: false, devices: ["bedroom lamp"], children: [] } }, "House") },
+        ],
+      },
     },
   ],
 
@@ -245,3 +358,4 @@ registerConcept({
     },
   ],
 });
+})();
