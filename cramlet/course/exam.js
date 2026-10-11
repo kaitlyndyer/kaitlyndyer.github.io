@@ -13,6 +13,7 @@
 //   parsons{ q, lines: [code in order], groups?, distractors: [{ code, why }], explain } build the code (3 pts)
 //   design { q, options, answer, model, explain }                  pick (1 pt) + justification you check yourself (1 pt)
 //   write  { q, starter?, rubric: [{ text, re? }], model, explain } write code; the rubric is partly checked automatically
+// Any question can add ref: "<example id>" to show a collapsible shared lecture example (<course>/data/examples.js).
 //
 // Modes: "mixed" uses every type above; "mc" (multiple choice only) uses mc + design questions, all 1 point,
 // with no written justification. Answer options are shuffled per exam (E.perm), but answers are stored and
@@ -156,13 +157,13 @@
 
     // ---------- The exam page ----------
     function render(main, ctx, parts) {
-        const { S, COURSE, esc, icon, codeBlock, highlight, conceptById, allConcepts } = ctx;
+        const { S, COURSE, esc, icon, codeBlock, exampleRef, highlight, conceptById, allConcepts } = ctx;
         const KEY = `cramlet.exam.${COURSE}`;
         const lectures = Object.keys(S.lectures).map(Number);
 
         // What a question shows above its answer area: an automaton diagram (ToC) and/or a code block.
         const machineOf = q => (q.machine && CRAMLET.automata ? `<div class="quiz-machine">${CRAMLET.automata.render(q.machine)}</div>` : "");
-        const media = q => machineOf(q) + (q.code ? codeBlock(q.code) : "");
+        const media = q => exampleRef(q) + machineOf(q) + (q.code ? codeBlock(q.code) : "");
 
         function poolFor(lecs) {
             const pool = [];
@@ -315,7 +316,7 @@
                         <span class="exam-clock" aria-live="off"></span>
                         <button type="button" class="btn ghost small exam-pause-btn" data-act="pause" title="Pause the exam (the timer stops)">${icon("hourglass-medium")} Pause</button>
                         <button type="button" class="btn ghost small" data-act="exit" title="Save your answers and leave. Continue any time from the exam page.">Save &amp; exit</button>
-                        <button type="button" class="btn primary small" data-act="review">Review &amp; submit</button>
+                        <button type="button" class="btn primary small exam-review-btn" data-act="review">${icon("list-checks")} Review</button>
                     </div>
                     <div class="exam-body">
                         <nav class="exam-map" aria-label="Questions"></nav>
@@ -405,7 +406,16 @@
                 drawMap();
             }
 
+            // The top-bar button says "Review" while answering, and becomes "Submit exam" on the review page.
+            function syncReviewBtn() {
+                const b = $(".exam-review-btn");
+                if (!b) return;
+                b.dataset.act = E.review ? "submit" : "review";
+                b.innerHTML = E.review ? `${icon("check")} Submit exam` : `${icon("list-checks")} Review`;
+            }
+
             function drawQ() {
+                syncReviewBtn();
                 if (E.pausedAt) return drawPaused();
                 if (E.review) return drawReview();
                 const i = E.cur, q = qs[i], a = E.answers[q.id] || {}, pts = pointsOf(q, E.mode);
@@ -453,7 +463,7 @@
                 }
                 $(".exam-q").innerHTML = `
                     ${head}
-                    <div class="question">${q.q}</div>${["bug", "trace", "fill", "parsons"].includes(q.type) ? machineOf(q) : ""}
+                    <div class="question">${q.q}</div>${["bug", "trace", "fill", "parsons"].includes(q.type) ? exampleRef(q) + machineOf(q) : ""}
                     ${body}
                     <div class="q-nav">
                         <button type="button" class="btn" data-act="prev" ${i ? "" : "disabled"}>← Previous</button>
@@ -698,7 +708,7 @@
                 return `<details class="res-q ${full ? "full" : none ? "zero" : "part-cred"}"${full ? "" : " open"}>
                     <summary><span class="res-n">${n}</span><span class="res-what"><b>${esc(c ? c.title : x.concept)}</b> · ${esc(R.mode === "mc" ? "Multiple choice" : sectionOf(q.type).name)}${x.guessed ? ` <span class="tag in">guessed</span>` : ""}${slow(x) ? ` <span class="tag in">slow</span>` : ""}</span>${x.ms ? `<span class="res-time">${mmss(x.ms)}</span>` : ""}<span class="res-pts">${x.earned}/${x.max}</span></summary>
                     <div class="question">${q.q}</div>
-                    ${machineOf(q)}${q.code && q.type !== "fill" ? codeBlock(q.code) : ""}
+                    ${exampleRef(q)}${machineOf(q)}${q.code && q.type !== "fill" ? codeBlock(q.code) : ""}
                     ${q.type === "bug" ? `<div class="bug-code">${q.lines.map((ln, k) => `<div class="bug-line${k === q.answer ? " correct" : k === a.line ? " wrong" : ""}"><span class="ln">${k + 1}</span><code>${highlight(ln) || "&nbsp;"}</code></div>`).join("")}</div>` : ""}
                     <div class="res-ans"><div><div class="side-title">Your answer</div>${yours(q, a)}</div><div><div class="side-title">Model answer</div>${model(q)}</div></div>
                     ${q.explain ? `<div class="callout tip done">${icon("lightbulb", "callout-ic")}<div class="callout-body"><span class="callout-label">Why</span>${q.explain}</div></div>` : ""}

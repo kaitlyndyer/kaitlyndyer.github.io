@@ -36,7 +36,7 @@ System.out.println("owner " + o);`,
   {
     id: "mc-equals-nullable", type: "mc", lec: [6], sec: "setup",
     q: "In a <code>@NullMarked</code> package, why is <code>equals</code> declared as <code>equals(@Nullable Object obj)</code>?",
-    options: ["Because the contract says <code>x.equals(null)</code> returns false, so null is a valid argument", "Because <code>@Nullable</code> makes it faster", "Because <code>Object</code> can’t be non-null", "It isn’t needed; it’s just style"],
+    options: ["Because the contract says <code>x.equals(null)</code> returns false, so null is a valid argument", "Because <code>equals</code> must throw a <code>NullPointerException</code> when given null", "Because <code>Object</code> can’t be non-null", "It isn’t needed; it’s just style"],
     answer: 0,
     explain: "Null is a legal input to <code>equals</code>. Without <code>@Nullable</code>, the checker (NullAway) reports an error, because Object’s own spec allows null.",
   },

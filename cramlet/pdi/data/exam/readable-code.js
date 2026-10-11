@@ -17,7 +17,7 @@ registerExam("readable-code", [
   {
     id: "mc-synonyms", type: "mc", lec: [7], sec: "consistency",
     q: "A class has <code>getBrightness()</code>, <code>setLevel(int)</code>, and a field named <code>intensity</code>, all for the same value. What is the main readability problem?",
-    options: ["The names are too long", "Different words for one concept make readers wonder if they’re different things", "Getters should never be named <code>get…</code>", "Fields must match method names exactly by law"],
+    options: ["The names are too long", "Different words for one concept make readers wonder if they’re different things", "Getters should never be named <code>get…</code>", "The getter and setter should be merged into one method"],
     answer: 1,
     explain: "Same word ⇒ same concept. Pick one word (here, brightness) and use it everywhere.",
   },
@@ -31,14 +31,14 @@ registerExam("readable-code", [
   {
     id: "mc-unit-noise", type: "mc", lec: [7], sec: "name-molds",
     q: "In a codebase where <b>every</b> temperature is in Kelvin, a teammate names variables <code>targetTempKelvin</code>, <code>currentTempKelvin</code>, and so on. What does the lecture say?",
-    options: ["Good: units should always be in names", "The unit is mostly noise here, since nothing else could be meant", "Units must be in comments, never names", "Kelvin should be written as K"],
+    options: ["Good: units should always be in names", "The unit is mostly noise here, since nothing else could be meant", "Units must be in comments, never names", "Good: a longer name is always more descriptive"],
     answer: 1,
     explain: "Units in names earn their place when units are mixed (Kelvin vs. mired) and confusion is possible.",
   },
   {
     id: "mc-scope-length", type: "mc", lec: [7], sec: "length",
     q: "Which is the best example of matching name length to scope?",
-    options: ["<code>for (Light l : lights)</code> in a two-line loop, and a field named <code>startupColorTemperature</code>", "A public method named <code>f()</code>", "A loop variable named <code>theCurrentLightBeingProcessedInThisLoop</code>", "All names exactly the same length"],
+    options: ["<code>for (Light l : lights)</code> in a two-line loop, and a field named <code>startupColorTemperature</code>", "A public method named <code>f()</code>", "A loop variable named <code>theCurrentLightBeingProcessedInThisLoop</code>", "A field named <code>t</code> and a two-line loop variable named <code>currentLightBeingDimmed</code>"],
     answer: 0,
     explain: "Short scopes can use short names; names read far from their definition need to be descriptive.",
   },
@@ -52,7 +52,7 @@ registerExam("readable-code", [
   {
     id: "mc-bus-factor", type: "mc", lec: [7], sec: "over-time",
     q: "Only the two original authors can understand a project’s code. Which risk is this?",
-    options: ["Hyrum’s Law", "A bus-factor problem: the project depends on a few people", "A compile-time error", "Low coupling"],
+    options: ["Hyrum’s Law", "A bus-factor problem: the project depends on a few people", "Low cohesion", "Low coupling"],
     answer: 1,
     explain: "Readable code lets others take over, which cuts onboarding cost and keeps a project alive.",
   },

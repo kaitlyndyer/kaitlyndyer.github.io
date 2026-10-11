@@ -130,4 +130,49 @@ lights.sort(Comparator.[[2]](DimmableLight[[3]]getBrightness));`,
     blanks: [["->"], ["comparingInt"], ["::"]],
     explain: "<code>-&gt;</code> separates parameters from the body. <code>::</code> makes a method reference, and <code>comparingInt</code> builds the comparator.",
   },
+
+  // Calibration batch (2026-10-11)
+  {
+    id: "cal-lambda-gain", type: "mc", lec: [7], sec: "evolution",
+    q: "A team rewrites every anonymous <code>Comparator</code> class as a lambda. What do they mainly gain?",
+    options: ["The code runs noticeably faster", "Much less boilerplate: the code says only what it compares", "Lambdas can reassign the local variables they use", "Lambdas can implement interfaces with several abstract methods"],
+    answer: 1,
+    explain: "Conciseness is the point. Behavior is the same; lambdas aren’t faster, can’t change captured locals, and only fit functional interfaces.",
+  },
+  {
+    id: "cal-lambda-cant", type: "mc", lec: [7], sec: "functional-interface",
+    q: "Which of these can an anonymous class do that a lambda <b>cannot</b>?",
+    options: ["Be passed where a <code>Comparator</code> is expected", "Implement an interface that has two abstract methods", "Use an effectively final local variable", "Call methods on its parameters"],
+    answer: 1,
+    explain: "A lambda supplies exactly one method, so it only works for a <b>functional interface</b> (one abstract method). An anonymous class can implement any interface.",
+  },
+  {
+    id: "cal-anon-to-lambda", type: "mc", lec: [7], sec: "syntax",
+    code: `lights.sort(new Comparator<DimmableLight>() {
+    @Override
+    public int compare(DimmableLight a, DimmableLight b) {
+        return Integer.compare(a.getBrightness(), b.getBrightness());
+    }
+});`,
+    q: "Which lambda version sorts <code>lights</code> exactly the same way?",
+    options: ["<code>lights.sort((a, b) -&gt; Integer.compare(a.getBrightness(), b.getBrightness()));</code>", "<code>lights.sort((a, b) -&gt; Integer.compare(b.getBrightness(), a.getBrightness()));</code>", "<code>lights.sort(a -&gt; a.getBrightness());</code>", "<code>lights.sort(() -&gt; Integer.compare(a.getBrightness(), b.getBrightness()));</code>"],
+    answer: 0,
+    explain: "The lambda’s parameters are <code>compare</code>’s parameters and its body is the return value. Swapping <code>a</code> and <code>b</code> reverses the order; the other two have the wrong number of parameters.",
+  },
+  {
+    id: "cal-mref-println", type: "mc", lec: [7], sec: "method-refs",
+    code: `recipes.forEach(System.out::println);`,
+    q: "What does this line do?",
+    options: ["Prints the method <code>println</code> itself", "Calls <code>System.out.println(r)</code> once for each recipe <code>r</code>", "Calls <code>println</code> once with the whole list", "Calls a static <code>println</code> method defined in <code>Recipe</code>"],
+    answer: 1,
+    explain: "<code>System.out::println</code> is shorthand for <code>r -&gt; System.out.println(r)</code>.",
+  },
+  {
+    id: "cal-mref-equiv", type: "mc", lec: [7], sec: "method-refs",
+    code: `ingredients.sort(Comparator.comparing(MeasuredIngredient::getName));`,
+    q: "Which lambda means the same as <code>MeasuredIngredient::getName</code> here?",
+    options: ["<code>() -&gt; MeasuredIngredient.getName()</code>", "<code>i -&gt; i.getName()</code>", "<code>i -&gt; MeasuredIngredient.getName(i)</code>", "<code>i -&gt; new MeasuredIngredient().getName()</code>"],
+    answer: 1,
+    explain: "<code>Type::instanceMethod</code> becomes a lambda whose parameter is the object the method is called on. <code>getName</code> isn’t static, and nothing new is constructed.",
+  },
 ]);

@@ -203,7 +203,7 @@ void emptyListThrows() {
   {
     id: "mc-integral", type: "mc", lec: [4], sec: "non-functional",
     q: "What does “software engineering is the integral of programming over time” mean?",
-    options: ["Programs should use calculus", "Engineering is about how code holds up as it’s changed again and again over its life, not just whether it works today", "Older code is always better", "You should write code as fast as possible"],
+    options: ["Code should be rewritten from scratch regularly so it stays current", "Engineering is about how code holds up as it’s changed again and again over its life, not just whether it works today", "Older code is always better", "You should write code as fast as possible"],
     answer: 1,
     explain: "Programming gets something working now; engineering adds up the cost of every future change. That’s why non-functional goals matter.",
   },
@@ -221,7 +221,7 @@ registerExam("design-goals", [
   {
     id: "mc6-untestable", type: "mc", lec: [4], sec: "change-test",
     q: "A method reads its input from <code>System.in</code> and prints its result. It works perfectly. What is the main problem?",
-    options: ["It’s functionally incorrect", "It’s hard to test automatically, because a test can’t easily supply input or check output", "Printing is slower than returning", "It violates the equals contract"],
+    options: ["It’s functionally incorrect", "It’s hard to test automatically, because a test can’t easily supply input or check output", "Printing is slower than returning", "Other methods can’t call it"],
     answer: 1,
     explain: "Take input as parameters and return the result; then tests can call it directly.",
   },

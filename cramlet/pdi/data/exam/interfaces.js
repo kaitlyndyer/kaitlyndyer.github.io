@@ -157,7 +157,7 @@ registerExam("interfaces", [
   {
     id: "mc6-skeletal", type: "mc", lec: [2], sec: "skeletal",
     q: "What is a <b>skeletal implementation</b> (like <code>AbstractList</code>) for?",
-    options: ["Preventing anyone from implementing the interface", "Providing most of an interface’s methods so implementers only write a few", "Making an interface sealed", "Replacing the interface entirely"],
+    options: ["Preventing anyone from implementing the interface", "Providing most of an interface’s methods so implementers only write a few", "Letting a class extend several abstract classes at once", "Replacing the interface entirely"],
     answer: 1,
     explain: "An abstract class that implements the interface does the repetitive work; you fill in the core methods.",
   },

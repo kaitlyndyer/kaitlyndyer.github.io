@@ -132,7 +132,20 @@ System.out.println(level(90) + " " + level(30));`,
   },
   {
     id: "mc-paths", type: "mc", lec: [5], sec: "control",
-    q: "In <code>processLights</code> from lecture (a loop with “is connected?”, then “use defaults?” nested inside), how many different paths can <b>one</b> light take through the loop body?",
+    code: `public void processLights(List<Light> lights, boolean useDefaults) {
+    for (Light light : lights) {
+        if (light.isConnected()) {
+            if (useDefaults) {
+                light.setBrightness(50);
+            } else {
+                light.setBrightness(getUserPreference());
+            }
+        } else {
+            logDisconnectedDevice(light);
+        }
+    }
+}`,
+    q: "How many different paths can <b>one</b> light take through the loop body of <code>processLights</code>?",
     options: ["2", "3", "4", "1"],
     answer: 1,
     explain: "Connected + defaults, connected + user preference, or disconnected (logged). The inner choice only exists on the connected side.",
@@ -241,7 +254,7 @@ return total / count;`,
   {
     id: "mc-flow-kind", type: "mc", lec: [5], sec: "data",
     q: "“Can <code>count</code> still be 0 when we reach the <code>return</code>?” is mainly which kind of question?",
-    options: ["A data-flow question", "A sequence-diagram question", "A readability question", "A Gradle question"],
+    options: ["A data-flow question", "A sequence-diagram question", "A readability question", "A call-graph question"],
     answer: 0,
     explain: "Data flow asks where a variable is assigned and read, and what values it can have at each point.",
   },
@@ -497,7 +510,7 @@ registerExam("program-understanding", [
   {
     id: "mc6-recursion-check", type: "mc", lec: [5], sec: "combined",
     q: "When reviewing a recursive method, what should you check first to rule out infinite recursion?",
-    options: ["That it has a Javadoc comment", "That every call makes progress toward a base case that will be reached", "That it returns void", "That it’s static"],
+    options: ["That it has a Javadoc comment", "That every call makes progress toward a base case that will be reached", "That it calls itself only once per call", "That it’s static"],
     answer: 1,
     explain: "For example, <code>countdown(n - 2)</code> with base case <code>n == 0</code> skips 0 for odd n.",
   },

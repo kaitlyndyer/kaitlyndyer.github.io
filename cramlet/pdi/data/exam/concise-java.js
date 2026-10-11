@@ -57,7 +57,7 @@ System.out.println("made both");`,
   {
     id: "mc-pattern-why", type: "mc", lec: [7], sec: "pattern",
     q: "Why is <code>if (obj instanceof DimmableLight other)</code> considered <b>safer</b> than checking with <code>instanceof</code> and then casting?",
-    options: ["It runs faster", "The type you check and the type you bind can’t accidentally differ", "It catches NullPointerExceptions", "It works with primitives"],
+    options: ["It runs faster", "The type you check and the type you bind can’t accidentally differ", "It catches NullPointerExceptions", "It also rejects subclasses of <code>DimmableLight</code>"],
     answer: 1,
     explain: "With a separate cast you could check one type and cast to another. Pattern matching does both in one step.",
   },
@@ -90,5 +90,18 @@ Range r = new Range(10, 90);
 int top = r.[[2]]();`,
     blanks: [["record"], ["max"]],
     explain: "One line gives you the constructor, accessors <code>min()</code>/<code>max()</code>, equals, hashCode, and toString.",
+  },
+
+  // Calibration batch (2026-10-11)
+  {
+    id: "cal-record-setter", type: "mc", lec: [7], sec: "records",
+    code: `record Nutrition(int calories, int protein) {}
+
+Nutrition n = new Nutrition(200, 5);
+n.setCalories(250);`,
+    q: "What happens on the last line?",
+    options: ["It sets calories to 250", "A compile error: records don’t generate setters, and their fields are final", "A runtime exception, because records are frozen after construction", "It creates a new <code>Nutrition</code> with 250 calories"],
+    answer: 1,
+    explain: "A record gives you a constructor, accessors like <code>calories()</code>, and <code>equals</code>/<code>hashCode</code>/<code>toString</code>, but no setters. To “change” one, make a new record.",
   },
 ]);

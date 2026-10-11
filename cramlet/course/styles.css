@@ -585,3 +585,18 @@ code { font-family: var(--font-code); font-size: .88em; }
 .fb-text { min-width: 0; }
 .flash-buddy { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 14px; }
 .flash-buddy .fb-av { width: 56px; height: 56px; flex: none; }
+
+/* "Show the example" panel: a shared lecture example a question refers to (question.ref) */
+.example-ref {
+    min-width: 0; /* let wide code scroll inside the panel instead of stretching the question */
+    margin: 0 0 16px; border: 2px dashed color-mix(in srgb, var(--c, #7c5cff) 45%, var(--line));
+    border-radius: 14px; padding: 10px 14px; background: color-mix(in srgb, var(--c, #7c5cff) 6%, var(--paper));
+}
+.example-ref > summary {
+    cursor: pointer; font: 700 14.5px var(--font-body); color: color-mix(in srgb, var(--c, #7c5cff) 70%, var(--deep));
+    display: flex; align-items: center; gap: 8px; list-style: none;
+}
+.example-ref > summary::-webkit-details-marker { display: none; }
+.example-ref > summary svg { width: 18px; height: 18px; }
+.example-ref[open] > summary { margin-bottom: 10px; }
+.example-ref > p { margin: 0 0 10px; font-size: 15px; }
