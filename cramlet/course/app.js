@@ -367,7 +367,7 @@
         if (!w) { el.innerHTML = `<p class="muted">This widget didn’t load. Try refreshing the page.</p>`; return; }
         // One broken widget shouldn't stop the rest of the page from loading.
         try {
-            w(el, config || {}, { course: COURSE, concept: c, icon, esc, buddy, progress, celebrate, setKeyHandler });
+            w(el, config || {}, { course: COURSE, concept: c, icon, esc, highlight, buddy, progress, celebrate, setKeyHandler });
         } catch (err) {
             console.error(`cramlet: the "${name}" widget failed`, err);
             el.innerHTML = `<p class="muted">This part of the page didn’t load. Try refreshing, or report it with the link at the bottom.</p>`;
