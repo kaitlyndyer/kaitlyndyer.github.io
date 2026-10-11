@@ -144,6 +144,14 @@
         return `<div class="codeblock"><button class="copy-btn" type="button" data-copy>Copy</button><pre><code>${highlight(code)}</code></pre></div>`;
     }
 
+    // A collapsible copy of a shared lecture example (S.examples, from data/examples.js) that a question names with ref.
+    function exampleRef(q) {
+        const ex = q.ref && (S.examples || {})[q.ref];
+        if (!ex) return "";
+        return `<details class="example-ref"><summary>${icon("code")} Show the example: ${ex.title}</summary>
+            ${ex.intro ? `<p>${ex.intro}</p>` : ""}${codeBlock(ex.code)}</details>`;
+    }
+
     function celebrate(el) {
         if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
         const r = el.getBoundingClientRect();
@@ -534,7 +542,7 @@
                         <span class="ln">${k + 1}</span><code>${highlight(ln) || "&nbsp;"}</code></button>`).join("")}
                 </div>`;
             } else {
-                body = `${q.code ? codeBlock(q.code) : ""}
+                body = `${exampleRef(q)}${q.code ? codeBlock(q.code) : ""}
                 ${q.machine && CRAMLET.automata ? `<div class="quiz-machine">${CRAMLET.automata.render(q.machine)}</div>` : ""}
                 <div class="options">
                     ${order.map((k, pos) => `<button type="button" class="option" data-pick="${k}">
@@ -817,7 +825,7 @@
         if (parts[0] !== "exam") document.body.classList.remove("exam-focus");
         if (parts[0] === "exam" && CRAMLET.exam) {
             renderNav(parts[1] === "missed" || parts[1] === "mistakes" ? "missed" : "exam");
-            CRAMLET.exam.render(main, { S, COURSE, esc, icon, codeBlock, highlight, conceptById, allConcepts }, parts);
+            CRAMLET.exam.render(main, { S, COURSE, esc, icon, codeBlock, exampleRef, highlight, conceptById, allConcepts }, parts);
             document.title = "Practice exam · " + S.course.title + " · cramlet";
         } else if (parts[0] === "c" && parts[1]) {
             renderNav(parts[1]);

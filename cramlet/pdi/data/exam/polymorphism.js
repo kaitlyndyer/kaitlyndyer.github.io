@@ -110,7 +110,7 @@ registerExam("polymorphism", [
   {
     id: "mc6-dispatch", type: "mc", lec: [2], sec: "lookup",
     q: "<code>IoTDevice d = new Fan();</code> then <code>d.identify();</code>. Which <code>identify()</code> runs?",
-    options: ["IoTDevice’s, because that’s the declared type", "Fan’s, chosen at runtime from the actual object", "Whichever was defined first", "It doesn’t compile"],
+    options: ["IoTDevice’s, because that’s the declared type", "Fan’s, chosen at runtime from the actual object", "<code>IoTDevice</code>’s, unless <code>Fan</code>’s version is marked <code>@Override</code>", "It doesn’t compile"],
     answer: 1,
     explain: "Dynamic dispatch picks the method from the object’s actual class at runtime.",
   },
@@ -124,14 +124,14 @@ registerExam("polymorphism", [
   {
     id: "mc6-overload-when", type: "mc", lec: [3], sec: "overloading",
     q: "When is the choice between overloaded methods like <code>read()</code> and <code>read(byte[] b)</code> made?",
-    options: ["At runtime, from the object’s actual type", "At compile time, from the argument types", "Randomly", "By the JVM on first call"],
+    options: ["At runtime, from the object’s actual type", "At compile time, from the argument types", "At runtime, from the actual types of the argument objects", "By the JVM on first call"],
     answer: 1,
     explain: "Overloading is resolved at compile time; overriding is resolved at runtime.",
   },
   {
     id: "mc6-uniform", type: "mc", lec: [2], sec: "uniform",
     q: "What is the main benefit of polymorphism in a loop like <code>for (IoTDevice d : devices) d.turnOn();</code>?",
-    options: ["It runs faster than separate loops", "The same code works for every device type, including ones added later", "It prevents NullPointerExceptions", "It makes the devices immutable"],
+    options: ["It runs faster than separate loops", "The same code works for every device type, including ones added later", "It prevents NullPointerExceptions", "The compiler picks each device’s <code>turnOn</code> ahead of time, so there’s no runtime lookup"],
     answer: 1,
     explain: "Callers treat all devices uniformly; each class supplies its own behavior.",
   },

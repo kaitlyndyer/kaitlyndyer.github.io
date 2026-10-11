@@ -203,7 +203,7 @@ registerConcept({
       explain: "Duplicated code should move higher in the hierarchy, into <code>BaseIoTDevice</code>.",
     },
     {
-      type: "mc", lec: [2],
+      type: "mc", lec: [2], ref: "devices-l2",
       q: "Why must <code>BaseIoTDevice</code> be declared <code>abstract</code>?",
       options: ["Because it has fields", "Because it doesn’t implement <code>identify()</code> from IoTDevice", "Because it has a constructor", "Because it’s used as a parent"],
       answer: 1,

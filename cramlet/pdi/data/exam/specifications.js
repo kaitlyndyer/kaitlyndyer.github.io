@@ -59,14 +59,14 @@ registerExam("specifications", [
   {
     id: "mc-invariant", type: "mc", lec: [6], sec: "invariants",
     q: "Which of these is an <b>invariant</b> of a <code>DimmableLight</code>?",
-    options: ["“<code>setBrightness</code> was called at least once”", "“brightness is always between 0 and 100”", "“the light was created on a Tuesday”", "“<code>toString</code> is fast”"],
+    options: ["“<code>setBrightness</code> was called at least once”", "“brightness is always between 0 and 100”", "“<code>setBrightness</code> throws for values above 100”", "“<code>toString</code> is fast”"],
     answer: 1,
     explain: "An invariant is a condition that must <b>always</b> hold for the object. The constructor and every setter must keep it true (for example by throwing on bad values).",
   },
   {
     id: "mc-chunking", type: "mc", lec: [6], sec: "why",
     q: "Why does lecture bring up “chunking” (about 7 ± 2 items in short-term memory)?",
-    options: ["To set a maximum method length", "Clear specs let you treat a whole method as one chunk, so you can reason about several pieces at once without reading their code", "To show that programs should have at most 7 classes", "To explain why Java has 8 primitive types"],
+    options: ["To set a maximum method length", "Clear specs let you treat a whole method as one chunk, so you can reason about several pieces at once without reading their code", "To show that programs should have at most 7 classes", "To argue that a spec should list at most 7 conditions"],
     answer: 1,
     explain: "Modularization only helps if each module has a clear spec. Then a method is one “item” in your head, not its whole implementation.",
   },
@@ -136,8 +136,47 @@ registerExam("specifications", [
   {
     id: "mc6-ambiguity-cost", type: "mc", lec: [6], sec: "debt",
     q: "Why is it better to fix an ambiguous spec early?",
-    options: ["Specs can’t be changed after release", "Fixing ambiguity in the spec is far cheaper than fixing different interpretations in deployed code", "Ambiguous specs don’t compile", "It makes the code run faster"],
+    options: ["Specs can’t be changed after release", "Fixing ambiguity in the spec is far cheaper than fixing different interpretations in deployed code", "Ambiguous specs don’t compile", "A clear spec lets the compiler check the implementation against it"],
     answer: 1,
     explain: "That’s specification debt: harmless at first, a liability as the system grows.",
+  },
+
+  // Calibration batch (2026-10-11)
+  {
+    id: "cal-spec-three", type: "mc", lec: [6], sec: "why",
+    q: "The lecture judges a specification on three criteria. Which trio is it?",
+    options: ["Restrictive, general, and clear", "Fast, short, and complete", "Formal, operational, and tested", "Restrictive, detailed, and efficient"],
+    answer: 0,
+    explain: "<b>Restrictive</b> rules out bad implementations, <b>general</b> doesn’t rule out good ones, and <b>clear</b> means it’s easy to understand. Performance isn’t one of the three.",
+  },
+  {
+    id: "cal-spec-mergesort", type: "mc", lec: [6], sec: "general",
+    q: "A spec for <code>sortByName(List&lt;Recipe&gt; recipes)</code> says: “Sorts the list using merge sort, comparing names one character at a time.” Which criterion does it most clearly fail?",
+    options: ["Restrictive, because it doesn’t mention null", "General, because it dictates <i>how</i> to sort and rules out other correct implementations", "Clear, because merge sort is hard to understand", "None. More detail always makes a spec better"],
+    answer: 1,
+    explain: "That’s an operational spec. Any algorithm that leaves the list sorted by name is correct; describe the result, not the steps.",
+  },
+  {
+    id: "cal-spec-max", type: "mc", lec: [6], sec: "general",
+    code: `// Spec A
+/** Sorts a copy of a, then returns its last element.
+ *  @param a a non-empty array */
+int max(int[] a)
+
+// Spec B
+/** Returns the largest element of a.
+ *  @param a a non-empty array */
+int max(int[] a)`,
+    q: "A teammate implements <code>max</code> with one loop that tracks the biggest value seen, without sorting. Which spec does the implementation satisfy?",
+    options: ["Only Spec A", "Only Spec B, because Spec A also requires sorting a copy", "Both, because they return the same value", "Neither, because neither spec mentions loops"],
+    answer: 1,
+    explain: "Spec A is operational: it requires the sorting step, so a correct loop doesn’t meet it. Spec B is general and accepts any correct implementation.",
+  },
+  {
+    id: "cal-spec-empty", type: "mc", lec: [6], sec: "restrictive",
+    q: "A spec says: “<code>averageCalories(List&lt;Recipe&gt; recipes)</code>: returns the average calories of the recipes.” Which improvement makes it more <b>restrictive</b>?",
+    options: ["Saying it uses a for-each loop", "Saying what happens when the list is empty or null", "Renaming the parameter to <code>list</code>", "Adding that it is fast"],
+    answer: 1,
+    explain: "Restrictive specs consider all inputs. Without the empty case, an implementation that divides by zero would still meet the spec.",
   },
 ]);

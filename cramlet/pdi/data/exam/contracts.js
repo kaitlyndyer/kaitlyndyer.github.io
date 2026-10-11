@@ -361,4 +361,20 @@ registerExam("contracts", [
     answer: 1,
     explain: "Object’s default toString isn’t very informative, which is why it’s worth overriding.",
   },
+
+  // Calibration batch (2026-10-11)
+  {
+    id: "cal-equals-no-hash", type: "mc", lec: [6], sec: "hashcode",
+    q: "<code>MeasuredIngredient</code> overrides <code>equals</code> (same name and amount) but <b>not</b> <code>hashCode</code>. Two equal ingredients are added to a <code>HashSet</code>. What happens?",
+    options: ["A compile error: both must be overridden together", "It compiles, but the set will probably keep both, because their hash codes come from <code>Object</code> and differ", "The set keeps one, because <code>HashSet</code> only calls <code>equals</code>", "A runtime exception when the second one is added"],
+    answer: 1,
+    explain: "Nothing enforces the contract; it’s on you. <code>HashSet</code> checks the hash first, so equal objects with different hash codes land in different buckets.",
+  },
+  {
+    id: "cal-hash-case", type: "mc", lec: [6], sec: "hashcode",
+    q: "An ingredient’s <code>equals</code> compares names <b>ignoring case</b>, but its <code>hashCode</code> returns <code>name.hashCode()</code>. Which pair of ingredients shows the contract is broken?",
+    options: ["“flour” and “sugar”", "“Flour” and “flour”", "“flour” and “flour”", "No pair; <code>hashCode</code> may return anything"],
+    answer: 1,
+    explain: "They are <code>equals</code> but almost certainly hash differently. Normalize the case in <code>hashCode</code> too, so equal objects get equal hash codes.",
+  },
 ]);

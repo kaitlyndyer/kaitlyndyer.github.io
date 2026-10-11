@@ -237,7 +237,7 @@ registerExam("types-generics", [
   {
     id: "mc6-generics-benefit", type: "mc", lec: [3], sec: "problem",
     q: "What problem do generics solve compared with a list that stores <code>Object</code>?",
-    options: ["Lists of Object can’t be iterated", "The compiler can reject wrong element types, instead of a ClassCastException at runtime", "Generic lists use less memory", "Object lists can only hold strings"],
+    options: ["Lists of Object can’t be iterated", "The compiler can reject wrong element types, instead of a ClassCastException at runtime", "Generic lists use less memory", "Generics let a <code>List</code> hold primitives like <code>int</code> directly"],
     answer: 1,
     explain: "With <code>List&lt;Light&gt;</code>, adding a Fan is a compile error. With a list of Object, the mistake shows up later as a bad cast.",
   },
@@ -247,5 +247,27 @@ registerExam("types-generics", [
     options: ["Whether they hold equal values", "Whether they point to the same object", "Whether they have the same type", "Whether their hash codes match"],
     answer: 1,
     explain: "Use <code>equals</code> for value equality.",
+  },
+
+  // Calibration batch (2026-10-11)
+  {
+    id: "cal-raw-cast", type: "mc", lec: [3], sec: "raw",
+    code: `List items = new ArrayList();
+items.add(new ExactQuantity(2.5, Unit.CUP));
+items.add("2 cups");
+Quantity q = (Quantity) items.get(1);`,
+    q: "What happens with this code?",
+    options: ["A compile error on the second <code>add</code>", "It compiles, then throws a <code>ClassCastException</code> at the cast, a bug <code>List&lt;Quantity&gt;</code> would have caught at compile time", "It runs fine; the string is converted to a <code>Quantity</code>", "<code>ArrayList</code> doesn’t compile without a type argument"],
+    answer: 1,
+    explain: "A raw <code>List</code> accepts anything, so the mistake only shows up at runtime. Generics move the check to compile time.",
+  },
+  {
+    id: "cal-static-type-method", type: "mc", lec: [3], sec: "two-types",
+    code: `Quantity q = new FractionalQuantity(1, 2, Unit.CUP);
+q.getNumerator();   // only FractionalQuantity has this method`,
+    q: "What happens on the second line?",
+    options: ["It works, because the object really is a <code>FractionalQuantity</code>", "A compile error: the compiler only allows methods of the <b>static</b> type <code>Quantity</code>", "A runtime exception, because Java looks the method up while running", "It returns 0, the default for missing methods"],
+    answer: 1,
+    explain: "Java is statically typed: the compiler checks calls against the declared type. The object’s dynamic type only decides <i>which</i> override runs.",
   },
 ]);

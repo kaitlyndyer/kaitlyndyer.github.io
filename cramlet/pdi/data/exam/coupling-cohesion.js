@@ -3,7 +3,7 @@ registerExam("coupling-cohesion", [
   {
     id: "mc-report-hub", type: "mc", lec: [8], sec: "exposing",
     q: "<code>printCount(DeviceHub hub)</code> only ever calls <code>hub.getDevices().size()</code>. What is the main problem with this design?",
-    options: ["It’s slower than passing an int", "It’s coupled to all of <code>DeviceHub</code>, so testing it means building a whole hub", "It breaks the equals contract", "It has low cohesion because it prints"],
+    options: ["It’s slower than passing an int", "It’s coupled to all of <code>DeviceHub</code>, so testing it means building a whole hub", "It has too few parameters to be flexible", "It has low cohesion because it prints"],
     answer: 1,
     explain: "Ask for only what you need (the count or the list). Less coupling, and much easier to test.",
   },
@@ -39,7 +39,7 @@ registerExam("coupling-cohesion", [
   {
     id: "mc-cohesion-def", type: "mc", lec: [8], sec: "cohesion",
     q: "Which best describes a <b>highly cohesive</b> module?",
-    options: ["It depends on many other modules", "It has one specific purpose and is as self-sufficient as possible", "It contains every utility method in the project", "It has only private methods"],
+    options: ["It depends on many other modules", "It has one specific purpose and is as self-sufficient as possible", "It contains every utility method in the project", "It has as few methods as possible"],
     answer: 1,
     explain: "One purpose, fulfilled fully.",
   },
@@ -79,5 +79,17 @@ registerExam("coupling-cohesion", [
     answer: 1,
     model: "Depending on the concrete classes couples the hub to their implementations, which change often. Depending on the <code>IoTDevice</code> <b>interface</b> (and the standard <code>List</code>) means Light/Fan changes that keep their public spec can’t break the hub, and new device types need no new methods.",
     explain: "Depend on interfaces, and on modules unlikely to change.",
+  },
+
+  // Calibration batch (2026-10-11)
+  {
+    id: "cal-coupling-chain", type: "mc", lec: [8], sec: "exposing",
+    code: `double scaled(Recipe recipe, int i, double factor) {
+    return recipe.getIngredients().get(i).getQuantity().toDecimal() * factor;
+}`,
+    q: "The method compiles and works. What is the main design problem?",
+    options: ["Multiplying doubles is slow", "It depends on the internal structure of <code>Recipe</code>, its ingredient list and <code>MeasuredIngredient</code>, so it needs a whole recipe to test and breaks if any of them change", "It has low cohesion because it returns a double", "It violates the equals/hashCode contract"],
+    answer: 1,
+    explain: "It only needs a <code>Quantity</code> (or a number). Ask for what you use, and the coupling and test setup shrink.",
   },
 ]);

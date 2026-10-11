@@ -147,14 +147,14 @@ registerExam("io", [
   {
     id: "mc6-twr-why", type: "mc", lec: [3], sec: "twr",
     q: "What is the main advantage of try-with-resources over calling <code>close()</code> at the end of the try block?",
-    options: ["It reads files faster", "The resource is closed automatically even if an exception is thrown", "It removes the need to handle FileNotFoundException", "It lets you open more files"],
+    options: ["It reads files faster", "The resource is closed automatically even if an exception is thrown", "It removes the need to handle FileNotFoundException", "It catches and hides any exception thrown inside the try"],
     answer: 1,
     explain: "An exception would skip a close() at the end of the try. try-with-resources acts like a guaranteed finally.",
   },
   {
     id: "mc6-stderr", type: "mc", lec: [3], sec: "standard",
     q: "Where should a program print an error message like “Missing file: rooms.txt”?",
-    options: ["<code>System.in</code>", "<code>System.err</code>", "A comment", "<code>System.exit</code>"],
+    options: ["<code>System.in</code>", "<code>System.err</code>", "<code>System.out</code>, since that’s where all output goes", "<code>System.exit</code>"],
     answer: 1,
     explain: "Standard error keeps error messages separate from normal output on System.out.",
   },

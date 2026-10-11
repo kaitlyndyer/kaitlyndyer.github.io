@@ -94,7 +94,7 @@ registerExam("tooling", [
   {
     id: "mc6-before-each", type: "mc", lec: [2], sec: "junit",
     q: "Why put setup code in a <code>@BeforeEach</code> method instead of in a field initializer shared by all tests?",
-    options: ["It runs faster", "Each test gets a fresh object, so one test can’t affect another", "JUnit forbids fields", "It makes the tests run in alphabetical order"],
+    options: ["It runs faster", "Each test gets a fresh object, so one test can’t affect another", "JUnit forbids fields", "So the setup runs only once for all tests, which saves time"],
     answer: 1,
     explain: "Independent tests are reliable tests: <code>@BeforeEach</code> resets state before every test.",
   },
@@ -104,5 +104,14 @@ registerExam("tooling", [
     options: ["It formats the code", "It lets anyone build the project with the right Gradle version without installing Gradle first", "It replaces javac", "It stores the project’s dependencies"],
     answer: 1,
     explain: "The wrapper downloads and runs the Gradle version the project expects, so every machine builds the same way.",
+  },
+
+  // Calibration batch (2026-10-11)
+  {
+    id: "cal-jvm-send", type: "mc", lec: [2], sec: "two-steps",
+    q: "You compile your project on a Mac and send only the <code>.class</code> files to a friend on Windows who has Java installed. What happens?",
+    options: ["They must recompile the <code>.java</code> files for Windows first", "It runs: <code>.class</code> files hold platform-independent bytecode that their JVM executes", "It runs only if you compiled with a Windows option", "It fails, because <code>.class</code> files contain Mac machine code"],
+    answer: 1,
+    explain: "That’s “write once, run anywhere”: compile once to bytecode, and every platform’s JVM runs it.",
   },
 ]);

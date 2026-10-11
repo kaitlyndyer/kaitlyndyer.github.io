@@ -148,4 +148,20 @@ registerExam("exceptions", [
     answer: 1,
     explain: "Throwing is the last resort, but silently ignoring a problem is never the answer.",
   },
+
+  // Calibration batch (2026-10-11)
+  {
+    id: "cal-checked-which", type: "mc", lec: [2], sec: "types",
+    code: `String loadText(Path p) {
+    return Files.readString(p);        // can throw IOException
+}
+
+int parseServings(String s) {
+    return Integer.parseInt(s);        // can throw NumberFormatException
+}`,
+    q: "Neither method has a <code>try</code> or a <code>throws</code> clause. What does the compiler say?",
+    options: ["Both compile", "<code>loadText</code> fails to compile; <code>parseServings</code> compiles", "<code>parseServings</code> fails to compile; <code>loadText</code> compiles", "Neither compiles"],
+    answer: 1,
+    explain: "<code>IOException</code> is checked: catch it or declare it. <code>NumberFormatException</code> extends <code>RuntimeException</code>, so it’s unchecked and needs neither.",
+  },
 ]);

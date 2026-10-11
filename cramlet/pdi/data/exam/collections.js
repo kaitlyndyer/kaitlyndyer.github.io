@@ -209,7 +209,7 @@ registerExam("collections", [
   {
     id: "mc6-hashset-needs", type: "mc", lec: [3, 6], sec: "sets",
     q: "A <code>HashSet&lt;Room&gt;</code> keeps duplicate rooms even though <code>Room</code> overrides <code>equals</code>. What is the most likely cause?",
-    options: ["HashSet doesn’t use equals", "<code>Room</code> doesn’t override <code>hashCode</code> consistently with equals", "Rooms must be Comparable", "HashSet only works with Strings"],
+    options: ["HashSet doesn’t use equals", "<code>Room</code> doesn’t override <code>hashCode</code> consistently with equals", "Rooms must be Comparable", "<code>Room</code> must also override <code>toString</code>"],
     answer: 1,
     explain: "Hash-based sets use hashCode to find the bucket, then equals. Equal objects must have equal hash codes.",
   },
