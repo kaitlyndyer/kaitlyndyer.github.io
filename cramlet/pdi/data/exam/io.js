@@ -124,6 +124,7 @@ try (Res r = new Res()) {
     q: "A teammate opens a <code>Scanner</code> on a file and calls <code>sc.close()</code> on the last line of the <code>try</code> block. What’s the problem, and the best fix?",
     options: ["No problem; that’s the standard pattern", "If an exception happens first, <code>close()</code> never runs. Use try-with-resources", "<code>close()</code> should go in the <code>catch</code> block", "Scanners never need closing"],
     answer: 1,
+    whys: ["If anything throws before the last line, close() is skipped and the file stays open.", null, "catch only runs on an exception, so the normal path would never close the Scanner.", "A Scanner on a file holds an open file, which should always be closed."],
     model: "An exception skips the rest of the <code>try</code> block, including <code>close()</code>, so the file stays open. try-with-resources (<code>try (Scanner sc = …)</code>) closes it no matter how the block ends. It does the same job as a hand-written <code>finally { sc.close(); }</code>, but it’s shorter and harder to get wrong.",
     explain: "Putting close() in catch would miss the normal path; finally or try-with-resources covers both.",
   },
@@ -132,6 +133,7 @@ try (Res r = new Res()) {
     q: "Which statements are true?",
     options: ["<code>System.out</code> is a <code>PrintStream</code>", "<code>InputStream</code> is an abstract class for reading bytes", "<code>Closeable</code> has one method, <code>close()</code>", "<code>System.err</code> is for reading user input"],
     answers: [0, 1, 2],
+    whys: [null, null, null, "System.err is an output stream for error messages; input comes from System.in."],
     explain: "<code>System.in</code> is for input. <code>System.err</code> is standard <b>error</b>, an output stream for error messages.",
   },
   {
@@ -149,6 +151,7 @@ registerExam("io", [
     q: "What is the main advantage of try-with-resources over calling <code>close()</code> at the end of the try block?",
     options: ["It reads files faster", "The resource is closed automatically even if an exception is thrown", "It removes the need to handle FileNotFoundException", "It catches and hides any exception thrown inside the try"],
     answer: 1,
+    whys: ["Closing doesn’t change how fast reading is.", null, "You still have to catch or declare FileNotFoundException; it’s checked.", "It doesn’t hide exceptions; they still propagate unless you catch them."],
     explain: "An exception would skip a close() at the end of the try. try-with-resources acts like a guaranteed finally.",
   },
   {
@@ -156,6 +159,7 @@ registerExam("io", [
     q: "Where should a program print an error message like “Missing file: rooms.txt”?",
     options: ["<code>System.in</code>", "<code>System.err</code>", "<code>System.out</code>, since that’s where all output goes", "<code>System.exit</code>"],
     answer: 1,
+    whys: ["System.in is for reading input, not printing.", null, "Errors belong on their own stream, so they stay separate from normal output.", "System.exit ends the program; it doesn’t print anything."],
     explain: "Standard error keeps error messages separate from normal output on System.out.",
   },
 ]);

@@ -151,6 +151,7 @@ class Light {
       q: "Which best defines <b>coupling</b>?",
       options: ["How many lines a module has", "How much a module is affected by changes in other modules", "How closely a module’s methods relate to one purpose", "How fast modules communicate"],
       answer: 1,
+      whys: ["Size isn’t coupling.", null, "That’s cohesion, not coupling.", "Coupling is about dependence, not communication speed."],
       explain: "“How closely a module’s methods relate to one purpose” is cohesion. Coupling is about dependence on other modules.",
     },
     {
@@ -158,6 +159,7 @@ class Light {
       q: "Which <code>DeviceHub</code> method has the <b>lowest</b> harmful coupling?",
       options: ["<code>addLights(Light[] l)</code> and <code>addFans(Fan[] f)</code>", "<code>addDevices(MyList&lt;IoTDevice&gt; d)</code> (a custom list class)", "<code>addDevices(List&lt;IoTDevice&gt; d)</code>", "<code>addDevices(ArrayList&lt;Light&gt; d)</code>"],
       answer: 2,
+      whys: ["Separate arrays per concrete class need a new method for every new device.", "A custom list class is more likely to change than the standard List.", null, "That ties the hub to one concrete list class and one device type."],
       explain: "It depends on the stable <code>IoTDevice</code> interface and the standard <code>List</code> interface, both unlikely to change.",
     },
     {
@@ -165,6 +167,7 @@ class Light {
       q: "<code>notify(Order order)</code> only ever uses <code>order.customer.email</code>. What’s the main design problem?",
       options: ["It’s slower than passing a String", "It’s coupled to the whole Order/Customer structure, so tests must build a full Order", "It violates the equals contract", "Nothing; passing objects is always better"],
       answer: 1,
+      whys: ["Speed isn’t the problem; coupling and testability are.", null, "The method doesn’t touch equals.", "Pass what you need. Bigger parameters mean more coupling."],
       explain: "Ask only for what you need. Taking the email directly lowers coupling and makes testing easy.",
     },
     {
@@ -172,6 +175,7 @@ class Light {
       q: "A <code>Helpers</code> class contains <code>formatPrice()</code>, <code>parseCsv()</code>, and <code>sendAlert()</code>. What’s the main problem?",
       options: ["The class will be too slow", "Low cohesion: unrelated responsibilities, so it changes for many unrelated reasons", "High coupling between the three methods", "The methods must be made private"],
       answer: 1,
+      whys: ["Speed isn’t the issue; mixed responsibilities are.", null, "The methods don’t depend on each other. The problem is that they’re unrelated.", "Making them private would hide them, but the mix of purposes remains."],
       explain: "Utility grab-bags are hard to navigate, and a change for one purpose risks the others.",
     },
     {
@@ -179,6 +183,7 @@ class Light {
       q: "Why is <code>ecoMode()</code> with an <code>instanceof Light</code> / <code>instanceof Fan</code> chain a coupling problem?",
       options: ["instanceof doesn’t compile on interfaces", "Its logic depends on each device type, so new devices or device changes force it to change", "It makes the hub immutable", "It’s a cohesion problem only"],
       answer: 1,
+      whys: ["instanceof compiles fine on interfaces.", null, "instanceof doesn’t affect mutability.", "It’s logic coupling: the hub depends on every concrete device type."],
       explain: "That’s logic coupling: even though the data is typed as IoTDevice, the logic knows every device.",
     },
     {
@@ -186,6 +191,7 @@ class Light {
       q: "Which combination best promotes changeability?",
       options: ["High coupling, high cohesion", "Low coupling, low cohesion", "Low coupling, high cohesion", "High coupling, low cohesion"],
       answer: 2,
+      whys: ["High coupling means changes ripple to other modules.", "Low cohesion means each module changes for many reasons.", null, "That’s the worst combination for changeability."],
       explain: "Plus good information hiding.",
     },
     {
@@ -193,6 +199,7 @@ class Light {
       q: "Why does a module with an <b>incomplete</b> purpose hurt changeability?",
       options: ["It runs out of memory", "It must change whenever the other modules it relies on change", "It can’t be compiled separately", "It has too many methods"],
       answer: 1,
+      whys: ["Memory isn’t related to a module’s purpose.", null, "Cohesion doesn’t affect separate compilation.", "An incomplete purpose usually means too few responsibilities, not too many methods."],
       explain: "Highly cohesive modules are self-sufficient: one purpose, fulfilled fully.",
     },
     {

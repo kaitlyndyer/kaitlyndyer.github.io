@@ -133,6 +133,21 @@ body.exam-focus .main { max-width: 1100px; margin: 0 auto; }
 .res-q > * + * { margin-top: 10px; }
 .res-ans { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 .res-ans > div { padding: 10px 12px; border-radius: 12px; background: var(--surface-2); min-width: 0; overflow-x: auto; }
+/* Why each option is right or wrong (results page) */
+.why-opts ol { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
+.why-opts li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: start; padding: 9px 12px; border-radius: 12px; background: var(--surface-2); border: 2px solid transparent; }
+.why-opts li.ok { background: var(--good-bg); border-color: var(--good-line); }
+.why-opts li.mine { background: var(--bad-bg); border-color: color-mix(in srgb, var(--bad) 45%, var(--line)); }
+.why-opts .opt-letter { --c: var(--brand); }
+.why-opts li.ok .opt-letter { background: var(--good); color: white; }
+.why-opts li.mine .opt-letter { background: var(--bad); color: white; }
+.wo-text { font-weight: 600; }
+.wo-tag { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; font: 700 12px var(--font-body); color: var(--muted); white-space: nowrap; }
+.wo-tag svg { width: 15px; height: 15px; }
+.why-opts li.ok .wo-tag { color: var(--good); }
+.why-opts li.mine .wo-tag { color: var(--bad); }
+.wo-why { margin-top: 3px; font-size: 14.5px; color: var(--muted); }
+.why-opts li.mine .wo-why { color: var(--ink); }
 pre.mini { margin: 0; font: 500 13.5px/1.5 var(--font-code); white-space: pre-wrap; }
 .bug-line.correct, .bug-line.wrong { display: flex; }
 .mistakes { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
@@ -225,3 +240,37 @@ pre.mini { margin: 0; font: 500 13.5px/1.5 var(--font-code); white-space: pre-wr
 .paused-ic svg { width: 28px; height: 28px; }
 .quiz-progress .quiz-exit { margin-left: auto; padding: 4px 10px; }
 .quiz-resume p { margin: 0 0 6px; }
+
+/* ---------- Myth or fact? ---------- */
+.myth-keys { margin-top: 12px; }
+.myth-play .quiz-progress { --c: var(--brand); }
+.myth-score, .myth-streak { display: inline-flex; align-items: center; gap: 4px; font: 800 14px var(--font-code); color: var(--muted); }
+.myth-score svg, .myth-streak svg { width: 18px; height: 18px; }
+.myth-score { color: var(--good); }
+.myth-streak.hot { color: #f0702c; }
+.myth-card { max-width: 760px; margin: 18px auto 0; padding: 26px 28px; border-radius: 24px; background: var(--surface); border: 2px solid color-mix(in srgb, var(--c) 35%, var(--line)); box-shadow: var(--shadow); }
+.myth-concept { display: inline-flex; align-items: center; gap: 6px; font: 800 12.5px var(--font-body); text-transform: uppercase; letter-spacing: .4px; color: color-mix(in srgb, var(--c) 80%, var(--deep)); }
+.myth-concept svg { width: 18px; height: 18px; }
+.myth-s { font: 600 21px/1.45 var(--font-head); margin: 12px 0 18px; }
+.myth-s code { font-size: .85em; }
+.myth-clock { height: 6px; border-radius: 6px; background: var(--track); overflow: hidden; margin-bottom: 18px; }
+.myth-clock div { height: 100%; width: 100%; background: var(--c); transition: width .1s linear, background .2s; }
+.myth-clock div.low { background: var(--bad); }
+.myth-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.myth-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; border-radius: 16px; border: 2px solid var(--line); background: var(--surface-2); color: var(--ink); font: 700 19px var(--font-head); cursor: pointer; transition: transform .12s, border-color .15s, background .15s; }
+.myth-btn svg { width: 24px; height: 24px; }
+.myth-btn.myth svg { color: var(--bad); }
+.myth-btn.fact svg { color: var(--good); }
+.myth-btn kbd { font-size: 11px; color: var(--muted); }
+.myth-btn:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--c); }
+.myth-btn:disabled { cursor: default; opacity: .55; }
+.myth-btn.correct { opacity: 1; border-color: var(--good); background: var(--good-bg); }
+.myth-btn.wrong { opacity: 1; border-color: var(--bad); background: var(--bad-bg); animation: shake .35s; }
+.myth-review { margin-top: 8px; }
+.myth-missed { display: grid; gap: 10px; }
+.myth-miss { padding: 14px 18px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--c); }
+.myth-miss .myth-s { font-size: 17px; margin: 0 0 6px; }
+.myth-miss p { margin: 0 0 8px; }
+.tag.yes { background: var(--good); color: #fff; }
+.tag.no { background: var(--bad); color: #fff; }
+@media (max-width: 600px) { .myth-card { padding: 20px 16px; } .myth-s { font-size: 18px; } }

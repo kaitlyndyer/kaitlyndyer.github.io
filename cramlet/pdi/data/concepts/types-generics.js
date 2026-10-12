@@ -162,6 +162,7 @@ int x = list.get(0);    // auto-unbox: Integer -> int`,
 lights.add(new Fan());`,
       options: ["It compiles and works", "It compiles, then throws ClassCastException", "It doesn’t compile", "The Fan is silently converted to a Light"],
       answer: 2,
+      whys: ["The compiler rejects a Fan in a List<Light>.", "It never compiles.", null, "Java doesn’t convert between unrelated types."],
       explain: "The type parameter makes the compiler reject a <code>Fan</code>. That’s the point of generics: catch it before runtime.",
     },
     {
@@ -174,6 +175,7 @@ reset(n);
 System.out.println(n);`,
       options: ["0", "5", "null", "It doesn’t compile"],
       answer: 1,
+      whys: ["x is a copy of n, so changing x doesn’t change n.", null, "n is an int, which can’t be null.", "It compiles."],
       explain: "Primitives are copied. Changing <code>x</code> inside <code>reset</code> never affects <code>n</code>.",
     },
     {
@@ -185,6 +187,7 @@ Light lamp = new Light("lamp", 80);
 replace(lamp);`,
       options: ["\"new\"", "\"lamp\"", "null", "It depends on the JVM"],
       answer: 1,
+      whys: ["Reassigning l only changes the local copy.", null, "lamp still points to the original.", "Java always passes by value; this doesn’t depend on the JVM."],
       explain: "The address was copied into <code>l</code>. Reassigning <code>l</code> only changes the local copy, so <code>lamp</code> still points to the original object.",
     },
     {
@@ -204,6 +207,7 @@ replace(lamp);`,
       q: "Why is <code>List&lt;int&gt;</code> illegal?",
       options: ["Lists can’t hold numbers", "Type parameters must be reference types, so you use <code>List&lt;Integer&gt;</code>", "<code>int</code> is deprecated", "It’s legal"],
       answer: 1,
+      whys: ["Lists can hold numbers through Integer.", null, "int isn’t deprecated.", "It’s illegal; type arguments must be reference types."],
       explain: "Generics only work with reference types. Wrappers like <code>Integer</code> fill the gap, with autoboxing doing the conversion.",
     },
     {

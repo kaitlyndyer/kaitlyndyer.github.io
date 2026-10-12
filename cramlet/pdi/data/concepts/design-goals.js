@@ -112,6 +112,7 @@ public double averageBrightness(List<Light> lights) {
       q: "Which goal is the most <b>objective</b> measure of code quality?",
       options: ["Readability", "Functional correctness", "Changeability", "Understandability"],
       answer: 1,
+      whys: ["Readability is subjective. People disagree about what reads well.", null, "Changeability is hard to measure until you actually make a change.", "Understandability depends on the reader, so it isn’t objective."],
       explain: "Correctness is binary: it works right now or it doesn’t. The non-functional goals are much harder to quantify.",
     },
     {
@@ -119,6 +120,7 @@ public double averageBrightness(List<Light> lights) {
       q: "A method reads input only from a hard-coded path on your laptop. Which goal does that hurt most?",
       options: ["Testability", "Functional correctness", "Readability", "None. Fixed paths are fine."],
       answer: 0,
+      whys: [null, "It may give correct answers on your laptop. The problem is that tests can’t run it elsewhere.", "The path doesn’t affect how the code reads.", "Fixed paths force manual testing on one machine."],
       explain: "Rigid assumptions like fixed file paths force manual testing, which doesn’t scale.",
     },
     {
@@ -137,6 +139,7 @@ public double averageBrightness(List<Light> lights) {
         "Understandability only applies to comments",
       ],
       answer: 1,
+      whys: ["They’re related but not the same: you can read every line and still not understand the design.", null, "Neither one is about speed.", "Understandability is about the whole design, not just comments."],
       explain: "Understandability is about seeing how and why a design works. Readability is specifically about reading the code.",
     },
     {
@@ -144,6 +147,7 @@ public double averageBrightness(List<Light> lights) {
       q: "Why does the lecture say letting AI test its own generated code is a problem?",
       options: ["AI can’t write tests", "It’s often self-defeating: the same blind spots produce both the code and the tests", "Tests are illegal for AI code", "AI tests are always too slow"],
       answer: 1,
+      whys: ["AI can write tests. The issue is that they share the code’s blind spots.", null, "Nothing forbids testing AI code; it just shouldn’t be the only check.", "Speed isn’t the issue; independence is."],
       explain: "Verification needs an independent check. Humans still need to understand and verify what’s produced.",
     },
   ],

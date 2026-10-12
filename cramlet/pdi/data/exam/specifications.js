@@ -4,6 +4,7 @@ registerExam("specifications", [
     q: "A method’s Javadoc says: <i>“Processes the requests promptly.”</i> What’s the main problem?",
     options: ["It’s too restrictive", "It isn’t clear or restrictive enough: “processes” and “promptly” could mean anything", "Javadoc shouldn’t describe behavior", "Nothing; short specs are best"],
     answer: 1,
+    whys: ["It’s the opposite: it allows almost anything.", null, "Describing behavior is exactly what Javadoc is for.", "Short is good only if it’s still clear and restrictive."],
     model: "A spec should be <b>restrictive</b> (rule out wrong implementations), <b>general</b> (allow every right one), and <b>clear</b>. This one is vague: it doesn’t say what processing does, what “promptly” means, what’s returned, or what happens on bad input. A better spec names the inputs, the result, and the exceptions (<code>@param</code>, <code>@return</code>, <code>@throws</code>).",
     explain: "Ask: could two reasonable people implement this and get different behavior? If yes, it isn’t restrictive or clear enough.",
   },
@@ -16,6 +17,7 @@ registerExam("specifications", [
     q: "Clients of <code>search(arr, target)</code> only need <i>some</i> index where the target appears. Which spec is better?",
     options: ["“Examines each element in order; returns the index of the first match.”", "“Returns an index of arr that contains target.”", "“Searches the array.”", "“Uses binary search to find target.”"],
     answer: 1,
+    whys: ["That dictates the algorithm and rules out correct implementations (like searching from the end).", null, "“Searches the array” doesn’t say what’s returned.", "That dictates the algorithm and rules out correct implementations."],
     model: "The <b>behavioral</b> spec says <i>what</i>, not <i>how</i>. The operational one rules out correct implementations (searching backward, in parallel…) that clients would be happy with. “Searches the array” isn’t restrictive enough, and “uses binary search” describes the implementation.",
     explain: "To check generality, ask whether each requirement rules out a correct implementation.",
   },
@@ -24,6 +26,7 @@ registerExam("specifications", [
     q: "The spec for <code>search(arr, target)</code> says “Returns an index of arr that contains target.” A client <b>relies on</b> getting the first matching index (it highlights the earliest event). Is the spec still good enough?",
     options: ["Yes, general specs are always better", "No: it isn’t restrictive enough. Say “the smallest index” (or “first”)", "No: it should describe the loop", "Yes, but rename the method"],
     answer: 1,
+    whys: ["General is good only when clients don’t need more. This client needs the first index.", null, "Describing the loop would be operational; just say “the smallest index.”", "Renaming doesn’t change what the spec promises."],
     model: "Generality has to be balanced against restrictiveness. If clients truly need the first occurrence, the spec must promise it: “Returns the <b>smallest</b> index of arr that contains target.” That’s still behavioral, not a description of the loop.",
     explain: "Either spec can be right; it depends on what clients need.",
   },
@@ -32,6 +35,7 @@ registerExam("specifications", [
     q: "A Javadoc says only: <i>“Returns the average brightness of the lights.”</i> What’s the most important thing missing?",
     options: ["How the average is computed", "What happens for an empty or null list", "The author’s name", "A longer description of “average”"],
     answer: 1,
+    whys: ["How it’s computed is an implementation detail; specs describe results.", null, "Authorship isn’t part of a behavioral spec.", "“Average” is already clear; the edge cases are what’s missing."],
     model: "It isn’t <b>restrictive</b> enough: for an empty list, returning 0, returning NaN, and throwing would all “satisfy” it. Add <code>@throws IllegalArgumentException if lights is empty</code> (and say what happens for null), so clients know what to expect.",
     explain: "Consider all inputs, especially the edge cases.",
   },
@@ -40,6 +44,7 @@ registerExam("specifications", [
     q: "A spec says <i>“Show the top 10 players by score.”</i> Two developers implement it differently: one breaks ties alphabetically by name, the other by who reached the score first. What’s going on?",
     options: ["Nothing; both meet the spec, so it’s fine", "Specification debt: the ambiguity left a consequential decision to implementers, and one choice systematically favors certain players", "The spec is too restrictive", "It’s a performance problem"],
     answer: 1,
+    whys: ["Both meet the spec, but their outcomes differ, and that’s the problem.", null, "The problem is that it’s not restrictive enough.", "It’s not about speed; it’s about ambiguity."],
     model: "The spec is <b>ambiguous</b> about ties, so implementers made the decision without realizing it mattered. Breaking ties alphabetically always favors names like “Adams” over “Zhang”, which is a fairness issue. Fixing the spec now is far cheaper than fixing deployed code later.",
     explain: "Ask: could reasonable interpretations lead to different outcomes for different groups?",
   },
@@ -48,6 +53,7 @@ registerExam("specifications", [
     q: "Which spec is the <b>clearest</b>?",
     options: ["“Returns the sum of the elements. The sum is computed by adding each element. It is the total of all the elements.”", "“Returns the sum of the elements in arr.”", "“Does the math on arr.”", "“Returns the total, which is the sum, i.e., the aggregate of the elements.”"],
     answer: 1,
+    whys: ["Repeating the same thing three ways adds nothing and confuses.", null, "“Does the math” is vague: what math?", "Using three words for one idea makes readers wonder if they differ."],
     explain: "Concise and complete. The redundant versions repeat themselves and even make you wonder whether “sum” and “total” are different things. “Does the math” is vague.",
   },
   {
@@ -61,6 +67,7 @@ registerExam("specifications", [
     q: "Which of these is an <b>invariant</b> of a <code>DimmableLight</code>?",
     options: ["“<code>setBrightness</code> was called at least once”", "“brightness is always between 0 and 100”", "“<code>setBrightness</code> throws for values above 100”", "“<code>toString</code> is fast”"],
     answer: 1,
+    whys: ["That’s about history, not a condition that always holds for the object.", null, "That describes a method’s behavior, not a condition on the object’s state.", "That’s about performance, not the object’s state."],
     explain: "An invariant is a condition that must <b>always</b> hold for the object. The constructor and every setter must keep it true (for example by throwing on bad values).",
   },
   {
@@ -68,6 +75,7 @@ registerExam("specifications", [
     q: "Why does lecture bring up “chunking” (about 7 ± 2 items in short-term memory)?",
     options: ["To set a maximum method length", "Clear specs let you treat a whole method as one chunk, so you can reason about several pieces at once without reading their code", "To show that programs should have at most 7 classes", "To argue that a spec should list at most 7 conditions"],
     answer: 1,
+    whys: ["Chunking isn’t a rule about method length.", null, "Chunking isn’t a rule about class count.", "Chunking isn’t a rule about how many conditions a spec lists."],
     explain: "Modularization only helps if each module has a clear spec. Then a method is one “item” in your head, not its whole implementation.",
   },
   {
@@ -115,6 +123,7 @@ registerExam("specifications", [
     q: "A reviewer critiques a Javadoc spec. Which comment is <b>not</b> about one of the three qualities of a good specification?",
     options: ["“It doesn’t say what happens when the list is empty.”", "“It forces a for-loop when any approach would do.”", "“The second sentence just repeats the first and confuses me.”", "“It should name the developer who wrote the method.”"],
     answer: 3,
+    whys: ["That’s about restrictiveness: covering all inputs.", "That’s about generality: not over-constraining the implementation.", "That’s about clarity: redundancy confuses.", null],
     explain: "The three qualities are restrictive (cover all inputs), general (don’t over-constrain the implementation), and clear. Authorship isn’t part of a behavioral spec.",
   },
 
@@ -123,6 +132,7 @@ registerExam("specifications", [
     q: "Two specs for <code>int maxBrightness(List&lt;Light&gt; lights)</code>:<br>Spec A: “Sets best to 0, loops from index 0 to the end, replacing best whenever a brighter light is found, then returns best.”<br>Spec B: “Returns the highest brightness of any light in lights.”<br>What’s the key difference?",
     options: ["B describes the result, so any correct way of finding the maximum is allowed; A dictates one algorithm", "A is better because it explains the algorithm", "B is less restrictive about which value is returned", "They allow exactly the same implementations"],
     answer: 0,
+    whys: [null, "Explaining the algorithm is what makes A less general.", "B says exactly which value is returned: the highest.", "A rules out correct implementations, like looping backward."],
     explain: "A is operational: it rules out correct implementations (looping backward, using streams…). B is behavioral and more general. (Both still need to say what happens for an empty list!)",
   },
 
@@ -131,6 +141,7 @@ registerExam("specifications", [
     q: "“Returns the largest brightness in the list.” What makes this spec <b>not restrictive enough</b>?",
     options: ["It’s too short", "It doesn’t say what happens for an empty or null list", "It mentions brightness", "It uses the word “largest”"],
     answer: 1,
+    whys: ["Short is fine if it’s complete.", null, "Mentioning brightness is fine; it’s the domain.", "“Largest” is clear; the edge cases are what’s missing."],
     explain: "Without that, throwing, returning 0, or returning -1 would all “meet” the spec.",
   },
   {
@@ -138,6 +149,7 @@ registerExam("specifications", [
     q: "Why is it better to fix an ambiguous spec early?",
     options: ["Specs can’t be changed after release", "Fixing ambiguity in the spec is far cheaper than fixing different interpretations in deployed code", "Ambiguous specs don’t compile", "A clear spec lets the compiler check the implementation against it"],
     answer: 1,
+    whys: ["Specs can be changed; it just gets more expensive later.", null, "Specs are comments; they don’t affect compiling.", "The compiler doesn’t check Javadoc specs."],
     explain: "That’s specification debt: harmless at first, a liability as the system grows.",
   },
 
@@ -147,6 +159,7 @@ registerExam("specifications", [
     q: "The lecture judges a specification on three criteria. Which trio is it?",
     options: ["Restrictive, general, and clear", "Fast, short, and complete", "Formal, operational, and tested", "Restrictive, detailed, and efficient"],
     answer: 0,
+    whys: [null, "Speed and length aren’t spec criteria.", "Those aren’t the three criteria; operational is actually a warning sign.", "Detail and efficiency aren’t criteria."],
     explain: "<b>Restrictive</b> rules out bad implementations, <b>general</b> doesn’t rule out good ones, and <b>clear</b> means it’s easy to understand. Performance isn’t one of the three.",
   },
   {
@@ -154,6 +167,7 @@ registerExam("specifications", [
     q: "A spec for <code>sortByName(List&lt;Recipe&gt; recipes)</code> says: “Sorts the list using merge sort, comparing names one character at a time.” Which criterion does it most clearly fail?",
     options: ["Restrictive, because it doesn’t mention null", "General, because it dictates <i>how</i> to sort and rules out other correct implementations", "Clear, because merge sort is hard to understand", "None. More detail always makes a spec better"],
     answer: 1,
+    whys: ["Null handling might be missing, but the clearest failure is dictating the algorithm.", null, "Being unclear isn’t the main problem; it over-constrains.", "More detail can rule out correct implementations."],
     explain: "That’s an operational spec. Any algorithm that leaves the list sorted by name is correct; describe the result, not the steps.",
   },
   {
@@ -170,6 +184,7 @@ int max(int[] a)`,
     q: "A teammate implements <code>max</code> with one loop that tracks the biggest value seen, without sorting. Which spec does the implementation satisfy?",
     options: ["Only Spec A", "Only Spec B, because Spec A also requires sorting a copy", "Both, because they return the same value", "Neither, because neither spec mentions loops"],
     answer: 1,
+    whys: ["The loop doesn’t sort a copy, so it doesn’t meet A.", null, "Spec A requires sorting a copy, so the same result isn’t enough.", "Spec B doesn’t need to mention loops; any correct way is fine."],
     explain: "Spec A is operational: it requires the sorting step, so a correct loop doesn’t meet it. Spec B is general and accepts any correct implementation.",
   },
   {
@@ -177,6 +192,7 @@ int max(int[] a)`,
     q: "A spec says: “<code>averageCalories(List&lt;Recipe&gt; recipes)</code>: returns the average calories of the recipes.” Which improvement makes it more <b>restrictive</b>?",
     options: ["Saying it uses a for-each loop", "Saying what happens when the list is empty or null", "Renaming the parameter to <code>list</code>", "Adding that it is fast"],
     answer: 1,
+    whys: ["Naming the loop makes the spec operational, which is less general, not more restrictive about results.", null, "A parameter name doesn’t change what the method promises.", "“Fast” is vague, and speed isn’t what the spec is missing."],
     explain: "Restrictive specs consider all inputs. Without the empty case, an implementation that divides by zero would still meet the spec.",
   },
 ]);

@@ -163,6 +163,7 @@ for (int i = 0; i < 10; i++) {
       q: "A teammate replaces a 6-line anonymous <code>Comparator</code> class with <code>(a, b) -&gt; Integer.compare(a.getArea(), b.getArea())</code>. What did that change gain?",
       options: ["The sort now uses a faster algorithm", "The same behavior in far less code, so it’s easier to read", "The comparator can now have two compare methods", "It can now change local variables freely"],
       answer: 1,
+      whys: ["The sort algorithm is the same; only the comparator’s syntax changed.", null, "A Comparator has one compare method, lambda or not.", "Lambdas can only use effectively final locals."],
       explain: "The behavior is the same; the lambda just says it in far fewer lines.",
     },
     {
@@ -170,6 +171,7 @@ for (int i = 0; i < 10; i++) {
       q: "Which makes an interface usable with a lambda?",
       options: ["It has no methods at all", "It has exactly one abstract method", "All its methods are static", "It extends <code>Object</code>"],
       answer: 1,
+      whys: ["An interface with no methods gives a lambda nothing to implement.", null, "Static methods don’t count; a lambda needs one abstract method.", "Every interface implicitly has Object’s methods. That doesn’t make it functional."],
       explain: "That’s a functional interface. Static (and default) methods don’t count toward the one.",
     },
     {
@@ -177,6 +179,7 @@ for (int i = 0; i < 10; i++) {
       q: "In <code>rooms.sort(Comparator.comparingInt(Room::getArea))</code>, what does <code>Room::getArea</code> do?",
       options: ["It calls getArea once, before sorting starts", "It hands the comparator the getArea method, which it calls on each Room it compares", "It requires getArea to be a static method", "It creates a new Room for every element"],
       answer: 1,
+      whys: ["It isn’t called up front. comparingInt calls it each time it compares two rooms.", null, "It refers to an instance method; Room::getArea is called on each Room.", "No Rooms are created; it calls getArea on existing ones."],
       explain: "A method reference passes the method itself as a value; <code>comparingInt</code> calls it on each pair of objects it compares.",
     },
     {
@@ -184,6 +187,7 @@ for (int i = 0; i < 10; i++) {
       q: "Which standard interface fits a function that takes a <code>Light</code> and returns <code>true</code> or <code>false</code>?",
       options: ["<code>Supplier&lt;Light&gt;</code>", "<code>Consumer&lt;Light&gt;</code>", "<code>Predicate&lt;Light&gt;</code>", "<code>Runnable</code>"],
       answer: 2,
+      whys: ["A Supplier takes nothing and returns a value.", "A Consumer returns nothing.", null, "Runnable takes nothing and returns nothing."],
       explain: "Predicate: <code>boolean test(T t)</code>.",
     },
     {
@@ -191,6 +195,7 @@ for (int i = 0; i < 10; i++) {
       q: "Why doesn’t <code>for (int i = 0; i &lt; 3; i++) { Runnable r = () -&gt; System.out.println(i); }</code> compile?",
       options: ["Runnable can’t print", "<code>i</code> isn’t effectively final, since the loop modifies it", "Lambdas can’t be declared inside loops", "<code>i</code> must be an Integer"],
       answer: 1,
+      whys: ["Runnable’s run() can contain any statements, including println.", null, "Lambdas can be declared in loops.", "Boxing doesn’t help; the problem is that i changes."],
       explain: "Lambdas may only use enclosing local variables that are final or effectively final.",
     },
     {
@@ -198,6 +203,7 @@ for (int i = 0; i < 10; i++) {
       q: "Why prefer <code>ToIntFunction&lt;DimmableLight&gt;</code> over <code>Function&lt;DimmableLight, Integer&gt;</code>?",
       options: ["It avoids boxing each int into an Integer", "Function can’t return numbers", "ToIntFunction can return null", "There’s no difference"],
       answer: 0,
+      whys: [null, "Function can return an Integer.", "ToIntFunction returns a primitive int, which can’t be null.", "There is a difference: Function boxes each int into an Integer."],
       explain: "Primitive variants skip boxing: more efficient, and no surprise nulls.",
     },
     {
@@ -211,6 +217,7 @@ for (int i = 0; i < 10; i++) {
       q: "A teammate wrote a 15-line lambda with nested ifs inside a <code>sort</code> call. What does the lecture suggest?",
       options: ["Keep it; lambdas are always more readable", "Move the logic into a named method or class", "Convert it to an anonymous class with the same body", "Delete the comparator"],
       answer: 1,
+      whys: ["Lambdas are clear when they’re short. A 15-line lambda has no name or docs.", null, "An anonymous class with the same body is just as hard to read.", "The sort still needs the comparator."],
       explain: "Lambdas have no name or docs, so long or complicated ones hurt readability. A named method can be documented.",
     },
   ],

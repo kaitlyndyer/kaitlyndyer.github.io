@@ -173,6 +173,7 @@ public class Fan extends IoTDevice { }                   // compile error: not p
       q: "What does Hyrum’s Law say?",
       options: ["Every program eventually becomes a library", "With enough users of an API, every observable behavior will be depended on by somebody", "Modules should have at most seven methods", "Private fields make code slower"],
       answer: 1,
+      whys: ["Hyrum’s Law is about users relying on behavior, not programs turning into libraries.", null, "There’s no such rule about seven methods.", "Access modifiers don’t change speed."],
       explain: "That’s why hiding must be enforced: if something can be used, someone will use it.",
     },
     {
@@ -180,6 +181,7 @@ public class Fan extends IoTDevice { }                   // compile error: not p
       q: "A <code>Counter</code> promises its count never decreases, but its field is <code>public int count</code>. What’s the problem?",
       options: ["Public fields don’t compile", "Any caller can set <code>count</code> directly, breaking the invariant", "It uses too much memory", "Counters must be records"],
       answer: 1,
+      whys: ["Public fields compile fine.", null, "Memory isn’t affected by being public.", "Records are one option, but nothing requires one. The fix is making the field private."],
       explain: "Making the field private lets the class enforce its invariant.",
     },
     {
@@ -187,6 +189,7 @@ public class Fan extends IoTDevice { }                   // compile error: not p
       q: "A class has <code>private final List&lt;String&gt; rooms</code>, assigned straight from a constructor argument. Is the object immutable?",
       options: ["Yes, <code>final</code> makes the list unchangeable", "No: the caller still holds the same list and can change its contents", "Yes, because the field is private", "No, because lists can’t be final"],
       answer: 1,
+      whys: ["final only stops the field pointing to a different list; the list’s contents can still change.", null, "private stops other classes reaching the field, but the caller already holds the same list.", "Lists can be final; final just isn’t enough here."],
       explain: "<code>final</code> only fixes which object the field points to. A defensive copy is needed.",
     },
     {
@@ -194,6 +197,7 @@ public class Fan extends IoTDevice { }                   // compile error: not p
       q: "Which is <b>not</b> part of the recipe for an immutable class?",
       options: ["Make all fields private and final", "Make the class final", "Provide a setter for each field", "Make defensive copies of mutable reference fields"],
       answer: 2,
+      whys: ["That is part of the recipe.", "That is part of the recipe: it stops subclasses adding mutable state.", null, "That is part of the recipe: copies stop outside code changing your internals."],
       explain: "Immutable classes provide no mutators at all.",
     },
     {
@@ -201,6 +205,7 @@ public class Fan extends IoTDevice { }                   // compile error: not p
       q: "What does <code>public sealed class IoTDevice permits DimmableLight, Thermostat</code> do?",
       options: ["Makes IoTDevice impossible to extend", "Allows only DimmableLight and Thermostat to extend IoTDevice", "Makes all IoTDevice fields private", "Hides IoTDevice from other packages"],
       answer: 1,
+      whys: ["It can be extended, but only by the permitted classes.", null, "sealed controls subclassing, not field access.", "sealed doesn’t change package visibility."],
       explain: "Sealed classes allow exactly the permitted subclasses; others fail to compile.",
     },
     {
@@ -208,6 +213,7 @@ public class Fan extends IoTDevice { }                   // compile error: not p
       q: "Why is information hiding most effective when <b>enforced by the language</b>?",
       options: ["It makes programs run faster", "It doesn’t rely on every developer “doing the right thing”", "It removes the need for interfaces", "Python requires it"],
       answer: 1,
+      whys: ["Access modifiers don’t affect speed.", null, "You still need interfaces; hiding fields is a different tool.", "Python doesn’t enforce hiding; that’s the point of the comparison."],
       explain: "Conventions (like Python’s underscores) are easily ignored; access modifiers make violations compile errors.",
     },
     {
@@ -215,6 +221,7 @@ public class Fan extends IoTDevice { }                   // compile error: not p
       q: "In Java 9+, what happens to a <code>public</code> class in a package the module does <b>not</b> export?",
       options: ["It’s still usable by any consumer", "It’s invisible to code outside the module", "It becomes private", "It fails to compile"],
       answer: 1,
+      whys: ["Unexported packages are hidden, even their public classes.", null, "Its modifier doesn’t change; it’s just not visible outside the module.", "It compiles fine. It just isn’t part of the module’s API."],
       explain: "Only exported packages form the module’s API, so internals stay hidden even if public.",
     },
     {

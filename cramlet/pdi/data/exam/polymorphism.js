@@ -112,6 +112,7 @@ registerExam("polymorphism", [
     q: "<code>IoTDevice d = new Fan();</code> then <code>d.identify();</code>. Which <code>identify()</code> runs?",
     options: ["IoTDevice’s, because that’s the declared type", "Fan’s, chosen at runtime from the actual object", "<code>IoTDevice</code>’s, unless <code>Fan</code>’s version is marked <code>@Override</code>", "It doesn’t compile"],
     answer: 1,
+    whys: ["The declared type decides what you may call, not which version runs.", null, "@Override doesn’t control dispatch; it only asks the compiler to check the override.", "It compiles: identify() is declared in IoTDevice."],
     explain: "Dynamic dispatch picks the method from the object’s actual class at runtime.",
   },
   {
@@ -119,6 +120,7 @@ registerExam("polymorphism", [
     q: "<code>IoTDevice d = new DimmableLight(\"desk\");</code>. Why doesn’t <code>d.setBrightness(40)</code> compile?",
     options: ["DimmableLight has no setBrightness", "The compiler only allows methods of the declared type, IoTDevice", "setBrightness is private", "Dynamic dispatch is disabled"],
     answer: 1,
+    whys: ["DimmableLight does have setBrightness, but the declared type IoTDevice doesn’t.", null, "It’s public; the problem is the declared type.", "Dispatch still works; the compiler stops this call before runtime."],
     explain: "The declared type decides what you may call; the actual type decides which version runs.",
   },
   {
@@ -126,6 +128,7 @@ registerExam("polymorphism", [
     q: "When is the choice between overloaded methods like <code>read()</code> and <code>read(byte[] b)</code> made?",
     options: ["At runtime, from the object’s actual type", "At compile time, from the argument types", "At runtime, from the actual types of the argument objects", "By the JVM on first call"],
     answer: 1,
+    whys: ["That’s overriding (dynamic dispatch). Overloading is decided by the compiler.", null, "Overloads use the declared argument types, not the runtime ones.", "The compiler chooses before the program ever runs."],
     explain: "Overloading is resolved at compile time; overriding is resolved at runtime.",
   },
   {
@@ -133,6 +136,7 @@ registerExam("polymorphism", [
     q: "What is the main benefit of polymorphism in a loop like <code>for (IoTDevice d : devices) d.turnOn();</code>?",
     options: ["It runs faster than separate loops", "The same code works for every device type, including ones added later", "It prevents NullPointerExceptions", "The compiler picks each device’s <code>turnOn</code> ahead of time, so there’s no runtime lookup"],
     answer: 1,
+    whys: ["Polymorphism isn’t about speed.", null, "Polymorphism has nothing to do with nulls.", "Each turnOn is chosen at runtime by dynamic dispatch."],
     explain: "Callers treat all devices uniformly; each class supplies its own behavior.",
   },
 ]);

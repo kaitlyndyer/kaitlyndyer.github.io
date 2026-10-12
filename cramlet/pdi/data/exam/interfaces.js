@@ -26,6 +26,7 @@ registerExam("interfaces", [
     q: "Several device classes share the same <code>name</code> field and <code>isOn</code> logic, and other code should only depend on what devices <b>can do</b>. What’s the best design?",
     options: ["Just an interface", "Just an abstract class", "An interface plus an abstract base class that implements it", "Copy the shared code into each class"],
     answer: 2,
+    whys: ["An interface alone means copying the shared field and logic into every class.", "An abstract class alone uses up each device’s one superclass, and callers depend on a class instead of a capability.", null, "Copies drift apart; a fix has to be made in every class."],
     model: "This is the skeletal implementation pattern from lecture. The interface (<code>IoTDevice</code>) is what other code depends on, and the abstract base class (<code>BaseIoTDevice</code>) holds the shared fields and code so each device class stays small.",
     explain: "Interfaces describe <i>what</i> an object does; abstract classes share <i>how</i>. Using both gives you each benefit, like the JDK’s <code>List</code> + <code>AbstractList</code>.",
   },
@@ -34,6 +35,7 @@ registerExam("interfaces", [
     q: "Which are true about Java interfaces as defined in lecture?",
     options: ["They declare what an object can do, not what it has", "A class can implement several interfaces", "You can create one with new", "They can declare instance fields"],
     answers: [0, 1],
+    whys: [null, null, "You can’t create an interface with new; it has no implementation.", "Interfaces can’t have instance fields (only constants)."],
     explain: "An interface lists public method signatures. A class can implement many of them, but you can’t instantiate an interface, and it has no instance fields.",
   },
 ]);
@@ -71,6 +73,7 @@ System.out.println(d.identify());`,
     q: "<code>Thermostat</code> implements <code>IoTDevice</code>, which includes <code>turnOn()</code> and <code>turnOff()</code>, but a thermostat is always on. What’s the best fix?",
     options: ["Leave <code>turnOff()</code> empty", "Make <code>turnOff()</code> throw <code>UnsupportedOperationException</code>", "Split out a <code>Switchable</code> interface with <code>turnOn</code>/<code>turnOff</code>, and only switchable devices implement it", "Remove <code>Thermostat</code>"],
     answer: 2,
+    whys: ["An empty turnOff() quietly lies to callers: it promises an action that never happens.", "Throwing at runtime turns a design mistake into a crash.", null, "Removing a real device dodges the design problem."],
     model: "That’s the <b>Interface Segregation Principle</b>: clients should only see the methods relevant to them. Keep <code>IoTDevice</code> small, put on/off in <code>Switchable</code>, and have <code>Light</code> and <code>Fan</code> implement both while <code>Thermostat</code> doesn’t.",
     explain: "Empty or throwing methods are a sign the interface is too big for this class.",
   },
@@ -95,6 +98,7 @@ public class Fan [[3]] BaseIoTDevice {
     q: "Which can an <b>abstract class</b> have?",
     options: ["Fields", "Constructors", "Methods with bodies", "Objects created directly with <code>new</code>"],
     answers: [0, 1, 2],
+    whys: [null, null, null, "Abstract classes can’t be instantiated directly; you create a concrete subclass."],
     explain: "An abstract class is an incomplete blueprint: it can have fields, constructors (called with <code>super</code>), and implemented methods, but you can’t instantiate it.",
   },
   {
@@ -137,6 +141,7 @@ registerExam("interfaces", [
     q: "<code>BaseIoTDevice</code> stores the name and on/off state that every device shares, but each device describes itself differently in <code>identify()</code>. What does declaring <code>BaseIoTDevice</code> <code>abstract</code> accomplish?",
     options: ["It lets the class hold shared code while forcing each device to supply identify(), and nobody can create a bare BaseIoTDevice", "It hides the class from other packages", "It makes every field final", "It allows the class to extend two parents"],
     answer: 0,
+    whys: [null, "abstract doesn’t affect package visibility.", "abstract doesn’t make fields final.", "Java classes can only extend one parent, abstract or not."],
     explain: "An abstract class is a partial blueprint: real shared code, plus abstract methods subclasses must implement. Since it’s incomplete, <code>new BaseIoTDevice(…)</code> isn’t allowed.",
   },
 
@@ -145,6 +150,7 @@ registerExam("interfaces", [
     q: "Which is a key difference between an interface and an abstract class?",
     options: ["A class can implement many interfaces but extend only one class", "Interfaces can have constructors", "Abstract classes can’t have fields", "Interfaces can be instantiated"],
     answer: 0,
+    whys: [null, "Interfaces can’t have constructors.", "Abstract classes can have fields.", "Interfaces can’t be instantiated."],
     explain: "Single inheritance of classes, multiple implementation of interfaces. That’s why capabilities like Switchable are interfaces.",
   },
   {
@@ -152,6 +158,7 @@ registerExam("interfaces", [
     q: "Which design follows the Interface Segregation Principle best?",
     options: ["One big <code>SmartDevice</code> interface with every method any device might need", "Small interfaces like <code>Switchable</code> and <code>Dimmable</code>, each device implementing only what applies", "No interfaces at all", "An interface per method name, shared by all devices"],
     answer: 1,
+    whys: ["One big interface forces devices to implement methods that don’t apply to them.", null, "Without interfaces, callers depend on concrete classes.", "One interface per method name ignores which methods belong together."],
     explain: "Clients should only see the methods relevant to them; a thermostat shouldn’t be forced to implement turnOff.",
   },
   {
@@ -159,6 +166,7 @@ registerExam("interfaces", [
     q: "What is a <b>skeletal implementation</b> (like <code>AbstractList</code>) for?",
     options: ["Preventing anyone from implementing the interface", "Providing most of an interface’s methods so implementers only write a few", "Letting a class extend several abstract classes at once", "Replacing the interface entirely"],
     answer: 1,
+    whys: ["Skeletal implementations make an interface easier to implement, not harder.", null, "Java classes can only extend one class.", "The interface stays; the skeletal class implements it."],
     explain: "An abstract class that implements the interface does the repetitive work; you fill in the core methods.",
   },
 ]);

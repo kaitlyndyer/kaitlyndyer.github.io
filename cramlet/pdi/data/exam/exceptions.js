@@ -70,6 +70,7 @@ System.out.println("end");`,
     q: "Which of these are <b>unchecked</b> exceptions (not required to be caught or declared)?",
     options: ["<code>IllegalArgumentException</code>", "<code>NullPointerException</code>", "<code>FileNotFoundException</code>", "<code>ArithmeticException</code>"],
     answers: [0, 1, 3],
+    whys: [null, null, "FileNotFoundException is checked (it extends IOException), so you must catch it or declare it.", null],
     explain: "Unchecked exceptions are subclasses of <code>RuntimeException</code>. <code>FileNotFoundException</code> is <b>checked</b>: you must catch it or declare <code>throws</code>.",
   },
   {
@@ -93,6 +94,7 @@ public Scanner open(String path) [[2]] FileNotFoundException {
     q: "A caller passes a negative brightness to your <code>Light</code> constructor. Following the lecture’s recipe, what should the constructor do?",
     options: ["Quietly use 0 instead", "Print an error message and keep going", "Throw an <code>IllegalArgumentException</code> and document it with <code>@throws</code>", "Return <code>null</code>"],
     answer: 2,
+    whys: ["Silently changing the value hides the caller’s bug.", "Printing doesn’t stop the bad object from being built.", null, "A constructor can’t return anything, including null."],
     model: "The recipe: prevent the error if you can, else recover locally if that makes sense, else throw. The constructor can’t prevent bad input from its caller, and silently changing it would hide a bug. So throw an exception and document it with <code>@throws</code>.",
     explain: "Constructors can’t return null, and printing doesn’t stop the bad object from being built.",
   },
@@ -124,6 +126,7 @@ registerExam("exceptions", [
     q: "<code>loadRooms()</code> opens a file and can throw <code>FileNotFoundException</code>. <code>setBrightness()</code> can throw <code>IllegalArgumentException</code>. Which statement is correct?",
     options: ["Callers of loadRooms must catch the exception or declare it with throws; callers of setBrightness don’t have to", "Both must be declared with throws", "Neither can be caught", "IllegalArgumentException is checked because it’s about arguments"],
     answer: 0,
+    whys: [null, "IllegalArgumentException is unchecked, so it doesn’t need a throws clause.", "Both can be caught with try/catch.", "Checked vs. unchecked depends on the class hierarchy, not the name. IllegalArgumentException extends RuntimeException."],
     explain: "FileNotFoundException is a <b>checked</b> exception (the compiler enforces handling). IllegalArgumentException extends RuntimeException, so it’s <b>unchecked</b>.",
   },
 
@@ -132,6 +135,7 @@ registerExam("exceptions", [
     q: "A <code>try</code> has <code>catch (Exception e)</code> followed by <code>catch (IllegalArgumentException e)</code>. What happens?",
     options: ["The second catch handles IllegalArgumentException", "Compile error: the second catch can never be reached", "Both catches run", "The order doesn’t matter"],
     answer: 1,
+    whys: ["The first catch (Exception) already catches it, so the second can never run, and that’s a compile error.", null, "Only the first matching catch runs.", "Order matters: Java tries catches top to bottom, so specific ones must come first."],
     explain: "<code>Exception</code> already catches every IllegalArgumentException, so the more specific catch must come first.",
   },
   {
@@ -139,6 +143,7 @@ registerExam("exceptions", [
     q: "When does a <code>finally</code> block run?",
     options: ["Only when an exception is thrown", "Only when no exception is thrown", "After the try (and any catch), whether or not an exception happened", "Only if the method returns void"],
     answer: 2,
+    whys: ["finally also runs when nothing is thrown.", "finally also runs when an exception is thrown.", null, "finally doesn’t care about the return type."],
     explain: "That’s why it’s used for cleanup, like closing resources.",
   },
   {
@@ -146,6 +151,7 @@ registerExam("exceptions", [
     q: "Which order matches the lecture’s recipe for handling errors?",
     options: ["Throw first, then try to prevent", "Prevent the error if you can, else recover locally if it makes sense, else throw", "Always catch everything", "Print an error and continue"],
     answer: 1,
+    whys: ["Prevention comes first; throwing is the last resort.", null, "Catching everything hides real bugs.", "Printing and continuing means the program goes on with bad state."],
     explain: "Throwing is the last resort, but silently ignoring a problem is never the answer.",
   },
 
@@ -162,6 +168,7 @@ int parseServings(String s) {
     q: "Neither method has a <code>try</code> or a <code>throws</code> clause. What does the compiler say?",
     options: ["Both compile", "<code>loadText</code> fails to compile; <code>parseServings</code> compiles", "<code>parseServings</code> fails to compile; <code>loadText</code> compiles", "Neither compiles"],
     answer: 1,
+    whys: ["loadText can throw IOException, which is checked, so it must catch or declare it.", null, "NumberFormatException is unchecked, so parseServings compiles without a throws clause.", "parseServings is fine; only the checked IOException needs handling."],
     explain: "<code>IOException</code> is checked: catch it or declare it. <code>NumberFormatException</code> extends <code>RuntimeException</code>, so it’s unchecked and needs neither.",
   },
 ]);
