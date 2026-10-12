@@ -149,6 +149,7 @@ public void testInvalidBrightness() {
       q: "Which exception type is <b>checked</b>?",
       options: ["<code>IllegalArgumentException</code>", "<code>NullPointerException</code>", "<code>FileNotFoundException</code>", "<code>ClassCastException</code>"],
       answer: 2,
+      whys: ["IllegalArgumentException extends RuntimeException, so it’s unchecked.", "NullPointerException extends RuntimeException, so it’s unchecked.", null, "ClassCastException extends RuntimeException, so it’s unchecked."],
       explain: "The others extend <code>RuntimeException</code>, so they’re unchecked. <code>FileNotFoundException</code> must be caught or declared.",
     },
     {
@@ -156,6 +157,7 @@ public void testInvalidBrightness() {
       q: "What happens to the <code>catch</code> block if no exception is thrown?",
       options: ["It runs anyway", "It’s skipped", "It runs after the method returns", "The program crashes"],
       answer: 1,
+      whys: ["catch only runs for a matching exception. (finally is the block that always runs.)", null, "catch never runs after the method returns.", "No exception means nothing to crash on."],
       explain: "The <code>catch</code> only runs when a matching exception was thrown.",
     },
     {
@@ -163,6 +165,7 @@ public void testInvalidBrightness() {
       q: "Which is the most concise JUnit 5 way to test that a constructor throws?",
       options: ["<code>assertTrue(false)</code>", "<code>assertThrows(IllegalArgumentException.class, () -&gt; new DimmableLight(\"x\", -10))</code>", "<code>@Test(expected = ...)</code>", "Print the stack trace and look at it"],
       answer: 1,
+      whys: ["assertTrue(false) always fails; it doesn’t check for an exception.", null, "That’s JUnit 4 syntax, not JUnit 5.", "Looking at output by hand isn’t an automated test."],
       explain: "<code>assertThrows</code> is the JUnit 5 option. <code>@Test(expected = ...)</code> is the older JUnit 4 style.",
     },
     {
@@ -170,6 +173,7 @@ public void testInvalidBrightness() {
       q: "Your method finds a problem it can’t prevent but <i>can</i> fix itself. According to the recipe, what should it do?",
       options: ["Throw an exception anyway", "Recover locally", "Throw an Error", "Ignore it"],
       answer: 1,
+      whys: ["Throwing is the last resort when you can’t fix it.", null, "Errors are for serious JVM problems, not for problems you can fix.", "Ignoring a problem is never the answer."],
       explain: "Prevent if you can, else recover locally if you can, and only then throw.",
     },
     {

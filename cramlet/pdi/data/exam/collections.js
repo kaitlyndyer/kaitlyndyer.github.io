@@ -16,6 +16,7 @@ System.out.println(fruits.size() + " " + fruits);`,
     q: "You need to store usernames so that <b>no name appears twice</b>, and show them in <b>alphabetical order</b>. Which do you use?",
     options: ["<code>ArrayList&lt;String&gt;</code>", "<code>HashSet&lt;String&gt;</code>", "<code>TreeSet&lt;String&gt;</code>", "<code>LinkedHashSet&lt;String&gt;</code>"],
     answer: 2,
+    whys: ["An ArrayList allows duplicates, and it keeps insertion order, not alphabetical order.", "A HashSet blocks duplicates, but its order is unpredictable, so it won’t list names alphabetically.", null, "A LinkedHashSet blocks duplicates but keeps insertion order, not alphabetical order."],
     model: "A <code>Set</code> rules out duplicates, and <code>TreeSet</code> keeps its elements sorted. <code>HashSet</code> has no useful order, <code>LinkedHashSet</code> keeps insertion order (not alphabetical), and a list allows duplicates.",
     explain: "Pick the interface for the behavior you need (<code>Set</code>: no duplicates), then the implementation for the extra property (<code>TreeSet</code>: sorted).",
   },
@@ -149,6 +150,7 @@ while (it.[[2]]()) {
     q: "You’re logging device events in the order they happen. The same event can happen twice, and the UI often asks for “event #k”. Which structure fits best?",
     options: ["<code>TreeSet</code>", "<code>HashSet</code>", "<code>ArrayList</code>", "<code>TreeMap</code> keyed by event name"],
     answer: 2,
+    whys: ["A TreeSet drops duplicate events and re-sorts them, so you lose “the order they happened.”", "A HashSet drops duplicates and has no order, so “event #k” means nothing.", null, "A map keyed by event name keeps only one entry per name, so repeated events overwrite each other."],
     model: "You need <b>order</b>, <b>duplicates</b>, and fast <b>access by index</b>: that’s a List, and <code>ArrayList</code>’s contiguous array makes <code>get(k)</code> fast. Sets would drop repeated events, and a map keyed by name would overwrite them.",
     explain: "Ask three questions: does order matter, are duplicates allowed, and how will you look things up?",
   },
@@ -157,6 +159,7 @@ while (it.[[2]]()) {
     q: "You need to look up each device’s brightness by its name, and the settings page lists devices <b>alphabetically</b>. Which structure fits best?",
     options: ["<code>HashMap&lt;String, Integer&gt;</code>", "<code>TreeMap&lt;String, Integer&gt;</code>", "<code>ArrayList&lt;Integer&gt;</code>", "<code>LinkedHashSet&lt;String&gt;</code>"],
     answer: 1,
+    whys: ["A HashMap finds by name fast, but its iteration order is unpredictable, not alphabetical.", null, "A list of numbers has no names in it, so you can’t look a device up by name.", "A set of names stores no brightness values, so there’s nothing to look up."],
     model: "Lookup by name means a <b>Map</b>. Sorted output means a <code>TreeMap</code>: it keeps keys in order (balanced BST, O(log n) operations). A <code>HashMap</code> is a bit faster but has no order, so you’d have to sort every time.",
     explain: "TreeMap/TreeSet trade a little speed for keeping things sorted.",
   },
@@ -165,6 +168,7 @@ while (it.[[2]]()) {
     q: "Why can you use a for-each loop on <b>any</b> <code>Collection</code>?",
     options: ["Because <code>Collection</code> extends <code>Iterable</code>, which provides <code>iterator()</code>", "Because every collection is backed by an array", "Because <code>Collection</code> extends <code>Comparable</code>", "Because the compiler turns every collection into a <code>List</code>"],
     answer: 0,
+    whys: [null, "Most collections aren’t arrays (HashSet uses a hash table, LinkedList uses nodes). For-each only needs an iterator.", "Comparable is about ordering (compareTo), not iterating.", "The compiler doesn’t convert anything; it just calls iterator() on the Iterable."],
     explain: "For-each works on anything <code>Iterable</code>. Behind the scenes it calls <code>iterator()</code>, then <code>hasNext()</code>/<code>next()</code>.",
   },
   {
@@ -197,6 +201,7 @@ registerExam("collections", [
     q: "You need to check quickly whether a device ID has already reported in today, and each ID should be stored once. Which structure fits best?",
     options: ["<code>ArrayList&lt;String&gt;</code>", "<code>HashSet&lt;String&gt;</code>", "<code>LinkedList&lt;String&gt;</code>", "<code>String[]</code>"],
     answer: 1,
+    whys: ["A list allows duplicates, and contains() has to scan the whole list.", null, "A LinkedList allows duplicates, and contains() still scans every node.", "An array has a fixed size, allows duplicates, and needs a linear search."],
     explain: "Sets store unique elements and are optimized for <code>contains</code>. Lists would need a linear search and allow duplicates.",
   },
   {
@@ -204,6 +209,7 @@ registerExam("collections", [
     q: "When is <code>LinkedList</code> a better choice than <code>ArrayList</code>?",
     options: ["When you mostly read elements by index", "When you mostly add and remove at the ends", "When you need sorted order", "When you need unique elements"],
     answer: 1,
+    whys: ["Reading by index is ArrayList’s strength; LinkedList has to walk node by node to reach index i.", null, "Neither list sorts itself; a TreeSet or TreeMap keeps sorted order.", "Both lists allow duplicates; uniqueness is a Set’s job."],
     explain: "ArrayList has fast random access; LinkedList has fast insertion/removal at either end.",
   },
   {
@@ -211,6 +217,7 @@ registerExam("collections", [
     q: "A <code>HashSet&lt;Room&gt;</code> keeps duplicate rooms even though <code>Room</code> overrides <code>equals</code>. What is the most likely cause?",
     options: ["HashSet doesn’t use equals", "<code>Room</code> doesn’t override <code>hashCode</code> consistently with equals", "Rooms must be Comparable", "<code>Room</code> must also override <code>toString</code>"],
     answer: 1,
+    whys: ["HashSet does use equals, but only after hashCode has picked the bucket.", null, "Comparable matters for TreeSet, not HashSet.", "toString is only for printing; collections never use it for equality."],
     explain: "Hash-based sets use hashCode to find the bucket, then equals. Equal objects must have equal hash codes.",
   },
   {
@@ -218,6 +225,7 @@ registerExam("collections", [
     q: "What happens when you <code>put</code> a key that’s already in a <code>Map</code>?",
     options: ["The map now has two entries with that key", "The new value replaces the old one", "An exception is thrown", "The put is ignored"],
     answer: 1,
+    whys: ["Keys in a map are unique, so a key can never appear twice.", null, "put never throws for an existing key; replacing the value is normal behavior.", "put isn’t ignored. That’s what a Set does with a duplicate add, not a Map."],
     explain: "Keys are unique, which is why a map’s key set behaves like a Set.",
   },
 ]);

@@ -182,7 +182,10 @@
             </a>${(() => { const n = CRAMLET.exam.deckCount(COURSE); return n ? `
             <a class="nav-item exam-link deck-link${current === "missed" ? " active" : ""}" href="#/exam/missed" style="--c:var(--brand)">
                 <span class="nav-icon">${icon("cards")}</span><span class="nav-label">Missed deck</span><span class="deck-count">${n}</span>
-            </a>` : ""; })()}` : "") + S.groups.map(g => `
+            </a>` : ""; })()}` : "") + (CRAMLET.myths && CRAMLET.myths.count() ? `
+            <a class="nav-item exam-link${current === "myths" ? " active" : ""}" href="#/myths" style="--c:var(--brand)">
+                <span class="nav-icon">${icon("lightbulb")}</span><span class="nav-label">Myth or fact?</span>
+            </a>` : "") + S.groups.map(g => `
             <div class="nav-group">
                 <div class="nav-group-title">${icon(g.icon)} ${esc(g.title)}</div>
                 ${g.concepts.map(c => `
@@ -212,6 +215,7 @@
                     <div class="hero-actions">
                         <button class="btn primary" type="button" data-focus-search>${icon("magnifying-glass")} Search the notes</button>
                         ${CRAMLET.exam ? `<a class="btn" href="#/exam">${icon("list-checks")} Take a practice exam</a>` : ""}
+                        ${CRAMLET.myths && CRAMLET.myths.count() ? `<a class="btn" href="#/myths">${icon("lightbulb")} Myth or fact?</a>` : ""}
                     </div>
                 </div>
                 <div class="ring" style="--pct:${pct}" role="img" aria-label="${got} of ${allConcepts.length} concepts marked got it">
@@ -546,7 +550,7 @@
                 ${q.machine && CRAMLET.automata ? `<div class="quiz-machine">${CRAMLET.automata.render(q.machine)}</div>` : ""}
                 <div class="options">
                     ${order.map((k, pos) => `<button type="button" class="option" data-pick="${k}">
-                        <span class="opt-letter">${"ABCDEFG"[pos]}</span><span>${options[k]}</span></button>`).join("")}
+                        <span class="opt-letter">${"ABCDEFG"[pos]}</span><span class="opt-text">${options[k]}${q.whys && q.whys[k] ? `<span class="opt-why" hidden>${esc(q.whys[k])}</span>` : ""}</span></button>`).join("")}
                 </div>`;
             }
 
@@ -573,6 +577,8 @@
                 area.querySelectorAll("[data-pick]").forEach(b => {
                     b.disabled = true;
                     if (Number(b.dataset.pick) === correctIdx) b.classList.add("correct");
+                    const why = b.querySelector(".opt-why"); // why each wrong option is wrong
+                    if (why) why.hidden = false;
                 });
                 if (!right) btn.classList.add("wrong");
 
@@ -827,6 +833,10 @@
             renderNav(parts[1] === "missed" || parts[1] === "mistakes" ? "missed" : "exam");
             CRAMLET.exam.render(main, { S, COURSE, esc, icon, codeBlock, exampleRef, highlight, conceptById, allConcepts }, parts);
             document.title = "Practice exam · " + S.course.title + " · cramlet";
+        } else if (parts[0] === "myths" && CRAMLET.myths && CRAMLET.myths.count()) {
+            renderNav("myths");
+            CRAMLET.myths.render(main, { S, COURSE, esc, icon, conceptById, celebrate, setKeyHandler }, parts);
+            document.title = "Myth or fact? · " + S.course.title + " · cramlet";
         } else if (parts[0] === "c" && parts[1]) {
             renderNav(parts[1]);
             renderConcept(parts[1], parts[2] || "summary", parts[3]);

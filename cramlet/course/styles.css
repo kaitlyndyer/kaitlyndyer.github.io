@@ -410,6 +410,8 @@ code { font-family: var(--font-code); font-size: .88em; }
 .option.correct .opt-letter { background: var(--good); color: white; }
 .option.wrong, .bug-line.wrong { border-color: var(--bad); background: var(--bad-bg); animation: shake .35s; }
 .option.wrong .opt-letter { background: var(--bad); color: white; }
+.opt-why { display: block; margin-top: 4px; font: 500 14px/1.4 var(--font-body); color: var(--muted); }
+.option.wrong .opt-why { color: var(--ink); }
 @keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 
 .bug-code { background: var(--code-bg); border-radius: 14px; padding: 10px 0; overflow-x: auto; }

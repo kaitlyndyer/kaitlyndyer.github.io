@@ -152,6 +152,7 @@ class Light(IoTDevice):
       q: "Your app will mostly get <b>new kinds of devices</b> over time. Which design makes that easiest?",
       options: ["Data & functions separate", "Object-oriented (classes)", "Both are equally easy", "Neither. You’d need a new language."],
       answer: 1,
+      whys: ["Every function would need a new branch for each new device.", null, "They aren’t equally easy: it depends on which kind of change you expect.", "Either design works; one just makes this change easier."],
       explain: "In OO, a new device type is a new, self-contained class. In the separate design you’d edit every function that branches on type.",
     },
     {
@@ -159,6 +160,7 @@ class Light(IoTDevice):
       q: "Your app will mostly get <b>new operations</b> (like <code>reset()</code>) for the same devices. Which design makes that easiest?",
       options: ["Data & functions separate", "Object-oriented (classes)", "Both are equally easy", "Neither"],
       answer: 0,
+      whys: [null, "In OO, a new operation means adding a method to every class.", "They aren’t equally easy: it depends on which kind of change you expect.", "Either design works; one just makes this change easier."],
       explain: "With separate functions, one new function handles every device. In OO you’d add the method to every class.",
     },
     {
@@ -166,6 +168,7 @@ class Light(IoTDevice):
       q: "Which call matches the object-oriented mental model “Device, identify yourself”?",
       options: ["<code>identifyDevice(light)</code>", "<code>light.identify()</code>", "<code>identify(light, true)</code>", "<code>Light.identify()</code>"],
       answer: 1,
+      whys: ["That passes the device to a function, which is the separate-functions style.", null, "That passes the device and a flag to a function, which isn’t asking the object.", "That’s a static call on the class, not asking a particular light."],
       explain: "In OO, you ask the object to do the work: <code>light.identify()</code>.",
     },
     {
@@ -194,6 +197,7 @@ class Light(IoTDevice):
       q: "Which is <b>not</b> one of the weaknesses of the Python designs that Java addresses?",
       options: ["identifyDevice() must guess the type from dict contents", "No succinct way to see a device’s capabilities", "Code can reach into objects freely", "Python can’t create classes"],
       answer: 3,
+      whys: ["That was a real weakness: the function had to guess the type from dict keys.", "That was a real weakness: you couldn’t see a device’s capabilities at a glance.", "That was a real weakness: code could reach into objects freely.", null],
       explain: "Python has classes (Design 2 used them). The real issues were type guessing, unclear capabilities, and tight coupling.",
     },
   ],

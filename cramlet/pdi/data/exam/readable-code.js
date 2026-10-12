@@ -5,6 +5,7 @@ registerExam("readable-code", [
     q: "A team wants every file formatted the same way without arguing about it in code review. What does the lecture suggest?",
     options: ["Ask everyone to be careful", "Enforce the style automatically with tools like Spotless/google-java-format and Checkstyle", "Let each developer use their own style", "Only format code before releases"],
     answer: 1,
+    whys: ["Relying on people remembering doesn’t scale; tools enforce it every time.", null, "Mixed styles mean more mental effort for every reader.", "Style matters every time someone reads the code, not just at release."],
     explain: "Style is easy to enforce automatically, so it doesn’t depend on people remembering.",
   },
   {
@@ -12,6 +13,7 @@ registerExam("readable-code", [
     q: "Which of these is <b>not</b> something a code style guide typically mandates?",
     options: ["Indentation and spacing", "Braces around one-line <code>if</code> bodies", "Which algorithm to use for sorting", "Documentation format"],
     answer: 2,
+    whys: ["Style guides do mandate indentation and spacing.", "Style guides do cover optional syntax like braces.", null, "Style guides do cover doc format, like Javadoc conventions."],
     explain: "Style covers how code looks (spacing, optional syntax, docs). Algorithm choice is a design decision.",
   },
   {
@@ -19,6 +21,7 @@ registerExam("readable-code", [
     q: "A class has <code>getBrightness()</code>, <code>setLevel(int)</code>, and a field named <code>intensity</code>, all for the same value. What is the main readability problem?",
     options: ["The names are too long", "Different words for one concept make readers wonder if they’re different things", "Getters should never be named <code>get…</code>", "The getter and setter should be merged into one method"],
     answer: 1,
+    whys: ["Length isn’t the issue; using three names for one idea is.", null, "get… is the normal Java getter name.", "Merging them doesn’t fix the mismatched names."],
     explain: "Same word ⇒ same concept. Pick one word (here, brightness) and use it everywhere.",
   },
   {
@@ -26,6 +29,7 @@ registerExam("readable-code", [
     q: "What is a <b>lexicon</b> in the context of naming?",
     options: ["A tool that renames variables automatically", "A documented mapping from domain concepts to the canonical words used in the code", "A list of Java keywords", "A dictionary of abbreviations everyone should use"],
     answer: 1,
+    whys: ["A lexicon is a document people agree on, not a tool.", null, "A lexicon is about the project’s domain words, not Java keywords.", "A lexicon is about consistent domain words, not shortcuts."],
     explain: "It records which word means which concept, which is especially valuable on big teams and long-lived projects.",
   },
   {
@@ -33,6 +37,7 @@ registerExam("readable-code", [
     q: "In a codebase where <b>every</b> temperature is in Kelvin, a teammate names variables <code>targetTempKelvin</code>, <code>currentTempKelvin</code>, and so on. What does the lecture say?",
     options: ["Good: units should always be in names", "The unit is mostly noise here, since nothing else could be meant", "Units must be in comments, never names", "Good: a longer name is always more descriptive"],
     answer: 1,
+    whys: ["Units help when they’re mixed. When only one is possible, they’re noise.", null, "Units can go in names when they prevent confusion.", "Longer isn’t always better; extra words that add nothing are noise."],
     explain: "Units in names earn their place when units are mixed (Kelvin vs. mired) and confusion is possible.",
   },
   {
@@ -40,6 +45,7 @@ registerExam("readable-code", [
     q: "Which is the best example of matching name length to scope?",
     options: ["<code>for (Light l : lights)</code> in a two-line loop, and a field named <code>startupColorTemperature</code>", "A public method named <code>f()</code>", "A loop variable named <code>theCurrentLightBeingProcessedInThisLoop</code>", "A field named <code>t</code> and a two-line loop variable named <code>currentLightBeingDimmed</code>"],
     answer: 0,
+    whys: [null, "A public method is used far away, so f() tells callers nothing.", "A two-line loop doesn’t need a name that long.", "It’s backward: the long-lived field needs a long name, and the loop variable can be short."],
     explain: "Short scopes can use short names; names read far from their definition need to be descriptive.",
   },
   {
@@ -47,6 +53,7 @@ registerExam("readable-code", [
     q: "Which order matches the name-mold method?",
     options: ["Choose the words → select the concepts → construct the name", "Select the concepts → choose the words → construct the name", "Construct the name → select the concepts → choose the words", "Pick a casing style → choose a length → select the words"],
     answer: 1,
+    whys: ["You can’t choose words before you know which concepts the name must convey.", null, "You construct the name last, after choosing the concepts and words.", "Casing and length come from conventions, not the name-mold steps."],
     explain: "Decide what the name must convey, then which words express it, then how to put them together.",
   },
   {
@@ -54,6 +61,7 @@ registerExam("readable-code", [
     q: "Only the two original authors can understand a project’s code. Which risk is this?",
     options: ["Hyrum’s Law", "A bus-factor problem: the project depends on a few people", "Low cohesion", "Low coupling"],
     answer: 1,
+    whys: ["Hyrum’s Law is about users relying on behavior, not a few people knowing the code.", null, "Cohesion is about a module’s purpose, not who understands it.", "Low coupling is good, and it isn’t about people."],
     explain: "Readable code lets others take over, which cuts onboarding cost and keeps a project alive.",
   },
   {
@@ -61,6 +69,7 @@ registerExam("readable-code", [
     q: "Half a project uses <code>colorTemperatureTarget</code> and the other half uses <code>targetColorTemperature</code>. What should the team do?",
     options: ["Nothing; both are camelCase", "Pick one word order (modifier-first or modifier-last) and apply it everywhere", "Switch everything to snake_case", "Add a comment explaining both"],
     answer: 1,
+    whys: ["Both being camelCase isn’t enough. Different word orders still make readers stop and check.", null, "Changing the casing doesn’t fix the word order, and Java uses camelCase.", "A comment doesn’t remove the inconsistency."],
     model: "Step 3 of the name molds is to construct names with a <b>consistent</b> word order. Mixing orders makes readers stop to check whether two names mean different things. Consistency matters more than which order you choose.",
     explain: "Consistency reduces cognitive load.",
   },

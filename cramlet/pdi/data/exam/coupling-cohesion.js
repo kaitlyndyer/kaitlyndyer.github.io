@@ -5,6 +5,7 @@ registerExam("coupling-cohesion", [
     q: "<code>printCount(DeviceHub hub)</code> only ever calls <code>hub.getDevices().size()</code>. What is the main problem with this design?",
     options: ["It’s slower than passing an int", "It’s coupled to all of <code>DeviceHub</code>, so testing it means building a whole hub", "It has too few parameters to be flexible", "It has low cohesion because it prints"],
     answer: 1,
+    whys: ["Speed isn’t the issue; the problem is the dependency on everything in DeviceHub.", null, "More parameters wouldn’t help. The problem is depending on a big object to use one number.", "Printing one count is a single purpose; the problem is coupling."],
     explain: "Ask for only what you need (the count or the list). Less coupling, and much easier to test.",
   },
   {
@@ -12,6 +13,7 @@ registerExam("coupling-cohesion", [
     q: "Which parameter type couples <code>addDevices</code> to the <b>least</b> likely-to-change module?",
     options: ["<code>MyDeviceList devices</code> (a custom class the team edits often)", "<code>ArrayList&lt;Light&gt; devices</code>", "<code>List&lt;IoTDevice&gt; devices</code>", "<code>Light[] lights, Fan[] fans</code>"],
     answer: 2,
+    whys: ["A custom class the team edits often is the most likely to change, so it’s the riskiest dependency.", "That ties the method to one concrete list and one device type.", null, "Separate arrays per concrete type mean a new parameter for every new device."],
     explain: "Depend on interfaces (<code>IoTDevice</code>) and standard, stable modules (<code>List</code>), not concrete or frequently changing classes.",
   },
   {
@@ -19,6 +21,7 @@ registerExam("coupling-cohesion", [
     q: "<code>DeviceHub</code> exposes <code>public static List&lt;IoTDevice&gt; devices</code>, and three classes loop over it. The team switches to a <code>Map</code>. What happens?",
     options: ["Nothing; the change is internal", "All three classes must change, because they depended on an exposed implementation detail", "Only <code>DeviceHub</code> recompiles", "The Map is converted automatically"],
     answer: 1,
+    whys: ["The field is public, so it isn’t internal. Anyone who loops over it depends on it being a List.", null, "The other classes use List methods on the field, so they break too, not just DeviceHub.", "Java never converts between List and Map for you."],
     explain: "Exposing internals invites coupling. Keep the representation private behind methods.",
   },
   {
@@ -26,6 +29,7 @@ registerExam("coupling-cohesion", [
     q: "<code>ecoMode()</code> loops over <code>IoTDevice</code>s with an <code>instanceof Light</code> / <code>instanceof Fan</code> chain. The team adds a <code>Heater</code>. What is the problem?",
     options: ["Nothing; the data is typed as IoTDevice", "<code>ecoMode()</code> must change too, and nothing warns the <code>Heater</code> author", "Heater can’t implement IoTDevice", "instanceof is a compile error on interfaces"],
     answer: 1,
+    whys: ["The data is typed as IoTDevice, but the logic still names each concrete type, so it must change for each new one.", null, "Any class can implement IoTDevice, including Heater.", "instanceof works fine on interfaces; it compiles."],
     explain: "That’s logic coupling: the hub’s logic depends on every device type, so changes cascade and are found late.",
   },
   {
@@ -33,6 +37,7 @@ registerExam("coupling-cohesion", [
     q: "A <code>DeviceManager</code> class schedules devices, sends email alerts, and parses config files. What is the main problem?",
     options: ["Each method is too short", "Several unrelated jobs live together, so the class changes for many unrelated reasons and edits for one job risk the others", "It depends on too few other classes", "It should be split into records"],
     answer: 1,
+    whys: ["Method length isn’t the issue; the class does unrelated jobs.", null, "Few dependencies is a good thing (low coupling). The problem is mixed purposes.", "Records are for immutable data; splitting by purpose is the fix, not changing to records."],
     explain: "That’s low cohesion. A module with multiple purposes changes more often, and it’s harder to find where a change belongs.",
   },
 
@@ -41,6 +46,7 @@ registerExam("coupling-cohesion", [
     q: "Which best describes a <b>highly cohesive</b> module?",
     options: ["It depends on many other modules", "It has one specific purpose and is as self-sufficient as possible", "It contains every utility method in the project", "It has as few methods as possible"],
     answer: 1,
+    whys: ["Depending on many modules is high coupling, not cohesion.", null, "A grab-bag of utilities is the classic low-cohesion module.", "Cohesion is about one purpose, not the number of methods."],
     explain: "One purpose, fulfilled fully.",
   },
   {
@@ -48,6 +54,7 @@ registerExam("coupling-cohesion", [
     q: "Which design for devices is the <b>most cohesive</b>?",
     options: ["Records for Light and Fan, plus one <code>DeviceOperations</code> class with every operation", "Records for Light and Fan, plus <code>LightOperations</code> and <code>FanOperations</code>", "A <code>Light</code> class that holds its own data and its own operations (turnOn, setPower, identify)", "One <code>Devices</code> class with a switch on a type string"],
     answer: 2,
+    whys: ["One DeviceOperations class mixes every device’s logic, and it changes whenever any device changes.", "Splitting operations from the data still separates a device’s data from its behavior.", null, "A switch on a type string mixes every device into one place, which means low cohesion and logic coupling."],
     explain: "Combining a device’s data with its operations means only <code>Light</code> changes for light changes, and no existing class changes for new devices.",
   },
   {
@@ -55,6 +62,7 @@ registerExam("coupling-cohesion", [
     q: "Two designs each have 5 dependencies. Design A depends on <code>List</code> and interfaces; Design B depends on custom classes that change weekly. Which is true?",
     options: ["They have identical coupling", "B is riskier: coupling also depends on how likely each dependency is to change", "A is riskier because interfaces change often", "Coupling only matters above 10 dependencies"],
     answer: 1,
+    whys: ["Coupling isn’t just a count. It also depends on how likely each dependency is to change.", null, "List and stable interfaces rarely change, so they’re the safer dependencies.", "There’s no magic number. Even one unstable dependency can hurt."],
     explain: "Coupling is more than a count. Ask how likely each dependency is to cause harm.",
   },
   {
@@ -62,6 +70,7 @@ registerExam("coupling-cohesion", [
     q: "Which combination best promotes changeability?",
     options: ["High coupling, high cohesion", "Low coupling, high cohesion, and good information hiding", "Low coupling, low cohesion", "High coupling and public fields"],
     answer: 1,
+    whys: ["High coupling means changes ripple across modules.", null, "Low cohesion means each module changes for many reasons.", "Public fields expose internals, so that’s poor information hiding plus coupling."],
     explain: "The lecture’s summary: high cohesion, low coupling, good information hiding.",
   },
   {
@@ -69,6 +78,7 @@ registerExam("coupling-cohesion", [
     q: "<code>DeviceOperations</code> has <code>turnOnLight</code>, <code>turnOnFan</code>, <code>identifyLight</code>, <code>identifyFan</code>, … and changes almost every sprint. What’s the best refactor?",
     options: ["Split it alphabetically into two classes", "Move each operation into its device class, so <code>Light</code> owns its data and behavior", "Make all its methods static", "Add more comments"],
     answer: 1,
+    whys: ["Alphabetical splitting keeps unrelated jobs together, so it’s still low cohesion.", null, "Static methods don’t fix the mix of responsibilities.", "Comments don’t change the structure; the class still changes for every device."],
     model: "<code>DeviceOperations</code> is a low-cohesion “house for orphaned operations”: it changes whenever any device, any operation, or the ID format changes. Putting each device’s operations with its data gives <b>high cohesion</b>: light changes touch only <code>Light</code>, and a new device type is a new class with no edits elsewhere.",
     explain: "One purpose per module, fulfilled fully.",
   },
@@ -77,6 +87,7 @@ registerExam("coupling-cohesion", [
     q: "<code>DeviceHub</code> has <code>addLights(Light[])</code> and <code>addFans(Fan[])</code>, and breaks whenever Light or Fan change. What should it do instead?",
     options: ["Add an <code>addThermostats</code> method too", "Take <code>List&lt;IoTDevice&gt;</code>, depending only on the interface", "Copy the Light and Fan code into the hub", "Make Light and Fan final"],
     answer: 1,
+    whys: ["Adding another concrete method makes the coupling worse with every new device.", null, "Copying code duplicates it, and then you have two places to change.", "final stops subclassing, but the hub still depends on each concrete class."],
     model: "Depending on the concrete classes couples the hub to their implementations, which change often. Depending on the <code>IoTDevice</code> <b>interface</b> (and the standard <code>List</code>) means Light/Fan changes that keep their public spec can’t break the hub, and new device types need no new methods.",
     explain: "Depend on interfaces, and on modules unlikely to change.",
   },
@@ -90,6 +101,7 @@ registerExam("coupling-cohesion", [
     q: "The method compiles and works. What is the main design problem?",
     options: ["Multiplying doubles is slow", "It depends on the internal structure of <code>Recipe</code>, its ingredient list and <code>MeasuredIngredient</code>, so it needs a whole recipe to test and breaks if any of them change", "It has low cohesion because it returns a double", "It violates the equals/hashCode contract"],
     answer: 1,
+    whys: ["Speed isn’t the issue. The problem is reaching through three objects to get a number.", null, "Returning a double is fine; the problem is coupling to Recipe’s internals.", "The method doesn’t touch equals or hashCode."],
     explain: "It only needs a <code>Quantity</code> (or a number). Ask for what you use, and the coupling and test setup shrink.",
   },
 ]);

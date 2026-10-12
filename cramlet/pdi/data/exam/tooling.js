@@ -5,6 +5,7 @@ registerExam("tooling", [
     q: "What does <code>javac Fan.java</code> produce?",
     options: ["Machine code for your CPU", "Bytecode in <code>Fan.class</code>, which the JVM runs", "An HTML documentation page", "A Gradle build file"],
     answer: 1,
+    whys: ["javac produces bytecode for the JVM, not CPU machine code.", null, "Javadoc makes HTML docs, not javac.", "Gradle files are written by hand, not produced by javac."],
     explain: "<code>javac</code> compiles source into platform-independent <b>bytecode</b> (<code>.class</code> files); <code>java</code> then runs that bytecode on the JVM. That’s “write once, run anywhere.”",
   },
   {
@@ -12,6 +13,7 @@ registerExam("tooling", [
     q: "Your project needs a new library. Which file do you edit to add the dependency?",
     options: ["<code>settings.gradle</code>", "<code>build.gradle</code>", "<code>gradlew</code>", "Any <code>.java</code> file"],
     answer: 1,
+    whys: ["settings.gradle is root-folder config that rarely changes.", null, "gradlew is the wrapper script, not config.", "Dependencies are declared in the build file, not in source code."],
     explain: "<code>build.gradle</code> is the main config: JDK version, dependencies (including JUnit), and the entry point. <code>settings.gradle</code> is root-folder config that rarely changes.",
   },
   {
@@ -19,6 +21,7 @@ registerExam("tooling", [
     q: "Which statements about JUnit (as used in lecture) are true?",
     options: ["<code>@Test</code> marks a test method", "<code>@BeforeEach</code> runs once before every test", "JUnit is bundled with the JDK", "<code>assertThrows</code> checks that code throws an exception"],
     answers: [0, 1, 3],
+    whys: [null, null, "JUnit is an external library added through Gradle.", null],
     explain: "JUnit is an <b>external library</b> (added through Gradle), not part of the JDK. The other three are how lecture uses it.",
   },
   {
@@ -81,6 +84,7 @@ registerExam("tooling", [
     q: "A teammate on Linux sends you <code>Thermostat.class</code>, and it runs fine on your Mac without recompiling. What makes that possible?",
     options: ["The .class file contains Linux machine code that macOS translates", "It contains platform-independent bytecode, and your Mac’s JVM runs it", "javac secretly compiled it for every operating system", "Java source code is embedded in the .class file and reinterpreted"],
     answer: 1,
+    whys: [".class files hold bytecode, not machine code.", null, "javac compiles to bytecode once.", ".class files hold bytecode, not source."],
     explain: "That’s “write once, run anywhere”: javac produces bytecode, and each platform supplies its own JVM.",
   },
 
@@ -89,6 +93,7 @@ registerExam("tooling", [
     q: "Which statement best describes the JDK?",
     options: ["Only the virtual machine that runs bytecode", "The development kit: tools like <code>javac</code> plus everything needed to run Java", "A build tool like Gradle", "A testing library"],
     answer: 1,
+    whys: ["That’s the JVM.", null, "Gradle is a separate build tool.", "JUnit is a separate library."],
     explain: "The JDK is for developing (it includes the compiler); running Java needs the JRE/JVM, which the JDK includes.",
   },
   {
@@ -96,6 +101,7 @@ registerExam("tooling", [
     q: "Why put setup code in a <code>@BeforeEach</code> method instead of in a field initializer shared by all tests?",
     options: ["It runs faster", "Each test gets a fresh object, so one test can’t affect another", "JUnit forbids fields", "So the setup runs only once for all tests, which saves time"],
     answer: 1,
+    whys: ["It’s not about speed.", null, "JUnit allows fields.", "That’s @BeforeAll. @BeforeEach runs before every test."],
     explain: "Independent tests are reliable tests: <code>@BeforeEach</code> resets state before every test.",
   },
   {
@@ -103,6 +109,7 @@ registerExam("tooling", [
     q: "What’s the main purpose of the <code>gradlew</code> wrapper script checked into a project?",
     options: ["It formats the code", "It lets anyone build the project with the right Gradle version without installing Gradle first", "It replaces javac", "It stores the project’s dependencies"],
     answer: 1,
+    whys: ["Spotless or google-java-format formats code.", null, "Gradle still calls javac.", "Dependencies are declared in build.gradle and downloaded."],
     explain: "The wrapper downloads and runs the Gradle version the project expects, so every machine builds the same way.",
   },
 
@@ -112,6 +119,7 @@ registerExam("tooling", [
     q: "You compile your project on a Mac and send only the <code>.class</code> files to a friend on Windows who has Java installed. What happens?",
     options: ["They must recompile the <code>.java</code> files for Windows first", "It runs: <code>.class</code> files hold platform-independent bytecode that their JVM executes", "It runs only if you compiled with a Windows option", "It fails, because <code>.class</code> files contain Mac machine code"],
     answer: 1,
+    whys: ["Bytecode doesn’t need recompiling.", null, "There’s no Windows option; bytecode is the same everywhere.", ".class files hold bytecode, not Mac machine code."],
     explain: "That’s “write once, run anywhere”: compile once to bytecode, and every platform’s JVM runs it.",
   },
 ]);

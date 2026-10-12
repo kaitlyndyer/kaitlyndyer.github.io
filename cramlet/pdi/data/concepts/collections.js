@@ -132,6 +132,7 @@ for (String r : rooms) {           // every Collection is Iterable
       q: "You need to store device names in the order they were added and quickly check whether a name exists. Which fits best?",
       options: ["<code>TreeSet</code>", "<code>HashSet</code>", "<code>LinkedHashSet</code>", "An array"],
       answer: 2,
+      whys: ["A TreeSet sorts the names, so the order they were added is lost.", "A HashSet has a fast contains, but its order is unpredictable.", null, "An array needs a linear search for contains and has a fixed size."],
       explain: "<code>LinkedHashSet</code> combines a hash table (fast <code>contains</code>) with a linked list that keeps <b>insertion order</b>.",
     },
     {
@@ -139,6 +140,7 @@ for (String r : rooms) {           // every Collection is Iterable
       q: "You call <code>get(i)</code> with random indexes thousands of times. Which List is the better choice?",
       options: ["<code>ArrayList</code>", "<code>LinkedList</code>", "They’re the same", "Neither supports get(i)"],
       answer: 0,
+      whys: [null, "LinkedList.get(i) walks from an end node by node, so random access is slow.", "They have the same methods but different costs: ArrayList.get is constant time, LinkedList.get is linear.", "Every List supports get(i); that’s part of the List interface."],
       explain: "<code>ArrayList</code> is backed by contiguous memory, so random access is fast.",
     },
     {
@@ -146,6 +148,7 @@ for (String r : rooms) {           // every Collection is Iterable
       q: "What happens when you add a duplicate element to a <code>Set</code>?",
       options: ["It throws an exception", "The set stores two copies", "Nothing. Adding a duplicate has no effect.", "It replaces the whole set"],
       answer: 2,
+      whys: ["Set.add doesn’t throw on a duplicate; it just returns false.", "Sets never store duplicates, which is the whole point of a Set.", null, "Only the duplicate add is ignored; the rest of the set is unchanged."],
       explain: "Sets hold unique elements, so a duplicate add is simply ignored.",
     },
     {
@@ -153,6 +156,7 @@ for (String r : rooms) {           // every Collection is Iterable
       q: "Which structure keeps its elements <b>sorted</b> and supports “largest item smaller than X”?",
       options: ["<code>HashSet</code>", "<code>TreeSet</code>", "<code>ArrayList</code>", "<code>HashMap</code>"],
       answer: 1,
+      whys: ["A HashSet has no order, so “largest smaller than X” would mean scanning everything.", null, "An ArrayList keeps insertion order unless you sort it, and has no “lower” lookup.", "A HashMap has no order, and its keys aren’t navigable."],
       explain: "<code>TreeSet</code> is a balanced BST: ordered and navigable.",
     },
     {
@@ -166,6 +170,7 @@ for (String r : rooms) {           // every Collection is Iterable
       q: "Why can you write <code>for (Light l : lights)</code> when <code>lights</code> is a <code>Set&lt;Light&gt;</code>?",
       options: ["Sets are secretly arrays", "<code>Collection</code> extends <code>Iterable</code>", "The compiler converts it to a List", "Only Lists support for-each"],
       answer: 1,
+      whys: ["Sets aren’t arrays; for-each works because they’re Iterable.", null, "The compiler converts nothing; it calls the set’s iterator().", "Any Iterable supports for-each, including every Set and Queue."],
       explain: "Every collection is <code>Iterable</code>, and for-each uses its <code>iterator()</code>.",
     },
   ],

@@ -171,6 +171,7 @@ registerConcept({
       q: "<code>DimmableLight</code> needs to change the <code>brightness</code> field it inherits from <code>Light</code>. What’s the most restrictive modifier that still allows it?",
       options: ["<code>private</code>", "<code>protected</code>", "<code>public</code>", "It’s impossible"],
       answer: 1,
+      whys: ["private hides the field from subclasses.", null, "public works, but it isn’t the most restrictive option.", "protected allows it."],
       explain: "<code>protected</code> lets subclasses use the field while still hiding it from unrelated classes. That’s why <code>Light</code>’s fields were protected.",
     },
     {
@@ -178,6 +179,7 @@ registerConcept({
       q: "Which statement about inheritance in Java is true?",
       options: ["A class can extend several classes", "A class extends exactly one class and can implement many interfaces", "Interfaces can’t extend anything", "Subclasses can’t override methods"],
       answer: 1,
+      whys: ["Java allows only one superclass.", null, "Interfaces can extend other interfaces.", "Overriding is a core part of inheritance."],
       explain: "One superclass, many interfaces.",
     },
     {
@@ -200,6 +202,7 @@ registerConcept({
       q: "<code>Light</code>, <code>Fan</code>, and <code>Thermostat</code> all had identical <code>turnOn()</code> code. Which design rule does that break?",
       options: ["Hide what you can", "Avoid duplication", "Single responsibility", "Don’t lose meaning"],
       answer: 1,
+      whys: ["Hiding is about access modifiers, not repeated code.", null, "Single responsibility is about a class’s purpose, not repeated code.", "“Don’t lose meaning” is about keeping types precise, not about duplicate code."],
       explain: "Duplicated code should move higher in the hierarchy, into <code>BaseIoTDevice</code>.",
     },
     {
@@ -207,6 +210,7 @@ registerConcept({
       q: "Why must <code>BaseIoTDevice</code> be declared <code>abstract</code>?",
       options: ["Because it has fields", "Because it doesn’t implement <code>identify()</code> from IoTDevice", "Because it has a constructor", "Because it’s used as a parent"],
       answer: 1,
+      whys: ["Concrete classes can have fields too.", null, "Concrete classes have constructors too.", "Concrete classes can be parents too."],
       explain: "A class that doesn’t implement all of the abstract methods it inherits must itself be abstract.",
     },
     {

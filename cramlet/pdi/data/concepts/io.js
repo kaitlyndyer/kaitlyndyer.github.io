@@ -127,6 +127,7 @@ registerConcept({
       q: "Where should a program print an error message?",
       options: ["<code>System.in</code>", "<code>System.out</code>", "<code>System.err</code>", "A Scanner"],
       answer: 2,
+      whys: ["System.in is for reading input.", "System.out is for normal output; errors belong on their own stream.", null, "A Scanner reads input; it can’t print."],
       explain: "<code>System.err</code> is the standard error stream, meant for error messages.",
     },
     {
@@ -134,6 +135,7 @@ registerConcept({
       q: "What’s the main benefit of try-with-resources?",
       options: ["It makes reading faster", "The resource is closed automatically, even if an exception occurs", "It removes the need to catch exceptions", "It reads the whole file at once"],
       answer: 1,
+      whys: ["Closing doesn’t change reading speed.", null, "Checked exceptions still need to be caught or declared.", "It doesn’t change how much is read; it only closes the resource."],
       explain: "It’s equivalent to a <code>finally</code> block that calls <code>close()</code>, without the boilerplate.",
     },
     {
@@ -141,6 +143,7 @@ registerConcept({
       q: "What type is <code>System.out</code>?",
       options: ["<code>Scanner</code>", "<code>PrintStream</code>", "<code>FileOutputStream</code>", "<code>String</code>"],
       answer: 1,
+      whys: ["Scanner reads input; System.out writes output.", null, "System.out writes to the console, not a file.", "System.out is a stream object you call methods on, not a String."],
       explain: "<code>System.out</code> and <code>System.err</code> are just wrapped <code>PrintStream</code>s.",
     },
     {
@@ -148,6 +151,7 @@ registerConcept({
       q: "Why must <code>new Scanner(new File(\"input.txt\"))</code> be inside a try/catch (or declared)?",
       options: ["Scanner is abstract", "It can throw <code>FileNotFoundException</code>, a checked exception", "Files are always missing", "It can’t. That code never compiles."],
       answer: 1,
+      whys: ["Scanner is a concrete class, and you can create one.", null, "Files aren’t always missing, but the compiler can’t know, so it makes you handle the case.", "It compiles if you catch or declare the exception."],
       explain: "Checked exceptions must be caught or declared, and the compiler enforces it.",
     },
     {

@@ -690,6 +690,18 @@
                 if (q.type === "write") return codeBlock(q.model);
                 return "";
             };
+            // Why each option is right or wrong, in the order the options were shown on this exam.
+            const whyList = (q, a = {}) => {
+                if (!q.whys || !["mc", "design", "multi"].includes(q.type)) return "";
+                const order = (R.perm || {})[q.id] || q.options.map((_, k) => k);
+                const right = q.type === "multi" ? q.answers : [q.answer];
+                const mine = q.type === "multi" ? (a.picks || []) : a.pick === undefined ? [] : [a.pick];
+                return `<div class="why-opts"><div class="side-title">Why each answer is right or wrong</div><ol>${order.map((k, pos) => {
+                    const ok = right.includes(k), picked = mine.includes(k);
+                    const tag = ok ? (picked || q.type !== "multi" ? "Right answer" : "Right answer · you missed it") : picked ? "Your pick" : "";
+                    return `<li class="${ok ? "ok" : picked ? "mine" : ""}"><span class="opt-letter">${"ABCDEFG"[pos]}</span><div><div class="wo-text">${q.options[k]}${tag ? ` <span class="wo-tag">${icon(ok ? "check-circle" : "x-circle")}${tag}</span>` : ""}</div>${q.whys[k] ? `<div class="wo-why">${esc(q.whys[k])}</div>` : ""}</div></li>`;
+                }).join("")}</ol></div>`;
+            };
             // Timing: on a timed exam each question's fair share is minutes ÷ questions; twice that is "slow".
             const L = LENGTHS[R.length] || {}, share = L.minutes ? (L.minutes * 60000) / R.items.length : 0;
             const mmss = ms => `${Math.floor(ms / 60000)}:${String(Math.round(ms / 1000) % 60).padStart(2, "0")}`;
@@ -710,7 +722,7 @@
                     <div class="question">${q.q}</div>
                     ${exampleRef(q)}${machineOf(q)}${q.code && q.type !== "fill" ? codeBlock(q.code) : ""}
                     ${q.type === "bug" ? `<div class="bug-code">${q.lines.map((ln, k) => `<div class="bug-line${k === q.answer ? " correct" : k === a.line ? " wrong" : ""}"><span class="ln">${k + 1}</span><code>${highlight(ln) || "&nbsp;"}</code></div>`).join("")}</div>` : ""}
-                    <div class="res-ans"><div><div class="side-title">Your answer</div>${yours(q, a)}</div><div><div class="side-title">Model answer</div>${model(q)}</div></div>
+                    ${q.whys && ["mc", "design", "multi"].includes(q.type) ? whyList(q, a) : `<div class="res-ans"><div><div class="side-title">Your answer</div>${yours(q, a)}</div><div><div class="side-title">Model answer</div>${model(q)}</div></div>`}
                     ${q.explain ? `<div class="callout tip done">${icon("lightbulb", "callout-ic")}<div class="callout-body"><span class="callout-label">Why</span>${q.explain}</div></div>` : ""}
                     ${c ? `<a class="btn small" href="#/c/${c.id}/${q.sec ? `details/${q.sec}` : "summary"}">${icon("note")} Review ${esc(q.sec && secTitle(c.id, q.sec) ? secTitle(c.id, q.sec) : c.title)}</a>` : ""}
                 </details>`;

@@ -316,6 +316,7 @@ registerConcept({
       q: "Which bug comes from <b>control flow</b>?",
       options: ["Using a variable before it’s initialized", "An early return that skips necessary cleanup", "Unintended mutation of shared state", "A null pointer from a missing null check"],
       answer: 1,
+      whys: ["That’s data flow: a value used before it’s assigned.", null, "That’s data flow: shared data changing.", "That’s data flow: a null value reaching a dereference."],
       explain: "An early return changes which statements execute. The other three are data-flow problems.",
     },
     {
@@ -334,6 +335,7 @@ registerConcept({
 }`,
       options: ["It throws a NullPointerException", "It fails silently: nothing is logged or reported", "It activates a default scene", "It retries forever"],
       answer: 1,
+      whys: ["The if (scene != null) check stops the NullPointerException.", null, "Nothing in the code picks a default.", "There’s no loop that retries."],
       explain: "The <code>if (scene != null)</code> just skips everything, so the caller never learns something went wrong.",
     },
     {
@@ -341,6 +343,7 @@ registerConcept({
       q: "You’re debugging a problem that bounces between five objects. Which diagram fits best?",
       options: ["A sequence diagram", "A class hierarchy", "A truth table", "None. Just add print statements."],
       answer: 0,
+      whys: [null, "A class hierarchy shows types, not the order of calls.", "A truth table is for logic, not object interactions.", "Prints across five objects are hard to follow."],
       explain: "Sequence diagrams show the order of calls between objects, which is exactly what multi-object bugs need.",
     },
     {
@@ -348,6 +351,7 @@ registerConcept({
       q: "When drawing a call graph, what does “expand selectively” mean?",
       options: ["Draw every possible call in the program", "Follow only the path you’re investigating", "Only draw recursive calls", "Use a tool instead of sketching"],
       answer: 1,
+      whys: ["Drawing everything is exactly what “expand selectively” avoids.", null, "You follow the relevant path, not only recursive calls.", "Sketching by hand is recommended."],
       explain: "A call graph for everything is unreadable. Follow the path that matters for your question.",
     },
     {
