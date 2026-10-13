@@ -158,6 +158,7 @@
     // ---------- The exam page ----------
     function render(main, ctx, parts) {
         const { S, COURSE, esc, icon, codeBlock, exampleRef, highlight, conceptById, allConcepts } = ctx;
+        const K = CRAMLET.kitchen; // the Test Kitchen's shared header, when the course page loads it
         const KEY = `cramlet.exam.${COURSE}`;
         const lectures = Object.keys(S.lectures).map(Number);
 
@@ -229,10 +230,9 @@
             const deckN = deckCount(COURSE);
             main.innerHTML = `
                 <div class="exam-start">
-                    <div class="exam-hero">
-                        <div><h1>${icon("list-checks")} Practice exam</h1>
-                        <p>A closed-book exam drawn fresh from ${esc(S.course.title)}’s question bank. Notes, search, and hints are hidden until you submit. Most questions are graded automatically; for written code and design answers you check your work against a model answer.</p></div>
-                    </div>
+                    ${K ? K.header(ctx, "exam") : `<div class="exam-hero"><div><h1>${icon("list-checks")} Practice exam</h1>
+                        <p>A closed-book exam drawn fresh from ${esc(S.course.title)}’s question bank. Notes, search, and hints are hidden until you submit. Most questions are graded automatically; for written code and design answers you check your work against a model answer.</p></div></div>`}
+                    ${K ? `<div class="kh-slim"><span class="kh-label">${hist.length ? "Last exam" : "How it works"}</span><span class="kh-grow">${hist.length ? (() => { const h = hist[hist.length - 1]; return `<b>${Math.round(h.pct)}%</b> · ${esc(LENGTHS[h.length].name)}${h.mode === "mc" ? " · multiple choice" : ""} · ${new Date(h.at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`; })() : "Closed book: notes, search, and hints are hidden until you submit."}</span>${hist.length ? `<button type="button" class="btn small" data-hist="${hist.length - 1}">${icon("list-checks")} See it</button>` : ""}</div>` : ""}
                     ${active ? `<div class="callout key done exam-resume">${icon("hourglass-medium", "callout-ic")}<div class="callout-body"><span class="callout-label">Exam in progress</span>You have an unfinished ${(() => {
                         const paused = active.pausedAt ? (active.deadline ? `paused with ${clockText(active.deadline - active.pausedAt)} left` : "paused") : "";
                         const bits = active.length === "deck" ? [paused] : [esc(LENGTHS[active.length].name), active.mode === "mc" ? "multiple choice" : "", paused];
@@ -259,6 +259,7 @@
                     <div class="build-actions"><button type="button" class="btn primary" data-act="start">${icon("hourglass-medium")} Start the exam</button>${deckN ? `<a class="btn" href="#/exam/missed">${icon("cards")} Missed deck · ${deckN}</a>` : ""}</div>
                     ${hist.length ? `<div class="side-box"><div class="side-title">Past exams</div><ol class="exam-hist">${hist.slice().reverse().map((h, i) => `<li><button type="button" class="hist-link" data-hist="${hist.length - 1 - i}"><b>${Math.round(h.pct)}%</b> ${esc(LENGTHS[h.length].name)}${h.mode === "mc" ? " · multiple choice" : ""} · ${new Date(h.at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</button></li>`).join("")}</ol></div>` : ""}
                 </div>`;
+            if (K) K.mount(main);
             const selLecs = () => [...main.querySelectorAll(".exam-lec input:checked")].map(x => +x.value);
             const selMode = () => main.querySelector('[name="exam-mode"]:checked').value;
             const drawBank = () => {
@@ -769,14 +770,14 @@
                 const n = list.length;
                 main.innerHTML = `
                     <div class="exam-start">
-                        <div class="exam-hero"><div>
+                        ${K ? K.header(ctx, "missed", { line: `Every question you’ve missed on a practice exam or a concept quiz, plus right answers you marked as guesses. A question leaves after you get it right in <b>${DECK_WINS} different sessions</b> in a row; a miss starts it over.` }) : `<div class="exam-hero"><div>
                             <h1>${icon("cards")} Missed deck</h1>
                             <p>Every question you’ve missed on a practice exam or a concept quiz, plus right answers you marked as guesses. Retakes come in a new shuffled order with shuffled options. A question leaves the deck after you get it right in <b>${DECK_WINS} different sessions</b> in a row; a miss starts it over.</p>
-                        </div></div>
+                        </div></div>`}
                         ${all.length ? `
-                        <div class="build-actions">
+                        <div class="build-actions${K ? " kh-slim" : ""}">${K ? `<span class="kh-label">Retake</span><span class="kh-grow">${n} card${n === 1 ? "" : "s"} in these lectures, in a new shuffled order</span>` : ""}
                             ${n ? [10, 25].filter(k => k < n).map(k => `<button type="button" class="btn${k === 10 ? " primary" : ""}" data-redo="${k}">${icon("shuffle")} Retake ${k}</button>`).join("") + `<button type="button" class="btn${n <= 10 ? " primary" : ""}" data-redo="${n}">${icon("arrow-clockwise")} Retake all ${n}</button>` : `<span class="muted">No missed questions in these lectures.</span>`}
-                            <a class="btn ghost" href="#/exam">Back to exams</a>
+                            ${K ? "" : `<a class="btn ghost" href="#/exam">Back to exams</a>`}
                         </div>
                         <div class="deck-filter"><span class="side-title">Lectures</span>${lecsIn.map(l => `<label class="deck-chip" title="${esc(S.lectures[l])}"><input type="checkbox" value="${l}" ${chosen.includes(l) ? "checked" : ""}><span>L${l} · ${all.filter(x => x.q.lec.includes(l)).length}</span></label>`).join("")}</div>
                         <ol class="mistakes">${list.map(x => {
@@ -785,6 +786,7 @@
                         }).join("")}</ol>`
                         : `<p class="muted">Your deck is empty. Questions you miss on exams and concept quizzes will show up here.</p><a class="btn" href="#/exam">Back to exams</a>`}
                     </div>`;
+                if (K) K.mount(main);
                 main.querySelectorAll(".deck-chip input").forEach(cb => cb.addEventListener("change", () => {
                     chosen = [...main.querySelectorAll(".deck-chip input:checked")].map(x => +x.value);
                     write(`${KEY}.deckLecs`, chosen);
@@ -812,5 +814,18 @@
         return h[h.length - 1] || null;
     }
 
-    window.CRAMLET = Object.assign(window.CRAMLET || {}, { exam: { render, latest, SECTIONS, LENGTHS, grade, pointsOf, recordAnswer, deckCount } });
+    // Every question (concept quizzes + exam bank) by id, with the same ids the exam and missed deck use.
+    function questionsById(S, allConcepts) {
+        const out = {};
+        allConcepts.forEach(c => {
+            const d = S.content[c.id];
+            if (!d) return;
+            (d.quiz || []).forEach(q => { const id = `${c.id}/quiz/${CRAMLET.progress.idFor(q.q + (q.code || "") + (q.lines || []).join(""))}`; out[id] = { ...q, concept: c.id, lec: q.lec || c.lectures, id }; });
+            (bank[c.id] || []).forEach(q => { const id = `${c.id}/${q.id}`; out[id] = { ...q, concept: c.id, lec: q.lec || c.lectures, id }; });
+        });
+        return out;
+    }
+    const missedIds = course => Object.keys(readDeck(course));
+
+    window.CRAMLET = Object.assign(window.CRAMLET || {}, { exam: { render, latest, SECTIONS, LENGTHS, grade, pointsOf, recordAnswer, deckCount, questionsById, missedIds } });
 })();

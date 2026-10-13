@@ -176,15 +176,11 @@
     function renderNav(activeId) {
         if (activeId !== undefined) nav.dataset.active = activeId;
         const current = nav.dataset.active || "";
-        nav.innerHTML = (CRAMLET.exam ? `
-            <a class="nav-item exam-link${current === "exam" ? " active" : ""}" href="#/exam" style="--c:var(--brand)">
-                <span class="nav-icon">${icon("list-checks")}</span><span class="nav-label">Practice exam</span>
-            </a>${(() => { const n = CRAMLET.exam.deckCount(COURSE); return n ? `
-            <a class="nav-item exam-link deck-link${current === "missed" ? " active" : ""}" href="#/exam/missed" style="--c:var(--brand)">
-                <span class="nav-icon">${icon("cards")}</span><span class="nav-label">Missed deck</span><span class="deck-count">${n}</span>
-            </a>` : ""; })()}` : "") + (CRAMLET.myths && CRAMLET.myths.count() ? `
-            <a class="nav-item exam-link${current === "myths" ? " active" : ""}" href="#/myths" style="--c:var(--brand)">
-                <span class="nav-icon">${icon("lightbulb")}</span><span class="nav-label">Myth or fact?</span>
+        // Every exam-prep tool lives in the Test Kitchen (course/kitchen.js), so the sidebar needs one item.
+        const deckN = CRAMLET.exam ? CRAMLET.exam.deckCount(COURSE) : 0;
+        nav.innerHTML = (CRAMLET.kitchen && CRAMLET.exam ? `
+            <a class="nav-item exam-link kitchen-link${current === "kitchen" ? " active" : ""}" href="#/kitchen" style="--c:var(--brand)"${current === "kitchen" ? ' aria-current="page"' : ""}>
+                <span class="nav-icon">${icon("chef-hat")}</span><span class="nav-label">Test Kitchen</span>${deckN ? `<span class="deck-count" title="Cards in your missed deck">${deckN}</span>` : ""}
             </a>` : "") + S.groups.map(g => `
             <div class="nav-group">
                 <div class="nav-group-title">${icon(g.icon)} ${esc(g.title)}</div>
@@ -196,6 +192,195 @@
                         ${hasContent(c.id) ? statusBadge(c.id) : `<span class="soon-tag">soon</span>`}
                     </a>`).join("")}
             </div>`).join("");
+    }
+
+    // ---------- Test Kitchen: the Cookie Sheet ----------
+    // Everything on one page, built for recall instead of rereading: the bold terms in each key point are
+    // blanks you fill in from memory (Peek), you stick a cookie on each point you know, and filters shrink the
+    // page to what's left. Also: your weak spots and flip cards for the course's examples (S.cast).
+    // Saved in cramlet.cookiesheet.<course>: { known: [point ids], mode, unknown, weak, lecs }.
+    function renderReview() {
+        const KEY = `cramlet.cookiesheet.${COURSE}`;
+        const load = () => { try { return Object.assign({ known: [], mode: "peek", unknown: false, weak: false, lecs: [] }, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { return { known: [], mode: "peek", unknown: false, weak: false, lecs: [] }; } };
+        const st = load();
+        const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) { /* storage blocked */ } };
+        const known = new Set(st.known);
+        const progress = CRAMLET.progress, cookie = progress.crumbIcon();
+        const weakConcepts = allConcepts.filter(c => hasContent(c.id) && examMiss(c.id));
+        const isWeak = new Set(weakConcepts.map(c => c.id));
+        const myths = CRAMLET.myths ? CRAMLET.myths.missed(COURSE) : [];
+        const deckN = CRAMLET.exam ? CRAMLET.exam.deckCount(COURSE) : 0;
+        const cast = S.cast || [];
+        const anyWeak = weakConcepts.length || myths.length || deckN;
+        const pointId = (c, k) => `${c.id}:${progress.idFor(k.html)}`;
+        const ready = allConcepts.filter(c => hasContent(c.id));
+        const pointsOf = c => ((S.content[c.id].summary || {}).keyPoints || []);
+        const total = ready.reduce((a, c) => a + pointsOf(c).length, 0);
+        const lecs = Object.keys(S.lectures).map(Number);
+        // The bold terms become blanks you can reveal.
+        const blanked = html => html.replace(/<b>([\s\S]*?)<\/b>/g, (_, t) => `<span class="cs-blank" role="button" tabindex="0" aria-label="Hidden term. Activate to reveal it.">${t}</span>`);
+        const R = 19, CIRC = 2 * Math.PI * R;
+
+        main.innerHTML = `
+            <div class="review-page cookie-sheet">
+                ${CRAMLET.kitchen.header({ S, COURSE, esc, icon }, "sheet", { line: "Everything on one page. The key terms are hidden, so fill them in from memory, then tap to check. Stick a cookie on each point you know, then hide those, and the page shrinks to what you still need." })}
+
+                <div class="cs-controls">
+                    <div class="cs-meter" title="Points stickered"><span class="cs-meter-ic">${cookie}</span><span class="cs-big"><span data-m-known>0</span><span class="cs-of"> / ${total}</span></span><span class="cs-bar"><span data-m-bar></span></span></div>
+                    <div class="seg cs-mode" role="group" aria-label="How to show key terms">
+                        <button type="button" class="seg-btn" data-mode="peek">Peek</button>
+                        <button type="button" class="seg-btn" data-mode="all">Show all</button>
+                    </div>
+                    <div class="cs-chips" role="group" aria-label="Filters">
+                        <button type="button" class="cs-chip" data-filter="unknown"><span class="cs-dot"></span>Only what I don’t know yet</button>
+                        ${weakConcepts.length ? `<button type="button" class="cs-chip" data-filter="weak">Weak spots</button>` : ""}
+                        ${lecs.map(n => `<button type="button" class="cs-chip" data-lec="${n}" title="Lecture ${n}: ${esc(S.lectures[n])}">L${n}</button>`).join("")}
+                    </div>
+                    <nav class="cs-jump">
+                        <a href="#/last-crumbs/sheet" data-jump="rv-weak">Weak spots</a>
+                        ${cast.length ? `<a href="#/last-crumbs/sheet" data-jump="rv-cast">Examples</a>` : ""}
+                        <a href="#/last-crumbs/sheet" data-jump="rv-keys">Key points</a>
+                        <button type="button" data-print>${icon("note")} Print</button>
+                    </nav>
+                </div>
+
+                <section class="review-sec" id="rv-weak">
+                    <h2 class="panel-title">${icon("target")} Your weak spots</h2>
+                    ${anyWeak ? `
+                        ${weakConcepts.length ? `<p>Under 70% on your last practice exam:</p><div class="review-chips">${weakConcepts.map(c => `<a class="related-chip" style="--c:${c.color}" href="#/c/${c.id}/summary">${icon(c.icon)} ${esc(c.title)}</a>`).join("")}</div>` : ""}
+                        ${deckN ? `<p><a class="btn" href="#/exam/missed">${icon("cards")} Missed deck · ${deckN}</a> Questions you missed or guessed. Retake them once more.</p>` : ""}
+                        ${myths.length ? `<p>Myths and facts that got you last time:</p>
+                            <ul class="review-myths">${myths.map(m => { const c = conceptById[m.c]; return `<li style="--c:${c ? c.color : "var(--brand)"}"><span class="tag ${m.fact ? "yes" : "no"}">${m.fact ? "Fact" : "Myth"}</span> <b>${m.s}</b> <span class="muted">${m.why}</span></li>`; }).join("")}</ul>` : ""}`
+                    : `<p class="muted">Nothing flagged yet. Take a <a href="#/exam">practice exam</a> or a <a href="#/myths">Myth or fact</a> round, and what you miss will show up here.</p>`}
+                </section>
+
+                ${cast.length ? `<section class="review-sec" id="rv-cast">
+                    <div class="cs-sec-head"><h2 class="panel-title">${icon("puzzle-piece")} The examples exam questions name</h2><button type="button" class="btn small" data-flip-all>Flip all</button></div>
+                    <p class="muted">Say what each one is, then tap to flip.</p>
+                    ${cast.map(g => `
+                        <div class="cast-group">
+                            <h3>${esc(g.title)}</h3>
+                            <div class="cs-cards">${g.items.map(it => { const c = conceptById[it.c]; return `
+                                <button type="button" class="cs-flip" style="--c:${c ? c.color : "var(--brand)"}" aria-label="${esc(it.name)}: flip to see what it is">
+                                    <span class="cs-flip-in">
+                                        <span class="cs-face cs-front"><span class="cast-kind">${esc(it.kind)}</span><span class="cs-name">${esc(it.name)}</span><span class="cs-hint">Say what it is, then tap</span><span class="cs-sticker">${cookie}</span></span>
+                                        <span class="cs-face cs-back"><span class="cast-kind">${esc(it.name)}</span><span class="cs-back-text">${it.html}</span></span>
+                                    </span>
+                                </button>`; }).join("")}</div>
+                            ${g.ref ? exampleRef({ ref: g.ref }) : ""}
+                        </div>`).join("")}
+                </section>` : ""}
+
+                <section class="review-sec" id="rv-keys">
+                    <h2 class="panel-title">${icon("push-pin")} Every concept’s key points</h2>
+                    ${S.groups.map(g => `
+                        <div class="cs-group">
+                        <h3 class="review-group">${icon(g.icon)} ${esc(g.title)}</h3>
+                        ${g.concepts.filter(c => hasContent(c.id)).map(c => {
+                            const kps = pointsOf(c);
+                            return `<article class="cs-concept" data-c="${c.id}" style="--c:${c.color}">
+                                <div class="cs-head">
+                                    <a class="review-concept-title" href="#/c/${c.id}/summary"><span class="nav-icon">${icon(c.icon)}</span><b>${esc(c.title)}</b></a>
+                                    <span class="cs-pills">${lectureChips(c.lectures, true)}${isWeak.has(c.id) ? `<span class="cs-weak">Under 70% last exam</span>` : ""}</span>
+                                    <span class="cs-ring" title="Points stickered"><svg viewBox="0 0 46 46" aria-hidden="true"><circle class="cs-track" cx="23" cy="23" r="${R}" fill="none" stroke-width="5"/><circle class="cs-fill" cx="23" cy="23" r="${R}" fill="none" stroke-width="5" stroke-linecap="round" stroke-dasharray="${CIRC}" stroke-dashoffset="${CIRC}"/></svg><span class="cs-ring-n"></span><span class="cs-ring-done">${cookie}</span></span>
+                                </div>
+                                <ul class="keypoints cs-points">${kps.map(k => { const id = pointId(c, k); return `
+                                    <li class="${k.kind ? `kp-${k.kind}` : ""}" data-id="${esc(id)}">${k.kind ? icon(k.kind, "kp-ic") : ""}<span class="kp-text">${blanked(k.html)}</span>
+                                        <button type="button" class="cs-stick" aria-label="I know this" title="I know this"><span class="cs-plus">+</span>${cookie}</button></li>`; }).join("")}</ul>
+                                <div class="cs-all-known" hidden>${cookie} All stickered. <button type="button" class="cs-link" data-show-anyway>Show them anyway</button></div>
+                                <div class="cs-foot"><button type="button" class="cs-link" data-reveal>Reveal every blank here</button></div>
+                            </article>`;
+                        }).join("")}
+                        </div>`).join("")}
+                    <p class="muted cs-empty" hidden>Nothing matches these filters. Try turning one off.</p>
+                </section>
+            </div>`;
+        CRAMLET.decorateIcons(main);
+        CRAMLET.kitchen.mount(main);
+        const page = main.querySelector(".cookie-sheet");
+
+        // A little toast where your buddy cheers when a concept is fully stickered.
+        let toast = document.querySelector(".cs-toast");
+        if (!toast) { toast = document.createElement("div"); toast.className = "cs-toast"; toast.setAttribute("role", "status"); document.body.appendChild(toast); }
+        let toastTimer = null;
+        const cheer = text => {
+            toast.innerHTML = `<span class="cs-toast-buddy"></span><span>${esc(text)}</span>`;
+            buddy.react(toast.querySelector(".cs-toast-buddy"), "cheer", "party");
+            toast.classList.add("show");
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove("show"), 2800);
+        };
+
+        const showAnyway = new Set();
+        function paint() {
+            page.classList.toggle("peek", st.mode === "peek");
+            page.classList.toggle("hide-known", st.unknown);
+            page.querySelectorAll("[data-mode]").forEach(b => b.classList.toggle("active", b.dataset.mode === st.mode));
+            page.querySelectorAll("[data-filter], [data-lec]").forEach(b => {
+                const on = b.dataset.filter === "unknown" ? st.unknown : b.dataset.filter === "weak" ? st.weak : st.lecs.includes(+b.dataset.lec);
+                b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on));
+            });
+            let shown = 0;
+            page.querySelectorAll(".cs-concept").forEach(art => {
+                const c = conceptById[art.dataset.c], lis = [...art.querySelectorAll(".cs-points li")];
+                const n = lis.filter(li => known.has(li.dataset.id)).length, done = lis.length > 0 && n === lis.length;
+                lis.forEach(li => li.classList.toggle("known", known.has(li.dataset.id)));
+                art.querySelector(".cs-fill").style.strokeDashoffset = CIRC * (1 - (lis.length ? n / lis.length : 0));
+                art.querySelector(".cs-ring-n").textContent = `${n}/${lis.length}`;
+                art.classList.toggle("done", done);
+                if (!done) showAnyway.delete(c.id);
+                const collapse = st.unknown && done && !showAnyway.has(c.id);
+                art.querySelector(".cs-points").hidden = collapse;
+                art.classList.toggle("show-known", showAnyway.has(c.id));
+                art.querySelector(".cs-all-known").hidden = !collapse;
+                const out = (st.weak && !isWeak.has(c.id)) || (st.lecs.length && !c.lectures.some(l => st.lecs.includes(l)));
+                art.hidden = out;
+                if (!out) shown++;
+            });
+            page.querySelectorAll(".cs-group").forEach(g => { g.hidden = !g.querySelector(".cs-concept:not([hidden])"); });
+            page.querySelector(".cs-empty").hidden = shown > 0;
+            page.querySelector("[data-m-known]").textContent = known.size;
+            page.querySelector("[data-m-bar]").style.width = (total ? (known.size / total) * 100 : 0) + "%";
+        }
+
+        page.addEventListener("click", e => {
+            const t = e.target.closest("button, .cs-blank, a[data-jump]");
+            if (!t) return;
+            if (t.matches(".cs-blank")) { t.classList.add("shown"); return; }
+            if (t.dataset.jump) { e.preventDefault(); document.getElementById(t.dataset.jump).scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+            if (t.dataset.mode) { st.mode = t.dataset.mode; persist(); paint(); return; }
+            if (t.dataset.filter === "unknown") { st.unknown = !st.unknown; persist(); paint(); return; }
+            if (t.dataset.filter === "weak") { st.weak = !st.weak; persist(); paint(); return; }
+            if (t.dataset.lec) { const l = +t.dataset.lec; st.lecs = st.lecs.includes(l) ? st.lecs.filter(x => x !== l) : [...st.lecs, l]; persist(); paint(); return; }
+            if (t.matches(".cs-flip")) { t.classList.toggle("flipped"); return; }
+            if (t.dataset.flipAll !== undefined) {
+                const cards = [...page.querySelectorAll(".cs-flip")], to = !cards.every(x => x.classList.contains("flipped"));
+                cards.forEach(x => x.classList.toggle("flipped", to));
+                t.textContent = to ? "Flip back" : "Flip all";
+                return;
+            }
+            if (t.dataset.reveal !== undefined) { t.closest(".cs-concept").querySelectorAll(".cs-blank").forEach(b => b.classList.add("shown")); return; }
+            if (t.dataset.showAnyway !== undefined) { showAnyway.add(t.closest(".cs-concept").dataset.c); paint(); return; }
+            if (t.dataset.print !== undefined) { page.querySelectorAll("details").forEach(x => { x.open = true; }); window.print(); return; }
+            if (t.matches(".cs-stick")) {
+                const li = t.closest("li"), id = li.dataset.id, art = t.closest(".cs-concept");
+                if (known.has(id)) known.delete(id);
+                else {
+                    known.add(id);
+                    li.querySelectorAll(".cs-blank").forEach(b => b.classList.add("shown"));
+                    progress.award("got", `${COURSE}:sheet:${id}`, { at: t });
+                    const lis = [...art.querySelectorAll(".cs-points li")];
+                    if (lis.every(x => known.has(x.dataset.id))) cheer(`${buddy.nameOf()} says: ${conceptById[art.dataset.c].title}, done!`);
+                }
+                st.known = [...known]; persist(); paint();
+            }
+        });
+        page.addEventListener("keydown", e => {
+            if ((e.key === "Enter" || e.key === " ") && e.target.matches(".cs-blank")) { e.preventDefault(); e.target.classList.add("shown"); }
+        });
+        // Points you already know show their terms.
+        page.querySelectorAll(".cs-points li").forEach(li => { if (known.has(li.dataset.id)) li.querySelectorAll(".cs-blank").forEach(b => b.classList.add("shown")); });
+        paint();
     }
 
     // ---------- Home ----------
@@ -214,8 +399,7 @@
                     <p class="hero-meta">${allConcepts.length} concepts · Lectures ${lecs[0]}–${lecs[lecs.length - 1]} · ${ready} ready so far</p>
                     <div class="hero-actions">
                         <button class="btn primary" type="button" data-focus-search>${icon("magnifying-glass")} Search the notes</button>
-                        ${CRAMLET.exam ? `<a class="btn" href="#/exam">${icon("list-checks")} Take a practice exam</a>` : ""}
-                        ${CRAMLET.myths && CRAMLET.myths.count() ? `<a class="btn" href="#/myths">${icon("lightbulb")} Myth or fact?</a>` : ""}
+                        ${CRAMLET.kitchen && CRAMLET.exam ? `<a class="btn" href="#/kitchen">${icon("chef-hat")} Test Kitchen</a>` : ""}
                     </div>
                 </div>
                 <div class="ring" style="--pct:${pct}" role="img" aria-label="${got} of ${allConcepts.length} concepts marked got it">
@@ -829,14 +1013,24 @@
         setKeyHandler(null);
         const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
         if (parts[0] !== "exam") document.body.classList.remove("exam-focus");
-        if (parts[0] === "exam" && CRAMLET.exam) {
-            renderNav(parts[1] === "missed" || parts[1] === "mistakes" ? "missed" : "exam");
+        if (parts[0] === "kitchen" && CRAMLET.kitchen && CRAMLET.exam) {
+            renderNav("kitchen");
+            CRAMLET.kitchen.render(main, { S, COURSE, esc, icon, allConcepts });
+            document.title = "Test Kitchen · " + S.course.title + " · cramlet";
+        } else if (parts[0] === "exam" && CRAMLET.exam) {
+            renderNav("kitchen");
             CRAMLET.exam.render(main, { S, COURSE, esc, icon, codeBlock, exampleRef, highlight, conceptById, allConcepts }, parts);
-            document.title = "Practice exam · " + S.course.title + " · cramlet";
+            document.title = (parts[1] === "missed" ? "Missed deck" : "Practice exam") + " · " + S.course.title + " · cramlet";
         } else if (parts[0] === "myths" && CRAMLET.myths && CRAMLET.myths.count()) {
-            renderNav("myths");
+            renderNav("kitchen");
             CRAMLET.myths.render(main, { S, COURSE, esc, icon, conceptById, celebrate, setKeyHandler }, parts);
             document.title = "Myth or fact? · " + S.course.title + " · cramlet";
+        } else if ((parts[0] === "last-crumbs" || parts[0] === "review") && S.cast && CRAMLET.lastCrumbs) {
+            renderNav("kitchen");
+            const sheet = parts[0] === "review" || parts[1] === "reference" || parts[1] === "sheet";
+            if (sheet) renderReview();
+            else CRAMLET.lastCrumbs.render(main, { S, COURSE, esc, icon, codeBlock, highlight, exampleRef, conceptById, allConcepts, celebrate, setKeyHandler }, parts);
+            document.title = (sheet ? "Cookie Sheet" : "Crumb Run") + " · " + S.course.title + " · cramlet";
         } else if (parts[0] === "c" && parts[1]) {
             renderNav(parts[1]);
             renderConcept(parts[1], parts[2] || "summary", parts[3]);
