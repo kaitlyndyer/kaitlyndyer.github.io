@@ -88,6 +88,32 @@ window.STUDY = {
   ],
 
   // Filled in by registerConcept().
+  // What the shared pages say and do for this course (see course/settings.js for every option).
+  settings: {
+    exam: {
+      // 25 multiple choice in 60 minutes is the real exam's size; pick "Multiple choice only" to match it.
+      lengths: {
+        full: { name: "Full exam", minutes: 120, mix: { choice: 9, trace: 7, bug: 4, fill: 4, parsons: 4, design: 3, write: 4 } },
+        sim: { name: "Exam length", minutes: 60, mix: { choice: 12, trace: 4, bug: 2, fill: 2, parsons: 1, design: 3, write: 1 } },
+        half: { name: "Half exam", minutes: 60, hidden: true, mix: { choice: 5, trace: 4, bug: 2, fill: 2, parsons: 2, design: 1, write: 2 } },
+        quick: { name: "Quick check", minutes: 0, mix: { choice: 4, trace: 2, bug: 1, fill: 1, parsons: 1, design: 1, write: 0 } },
+      },
+      mixed: "Trace, find the bug, fill in, build, design, and write code",
+      intro: "A closed-book exam drawn fresh from {course}’s question bank. Notes, search, and hints are hidden until you submit. Most questions are graded automatically; for written code and design answers you check your work against a model answer.",
+    },
+    myths: {
+      line: "Rapid-fire statements built from the traps behind wrong answers, like “compareTo returns -1” or “records have setters.” Decide fast, and every answer comes with the reason.",
+    },
+    cast: { title: "The examples exam questions name", asCode: true },
+    pep: {
+      tips: [
+        "Read every option before you pick. Wrong answers are usually common misconceptions, so name the trap.",
+        "Stuck? Flag it, move on, and come back. Another question may jog your memory.",
+        "Breathe out slowly before you start. Long exhales settle the jitters.",
+      ],
+    },
+  },
+
   content: {},
 };
 

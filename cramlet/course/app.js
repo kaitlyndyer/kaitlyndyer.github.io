@@ -251,11 +251,11 @@
                         ${deckN ? `<p><a class="btn" href="#/exam/missed">${icon("cards")} Missed deck · ${deckN}</a> Questions you missed or guessed. Retake them once more.</p>` : ""}
                         ${myths.length ? `<p>Myths and facts that got you last time:</p>
                             <ul class="review-myths">${myths.map(m => { const c = conceptById[m.c]; return `<li style="--c:${c ? c.color : "var(--brand)"}"><span class="tag ${m.fact ? "yes" : "no"}">${m.fact ? "Fact" : "Myth"}</span> <b>${m.s}</b> <span class="muted">${m.why}</span></li>`; }).join("")}</ul>` : ""}`
-                    : `<p class="muted">Nothing flagged yet. Take a <a href="#/exam">practice exam</a> or a <a href="#/myths">Myth or fact</a> round, and what you miss will show up here.</p>`}
+                    : `<p class="muted">Nothing flagged yet. Take a <a href="#/exam">practice exam</a>${CRAMLET.kitchen.has(S, "myths") ? ` or a <a href="#/myths">Myth or fact</a> round` : ""}, and what you miss will show up here.</p>`}
                 </section>
 
                 ${cast.length ? `<section class="review-sec" id="rv-cast">
-                    <div class="cs-sec-head"><h2 class="panel-title">${icon("puzzle-piece")} The examples exam questions name</h2><button type="button" class="btn small" data-flip-all>Flip all</button></div>
+                    <div class="cs-sec-head"><h2 class="panel-title">${icon("puzzle-piece")} ${esc(CRAMLET.settings(S).cast.title)}</h2><button type="button" class="btn small" data-flip-all>Flip all</button></div>
                     <p class="muted">Say what each one is, then tap to flip.</p>
                     ${cast.map(g => `
                         <div class="cast-group">
@@ -263,7 +263,7 @@
                             <div class="cs-cards">${g.items.map(it => { const c = conceptById[it.c]; return `
                                 <button type="button" class="cs-flip" style="--c:${c ? c.color : "var(--brand)"}" aria-label="${esc(it.name)}: flip to see what it is">
                                     <span class="cs-flip-in">
-                                        <span class="cs-face cs-front"><span class="cast-kind">${esc(it.kind)}</span><span class="cs-name">${esc(it.name)}</span><span class="cs-hint">Say what it is, then tap</span><span class="cs-sticker">${cookie}</span></span>
+                                        <span class="cs-face cs-front"><span class="cast-kind">${esc(it.kind)}</span><span class="cs-name${CRAMLET.settings(S).cast.asCode ? " code" : ""}">${esc(it.name)}</span><span class="cs-hint">Say what it is, then tap</span><span class="cs-sticker">${cookie}</span></span>
                                         <span class="cs-face cs-back"><span class="cast-kind">${esc(it.name)}</span><span class="cs-back-text">${it.html}</span></span>
                                     </span>
                                 </button>`; }).join("")}</div>
@@ -1025,7 +1025,7 @@
             renderNav("kitchen");
             CRAMLET.myths.render(main, { S, COURSE, esc, icon, conceptById, celebrate, setKeyHandler }, parts);
             document.title = "Myth or fact? · " + S.course.title + " · cramlet";
-        } else if ((parts[0] === "last-crumbs" || parts[0] === "review") && S.cast && CRAMLET.lastCrumbs) {
+        } else if ((parts[0] === "last-crumbs" || parts[0] === "review") && CRAMLET.kitchen && CRAMLET.kitchen.has(S, "run")) {
             renderNav("kitchen");
             const sheet = parts[0] === "review" || parts[1] === "reference" || parts[1] === "sheet";
             if (sheet) renderReview();

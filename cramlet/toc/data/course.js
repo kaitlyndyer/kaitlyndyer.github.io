@@ -62,6 +62,30 @@ window.STUDY = {
   ],
 
   // Filled in by registerConcept().
+  // What the shared pages say and do for this course (see course/settings.js for every option).
+  settings: {
+    exam: {
+      lengths: {
+        full: { name: "Full exam", minutes: 75, mix: { choice: 25 } },
+        quick: { name: "Quick check", minutes: 0, mix: { choice: 10 } },
+      },
+      intro: "A closed-book exam drawn fresh from {course}’s question bank. Notes, search, and hints are hidden until you submit, so you find out what you know without the definitions in front of you.",
+    },
+    myths: {
+      line: "Rapid-fire statements built from the traps behind wrong answers, like “every NFA needs ε-moves” or “the pumping lemma proves a language is regular.” Decide fast, and every answer comes with the reason.",
+    },
+    cast: { title: "The machines and languages from lecture", asCode: false },
+    pep: {
+      tips: [
+        "Write the definition down before you use it. Most questions are a definition applied carefully.",
+        "Draw the machine before you answer, then test it on a few strings: the empty string, the shortest string it should accept, and one it should reject.",
+        "For a proof, write the goal first (“Assume L is regular…”), then give a reason for every step.",
+        "Stuck? Flag it, move on, and come back. Another question may jog your memory.",
+        "Breathe out slowly before you start. Long exhales settle the jitters.",
+      ],
+    },
+  },
+
   content: {},
 };
 
