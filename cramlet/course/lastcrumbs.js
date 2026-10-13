@@ -294,6 +294,7 @@
             main.innerHTML = `
                 <div class="lc lc-step">
                     <div class="lc-card lc-pep">
+                        <div class="kh-eyebrow res-back"><a href="#/kitchen" data-done>${icon("chef-hat")} Test Kitchen</a></div>
                         <div class="lc-pep-buddy"></div>
                         <h2>You’re ready. ${esc(buddy.nameOf())} says so!</h2>
                         <p class="lc-reframe">Feeling jittery? That buzz is your body getting ready. It’s <b>energy</b>, and it helps you focus. You don’t need to calm down; aim it at the questions.</p>
@@ -308,7 +309,7 @@
                 </div>`;
             buddy.react(main.querySelector(".lc-pep-buddy"), "cheer", "party");
             celebrate(main.querySelector(".lc-pep-buddy"));
-            main.querySelector("[data-done]").addEventListener("click", () => { const s2 = state(); delete s2.session; save(s2); location.hash = "#/last-crumbs"; });
+            main.querySelectorAll("[data-done]").forEach(b => b.addEventListener("click", e => { e.preventDefault(); const s2 = state(); delete s2.session; save(s2); location.hash = "#/kitchen"; }));
         }
 
         // ---------- Night: lights out ----------
@@ -319,6 +320,7 @@
             main.innerHTML = `
                 <div class="lc lc-step">
                     <div class="lc-card lc-lights">
+                        <div class="kh-eyebrow res-back"><a href="#/kitchen" data-done>${icon("chef-hat")} Test Kitchen</a></div>
                         <div class="lc-sleep"><div class="lc-sleep-buddy"></div><span class="zzz">z</span><span class="zzz">z</span><span class="zzz">z</span></div>
                         <h2>Lights out, ${esc(buddy.nameOf())}.</h2>
                         <p>You got through <b>${t.done.length}</b> card${t.done.length === 1 ? "" : "s"}${hard.length ? `, and <b>${hard.length}</b> tricky one${hard.length === 1 ? " is" : "s are"} saved for the morning` : ""}. Sleep is when tonight’s studying sticks, so this is the best next step you can take.</p>
@@ -328,7 +330,7 @@
                 </div>`;
             setKeyHandler(null);
             buddy.react(main.querySelector(".lc-sleep-buddy"), "idle");
-            main.querySelector("[data-done]").addEventListener("click", () => { const s2 = state(); delete s2.session; save(s2); location.hash = "#/last-crumbs"; });
+            main.querySelectorAll("[data-done]").forEach(b => b.addEventListener("click", e => { e.preventDefault(); const s2 = state(); delete s2.session; save(s2); location.hash = "#/kitchen"; }));
         }
 
         stopTick();

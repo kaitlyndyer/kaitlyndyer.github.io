@@ -823,3 +823,6 @@ code { font-family: var(--font-code); font-size: .88em; }
     .kh h1 { font-size: 24px; }
 }
 @media print { .kh-tabs, .kh-buddy { display: none !important; } .kh { background: none; border: 0; } }
+/* "← Test Kitchen" in the top-left of a finish screen, like the eyebrow on Test Kitchen pages */
+.res-back { margin-bottom: 6px; }
+.lc-card .res-back { justify-content: flex-start; text-align: left; }
