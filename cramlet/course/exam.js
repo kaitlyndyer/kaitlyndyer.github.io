@@ -732,7 +732,7 @@
                 <div class="exam-results">
                     <div class="exam-hero res${CRAMLET.buddy ? " with-buddy" : ""}">
                         <div class="score-ring" style="--p:${Math.round(R.pct)}"><span>${Math.round(R.pct)}%</span></div>
-                        <div><h1>${R.pct >= 85 ? "Great exam!" : R.pct >= 70 ? "Solid work." : "Good practice. Here’s what to review."}</h1>
+                        <div>${CRAMLET.kitchen ? `<div class="kh-eyebrow res-back"><a href="#/kitchen">${icon("chef-hat")} Test Kitchen</a></div>` : ""}<h1>${R.pct >= 85 ? "Great exam!" : R.pct >= 70 ? "Solid work." : "Good practice. Here’s what to review."}</h1>
                         <p>${R.earned} of ${R.max} points · ${esc(LENGTHS[R.length].name)}${R.mode === "mc" ? " · multiple choice" : ""} · ${Math.max(1, Math.round((R.done - R.at) / 60000))} minutes${prev ? ` · last time ${Math.round(prev.pct)}% (${R.pct >= prev.pct ? "+" : ""}${Math.round(R.pct - prev.pct)})` : ""}${R.away ? ` · you left the exam page ${R.away} time${R.away > 1 ? "s" : ""}` : ""}</p>
                         ${avg ? `<p class="muted">Average ${mmss(avg)} per question${share ? ` (the time limit allows ${mmss(share)})` : ""}${(() => { const g = R.items.filter(x => x.guessed).length; return g ? ` · ${g} marked as ${g > 1 ? "guesses, which go" : "a guess, which goes"} in your missed deck` : ""; })()}.</p>` : ""}
                         <div class="build-actions"><a class="btn primary" href="#/exam">${icon("arrow-clockwise")} Take another exam</a><a class="btn" href="#/exam/missed">${icon("cards")} Missed deck · ${deckCount(COURSE)}</a></div></div>

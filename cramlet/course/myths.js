@@ -184,7 +184,7 @@
                 <div class="exam-results myths">
                     <div class="exam-hero res with-buddy">
                         <div class="score-ring" style="--p:${pct}"><span>${pct}%</span></div>
-                        <div><h1>${pct === 100 ? "No myth got past you!" : pct >= 80 ? "Sharp eye." : "Good practice. Here are the traps that got you."}</h1>
+                        <div>${CRAMLET.kitchen ? `<div class="kh-eyebrow res-back"><a href="#/kitchen">${icon("chef-hat")} Test Kitchen</a></div>` : ""}<h1>${pct === 100 ? "No myth got past you!" : pct >= 80 ? "Sharp eye." : "Good practice. Here are the traps that got you."}</h1>
                             <p>${right} of ${n} right · best streak ${R.best}${R.timed ? ` · ${SECONDS}-second timer` : ""}</p>
                             <div class="build-actions">
                                 ${missed.length ? `<button type="button" class="btn primary" data-act="retry">${icon("arrow-clockwise")} Retry the ${missed.length} I missed</button>` : ""}
