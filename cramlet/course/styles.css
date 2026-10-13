@@ -694,7 +694,8 @@ code { font-family: var(--font-code); font-size: .88em; }
 .cs-face { position: absolute; inset: 0; padding: 14px 16px; border-radius: 18px; backface-visibility: hidden; -webkit-backface-visibility: hidden; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); display: flex; flex-direction: column; }
 .cs-front { border-top: 5px solid var(--c); }
 .cs-back { transform: rotateY(180deg); background: color-mix(in srgb, var(--c) 9%, var(--paper)); border-color: color-mix(in srgb, var(--c) 35%, var(--line)); font-size: 14px; overflow: auto; }
-.cs-name { font: 600 16.5px var(--font-code); margin: 4px 0 auto; overflow-wrap: anywhere; padding-right: 40px; }
+.cs-name { font: 700 17px var(--font-head); margin: 4px 0 auto; overflow-wrap: anywhere; padding-right: 40px; }
+.cs-name.code { font: 600 16.5px var(--font-code); }
 .cs-hint { font-size: 12.5px; color: var(--muted); }
 .cs-sticker { position: absolute; right: 12px; bottom: 10px; width: 42px; height: 42px; transform: rotate(-12deg); }
 .cs-sticker svg, .cs-ring-done svg, .cs-stick svg, .cs-all-known svg, .cs-hero h1 svg { width: 100%; height: 100%; }

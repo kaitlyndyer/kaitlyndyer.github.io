@@ -37,7 +37,7 @@
             const [kind, ...rest] = id.split(":"), key = rest.join(":");
             if (kind === "q") { const q = Q[key]; return q && { id, kind, q, concept: q.concept, src: "From your missed deck" }; }
             if (kind === "m") { const m = CRAMLET.myths && CRAMLET.myths.get(key); return m && { id, kind, m, concept: m.c, src: "A myth or fact that got you" }; }
-            if (kind === "x") { const it = castItems.find(x => x.name === key); return it && { id, kind, it, concept: it.c, src: "An example the exam names" }; }
+            if (kind === "x") { const it = castItems.find(x => x.name === key); return it && { id, kind, it, concept: it.c, src: "A course example" }; }
             if (kind === "f") {
                 const [cid, fid] = [rest[0], rest.slice(1).join(":")];
                 const fc = ((S.content[cid] || {}).flashcards || []).find(f => idFor(f.front) === fid);
@@ -85,7 +85,7 @@
         const letter = k => "ABCDEFG"[k];
         function frontOf(card) {
             if (card.kind === "m") return `<div class="lc-prompt">Myth or fact?</div><div class="lc-big">${card.m.s}</div>`;
-            if (card.kind === "x") return `<div class="lc-prompt">What is it, and why does it matter?</div><div class="lc-big"><code>${esc(card.it.name)}</code> <span class="cast-kind">${esc(card.it.kind)}</span></div><p class="muted">${esc(card.it.group.title)}</p>`;
+            if (card.kind === "x") return `<div class="lc-prompt">What is it, and why does it matter?</div><div class="lc-big">${CRAMLET.settings(S).cast.asCode ? `<code>${esc(card.it.name)}</code>` : `<b>${esc(card.it.name)}</b>`} <span class="cast-kind">${esc(card.it.kind)}</span></div><p class="muted">${esc(card.it.group.title)}</p>`;
             if (card.kind === "f") return `<div class="lc-prompt">What does this mean?</div><div class="lc-big">${card.fc.front}</div>`;
             const q = card.q;
             let media = exampleRef(q);
@@ -298,11 +298,7 @@
                         <div class="lc-pep-buddy"></div>
                         <h2>You’re ready. ${esc(buddy.nameOf())} says so!</h2>
                         <p class="lc-reframe">Feeling jittery? That buzz is your body getting ready. It’s <b>energy</b>, and it helps you focus. You don’t need to calm down; aim it at the questions.</p>
-                        <ul class="lc-tips">
-                            <li>Read every option before you pick. Wrong answers are usually common misconceptions, so name the trap.</li>
-                            <li>Stuck? Flag it, move on, and come back. Another question may jog your memory.</li>
-                            <li>Breathe out slowly before you start. Long exhales settle the jitters.</li>
-                        </ul>
+                        <ul class="lc-tips">${CRAMLET.settings(S).pep.tips.map(t => `<li>${t}</li>`).join("")}</ul>
                         <p class="muted">This morning: ${t.done.length} card${t.done.length === 1 ? "" : "s"} relearned.</p>
                         <div class="build-actions"><button type="button" class="btn primary" data-done>${icon("star")} Go get it</button></div>
                     </div>

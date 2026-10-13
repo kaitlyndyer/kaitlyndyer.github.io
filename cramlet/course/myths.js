@@ -44,9 +44,9 @@
             const size = sizes.some(s => s[0] === prefs.size) ? prefs.size : 15;
             main.innerHTML = `
                 <div class="exam-start myths">
-                    ${K ? K.header(ctx, "myths", { line: "Rapid-fire statements built from the traps behind wrong answers, like “compareTo returns -1” or “records have setters.” Decide fast, and every answer comes with the reason." }) : `<div class="exam-hero"><div>
+                    ${K ? K.header(ctx, "myths", { line: CRAMLET.settings(S).myths.line }) : `<div class="exam-hero"><div>
                         <h1>${icon("lightbulb")} Myth or fact?</h1>
-                        <p>Rapid-fire statements built from the misconceptions that wrong exam answers are made of, like “compareTo returns -1” or “records have setters.” Decide fast: <b>myth</b> or <b>fact</b>. Every answer comes with the reason, so you learn the trap, not just the answer.</p>
+                        <p>${CRAMLET.settings(S).myths.line}</p>
                     </div></div>`}
                     <div class="build-actions${K ? " kh-slim" : ""}">
                         ${K ? `<span class="kh-label">Seen</span><span class="kh-grow"><b>${seen}</b> of ${bank.length}${w.length ? ` · ${w.length} missed last time` : ""}. Missed ones come first in every round.</span>` : ""}

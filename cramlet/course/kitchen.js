@@ -18,14 +18,16 @@
         { id: "myths", name: "Myth or fact?", icon: "lightbulb", href: "#/myths", group: "practice",
             line: "Rapid-fire statements built from the traps behind wrong answers. Decide fast, then learn why.", has: () => !!(CRAMLET.myths && CRAMLET.myths.count()) },
         { id: "run", name: "Crumb Run", icon: "hourglass-medium", href: "#/last-crumbs", group: "last",
-            line: "A short recall session: Tonight before bed, then the Morning of to relearn the tricky ones.", has: S => !!(S.cast && CRAMLET.lastCrumbs) },
+            line: "A short recall session: Tonight before bed, then the Morning of to relearn the tricky ones.", has: S => !!CRAMLET.lastCrumbs && hasCards(S) },
         { id: "sheet", name: "Cookie Sheet", icon: "note", href: "#/last-crumbs/sheet", group: "last",
-            line: "Everything on one page. Fill in the hidden terms from memory, and stick a cookie on what you know.", has: S => !!(S.cast && CRAMLET.lastCrumbs) },
+            line: "Everything on one page. Fill in the hidden terms from memory, and stick a cookie on what you know.", has: S => !!CRAMLET.lastCrumbs && hasCards(S) },
     ];
     const GROUPS = [
         { id: "practice", title: "Practice", sub: "Any day: find out what you don’t know yet, and fix it" },
         { id: "last", title: "Last-minute", sub: "The night before and the morning of the exam" },
     ];
+    // Crumb Run and the Cookie Sheet need something to recall: flashcards, or the course's example cards.
+    const hasCards = S => !!(S.cast && S.cast.length) || Object.values(S.content || {}).some(d => (d.flashcards || []).length);
     const toolsFor = S => TOOLS.filter(t => t.has(S));
     // Which page of the course belongs to the Test Kitchen (for the sidebar).
     const owns = parts => ["kitchen", "exam", "myths", "last-crumbs", "review"].includes(parts[0]);
@@ -113,5 +115,5 @@
         mount(main);
     }
 
-    window.CRAMLET = Object.assign(window.CRAMLET || {}, { kitchen: { header, mount, render, owns } });
+    window.CRAMLET = Object.assign(window.CRAMLET || {}, { kitchen: { header, mount, render, owns, has: (S, id) => toolsFor(S).some(t => t.id === id) } });
 })();

@@ -36,13 +36,8 @@
         { id: "write", name: "Write the code", types: ["write"] },
     ];
     const sectionOf = type => SECTIONS.find(s => s.types.includes(type));
-    const LENGTHS = {
-        full: { name: "Full exam", minutes: 120, mix: { choice: 9, trace: 7, bug: 4, fill: 4, parsons: 4, design: 3, write: 4 } },
-        sim: { name: "Exam length", minutes: 60, mix: { choice: 12, trace: 4, bug: 2, fill: 2, parsons: 1, design: 3, write: 1 } },
-        half: { name: "Half exam", minutes: 60, hidden: true, mix: { choice: 5, trace: 4, bug: 2, fill: 2, parsons: 2, design: 1, write: 2 } },
-        quick: { name: "Quick check", minutes: 0, mix: { choice: 4, trace: 2, bug: 1, fill: 1, parsons: 1, design: 1, write: 0 } },
-        deck: { name: "Missed deck", minutes: 0, mix: {}, hidden: true },
-    };
+    // Exam sizes come from the course's settings (CRAMLET.settings → exam.lengths); retakes of the missed deck use this one.
+    const DECK_LENGTH = { name: "Missed deck", minutes: 0, mix: {}, hidden: true };
     const countOf = L => Object.values(L.mix).reduce((a, b) => a + b, 0);
     const MC_TYPES = ["mc", "design"]; // the "multiple choice only" pool: one right answer out of a few options
     const DECK_WINS = 2;               // right answers, in different sessions, needed to leave the missed deck
@@ -161,6 +156,12 @@
         const K = CRAMLET.kitchen; // the Test Kitchen's shared header, when the course page loads it
         const KEY = `cramlet.exam.${COURSE}`;
         const lectures = Object.keys(S.lectures).map(Number);
+        // This course's wording and exam sizes (course/settings.js).
+        const SET = CRAMLET.settings(S).exam;
+        const LENGTHS = { ...SET.lengths, deck: DECK_LENGTH };
+        const lengthOf = id => LENGTHS[id] || { name: "Practice exam", minutes: 0, mix: {}, hidden: true }; // e.g. a size the course no longer offers
+        const secLabel = sec => SET.sections[sec.id] || sec.name;
+        const typeLabel = type => secLabel(sectionOf(type));
 
         // What a question shows above its answer area: an automaton diagram (ToC) and/or a code block.
         const machineOf = q => (q.machine && CRAMLET.automata ? `<div class="quiz-machine">${CRAMLET.automata.render(q.machine)}</div>` : "");
@@ -179,7 +180,7 @@
 
         // Pick questions for each section, spreading them across concepts and preferring ones not seen recently.
         function build(lengthId, lecs, mode) {
-            const L = LENGTHS[lengthId], pool = poolFor(lecs), seen = read(`${KEY}.seen`, {});
+            const L = lengthOf(lengthId), pool = poolFor(lecs), seen = read(`${KEY}.seen`, {});
             const used = new Set(), perConcept = {};
             const out = [];
             // Multiple choice only: one pool, spread across concepts, then in lecture order like a real exam.
@@ -228,28 +229,31 @@
             const counts = lecs => { const p = poolFor(lecs); return SECTIONS.map(s => [s, p.filter(q => s.types.includes(q.type)).length]); };
             const prefs = read(`${KEY}.prefs`, {});
             const deckN = deckCount(COURSE);
+            // The kinds of questions this course's bank has. With only one kind, there's no Mixed vs multiple choice to pick.
+            const kinds = counts(lectures).filter(([, n]) => n).map(([sec]) => secLabel(sec));
+            const mixedLine = kinds.map((k, i) => (i ? k.toLowerCase() : k)).join(", ").replace(/, ([^,]*)$/, kinds.length > 2 ? ", and $1" : " and $1");
             main.innerHTML = `
                 <div class="exam-start">
                     ${K ? K.header(ctx, "exam") : `<div class="exam-hero"><div><h1>${icon("list-checks")} Practice exam</h1>
-                        <p>A closed-book exam drawn fresh from ${esc(S.course.title)}’s question bank. Notes, search, and hints are hidden until you submit. Most questions are graded automatically; for written code and design answers you check your work against a model answer.</p></div></div>`}
-                    ${K ? `<div class="kh-slim"><span class="kh-label">${hist.length ? "Last exam" : "How it works"}</span><span class="kh-grow">${hist.length ? (() => { const h = hist[hist.length - 1]; return `<b>${Math.round(h.pct)}%</b> · ${esc(LENGTHS[h.length].name)}${h.mode === "mc" ? " · multiple choice" : ""} · ${new Date(h.at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`; })() : "Closed book: notes, search, and hints are hidden until you submit."}</span>${hist.length ? `<button type="button" class="btn small" data-hist="${hist.length - 1}">${icon("list-checks")} See it</button>` : ""}</div>` : ""}
+                        <p>${SET.intro.replace("{course}", esc(S.course.title))}</p></div></div>`}
+                    ${K ? `<div class="kh-slim"><span class="kh-label">${hist.length ? "Last exam" : "How it works"}</span><span class="kh-grow">${hist.length ? (() => { const h = hist[hist.length - 1]; return `<b>${Math.round(h.pct)}%</b> · ${esc(lengthOf(h.length).name)}${h.mode === "mc" ? " · multiple choice" : ""} · ${new Date(h.at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`; })() : "Closed book: notes, search, and hints are hidden until you submit."}</span>${hist.length ? `<button type="button" class="btn small" data-hist="${hist.length - 1}">${icon("list-checks")} See it</button>` : ""}</div>` : ""}
                     ${active ? `<div class="callout key done exam-resume">${icon("hourglass-medium", "callout-ic")}<div class="callout-body"><span class="callout-label">Exam in progress</span>You have an unfinished ${(() => {
                         const paused = active.pausedAt ? (active.deadline ? `paused with ${clockText(active.deadline - active.pausedAt)} left` : "paused") : "";
-                        const bits = active.length === "deck" ? [paused] : [esc(LENGTHS[active.length].name), active.mode === "mc" ? "multiple choice" : "", paused];
+                        const bits = active.length === "deck" ? [paused] : [esc(lengthOf(active.length).name), active.mode === "mc" ? "multiple choice" : "", paused];
                         const info = bits.filter(Boolean).join(", ");
                         return (active.length === "deck" ? "missed-deck retake" : "practice exam") + (info ? ` (${info})` : "");
                     })()}. <button type="button" class="btn primary small" data-act="resume">Continue it</button> <button type="button" class="btn ghost small" data-act="discard">Throw it away</button></div></div>` : ""}
                     <div class="exam-setup">
                         <div class="side-box"><div class="side-title">Length</div>
                             <div class="exam-lengths">${Object.entries(LENGTHS).filter(([, L]) => !L.hidden).map(([id, L], i) => {
-                                const on = prefs.length && !(LENGTHS[prefs.length] || {}).hidden ? prefs.length === id : i === 0;
+                                const on = LENGTHS[prefs.length] && !LENGTHS[prefs.length].hidden ? prefs.length === id : i === 0;
                                 return `<label class="exam-len"><input type="radio" name="exam-len" value="${id}" ${on ? "checked" : ""}><span><b>${L.name}</b><small>${countOf(L)} questions · ${L.minutes ? `${L.minutes} minutes` : "no timer"}</small></span></label>`;
                             }).join("")}</div>
-                            <div class="side-title exam-types-title">Question types</div>
+                            ${kinds.length > 1 ? `<div class="side-title exam-types-title">Question types</div>
                             <div class="exam-lengths">
-                                <label class="exam-len"><input type="radio" name="exam-mode" value="mixed" ${prefs.mode !== "mc" ? "checked" : ""}><span><b>Mixed</b><small>Trace, find the bug, fill in, build, design, and write code</small></span></label>
+                                <label class="exam-len"><input type="radio" name="exam-mode" value="mixed" ${prefs.mode !== "mc" ? "checked" : ""}><span><b>Mixed</b><small>${SET.mixed || mixedLine}</small></span></label>
                                 <label class="exam-len"><input type="radio" name="exam-mode" value="mc" ${prefs.mode === "mc" ? "checked" : ""}><span><b>Multiple choice only</b><small>One answer from A–D, every question worth the same</small></span></label>
-                            </div>
+                            </div>` : ""}
                         </div>
                         <div class="side-box"><div class="side-title">Lectures</div>
                             <div class="exam-lecs">${lectures.map(n => `<label class="exam-lec"><input type="checkbox" value="${n}" checked><span><b>L${n}</b> ${esc(S.lectures[n])}</span></label>`).join("")}</div>
@@ -257,20 +261,21 @@
                     </div>
                     <div class="exam-bank"></div>
                     <div class="build-actions"><button type="button" class="btn primary" data-act="start">${icon("hourglass-medium")} Start the exam</button>${deckN ? `<a class="btn" href="#/exam/missed">${icon("cards")} Missed deck · ${deckN}</a>` : ""}</div>
-                    ${hist.length ? `<div class="side-box"><div class="side-title">Past exams</div><ol class="exam-hist">${hist.slice().reverse().map((h, i) => `<li><button type="button" class="hist-link" data-hist="${hist.length - 1 - i}"><b>${Math.round(h.pct)}%</b> ${esc(LENGTHS[h.length].name)}${h.mode === "mc" ? " · multiple choice" : ""} · ${new Date(h.at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</button></li>`).join("")}</ol></div>` : ""}
+                    ${hist.length ? `<div class="side-box"><div class="side-title">Past exams</div><ol class="exam-hist">${hist.slice().reverse().map((h, i) => `<li><button type="button" class="hist-link" data-hist="${hist.length - 1 - i}"><b>${Math.round(h.pct)}%</b> ${esc(lengthOf(h.length).name)}${h.mode === "mc" ? " · multiple choice" : ""} · ${new Date(h.at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</button></li>`).join("")}</ol></div>` : ""}
                 </div>`;
             if (K) K.mount(main);
             const selLecs = () => [...main.querySelectorAll(".exam-lec input:checked")].map(x => +x.value);
-            const selMode = () => main.querySelector('[name="exam-mode"]:checked').value;
+            const selMode = () => { const m = main.querySelector('[name="exam-mode"]:checked'); return m ? m.value : "mixed"; };
             const drawBank = () => {
                 const lecs = selLecs();
                 if (selMode() === "mc") {
-                    const n = poolFor(lecs).filter(q => MC_TYPES.includes(q.type)).length, per = countOf(LENGTHS[main.querySelector('[name="exam-len"]:checked').value]);
+                    const n = poolFor(lecs).filter(q => MC_TYPES.includes(q.type)).length, per = countOf(lengthOf(main.querySelector('[name="exam-len"]:checked').value));
                     main.querySelector(".exam-bank").innerHTML = `<p class="muted">${n} multiple-choice questions in the bank for these lectures${n >= per * 2 ? `, enough for about ${Math.floor(n / per)} exams without repeats` : ""}.</p>`;
                     return;
                 }
                 const c = counts(lecs), total = c.reduce((a, [, n]) => a + n, 0);
-                main.querySelector(".exam-bank").innerHTML = `<p class="muted">${total} questions in the bank for these lectures: ${c.filter(([, n]) => n).map(([s, n]) => `${n} ${s.name.toLowerCase()}`).join(" · ")}.</p>`;
+                const have = c.filter(([, n]) => n);
+                main.querySelector(".exam-bank").innerHTML = `<p class="muted">${total} questions in the bank for these lectures${have.length > 1 ? `: ${have.map(([s, n]) => `${n} ${secLabel(s).toLowerCase()}`).join(" · ")}` : ""}${total >= countOf(lengthOf(main.querySelector('[name="exam-len"]:checked').value)) * 2 ? `, enough for about ${Math.floor(total / countOf(lengthOf(main.querySelector('[name="exam-len"]:checked').value)))} exams without repeats` : ""}.</p>`;
             };
             main.querySelectorAll(".exam-lec input, [name=exam-mode], [name=exam-len]").forEach(x => x.addEventListener("change", drawBank));
             drawBank();
@@ -286,7 +291,7 @@
                     const length = main.querySelector('[name="exam-len"]:checked').value, mode = selMode();
                     write(`${KEY}.prefs`, { length, mode });
                     const qs = build(length, lecs, mode);
-                    const L = LENGTHS[length];
+                    const L = lengthOf(length);
                     saveExam({ length, mode, lecs, ids: qs.map(q => q.id), perm: makePerms(qs), answers: {}, flags: [], guess: [], t: {}, at: Date.now(), deadline: L.minutes ? Date.now() + L.minutes * 60000 : 0, away: 0, cur: 0 });
                     location.hash = "#/exam/take";
                 }
@@ -304,7 +309,7 @@
             const Q = byId(), qs = E.ids.map(id => Q[id]).filter(Boolean);
             const answered = i => { const a = E.answers[qs[i].id]; return !!a && Object.values(a).some(v => (Array.isArray(v) ? v.length : v !== "" && v !== undefined && v !== null)); };
             const mcMode = E.mode === "mc", plainMap = mcMode || E.length === "deck";
-            const secName = q => (mcMode ? "Multiple choice" : sectionOf(q.type).name);
+            const secName = q => (mcMode ? "Multiple choice" : typeLabel(q.type));
             // Time spent on each question (for the results page). Time away from the page isn't counted on resume.
             const leaveQ = X => { const id = qs[X.cur] && qs[X.cur].id; if (!id) return; X.t = X.t || {}; X.t[id] = (X.t[id] || 0) + Math.min(Date.now() - (X.tAt || Date.now()), 20 * 60000); X.tAt = Date.now(); };
             E.tAt = Date.now(); saveExam(E);
@@ -312,7 +317,7 @@
             main.innerHTML = `
                 <div class="exam-take">
                     <div class="exam-bar">
-                        <span class="exam-title">${icon(E.length === "deck" ? "cards" : "list-checks")} ${esc(LENGTHS[E.length].name)}${mcMode ? " · multiple choice" : ""}</span>
+                        <span class="exam-title">${icon(E.length === "deck" ? "cards" : "list-checks")} ${esc(lengthOf(E.length).name)}${mcMode ? " · multiple choice" : ""}</span>
                         <span class="exam-pace" aria-live="off"></span>
                         <span class="exam-clock" aria-live="off"></span>
                         <button type="button" class="btn ghost small exam-pause-btn" data-act="pause" title="Pause the exam (the timer stops)">${icon("hourglass-medium")} Pause</button>
@@ -704,7 +709,7 @@
                 }).join("")}</ol></div>`;
             };
             // Timing: on a timed exam each question's fair share is minutes ÷ questions; twice that is "slow".
-            const L = LENGTHS[R.length] || {}, share = L.minutes ? (L.minutes * 60000) / R.items.length : 0;
+            const L = lengthOf(R.length), share = L.minutes ? (L.minutes * 60000) / R.items.length : 0;
             const mmss = ms => `${Math.floor(ms / 60000)}:${String(Math.round(ms / 1000) % 60).padStart(2, "0")}`;
             const slow = x => share && x.ms > share * 2;
             const timed = R.items.filter(x => x.ms), avg = timed.length ? timed.reduce((a, x) => a + x.ms, 0) / timed.length : 0;
@@ -719,7 +724,7 @@
                 const a = R.answers[x.id] || {}, c = conceptById[x.concept];
                 const full = x.earned >= x.max, none = x.earned === 0;
                 return `<details class="res-q ${full ? "full" : none ? "zero" : "part-cred"}"${full ? "" : " open"}>
-                    <summary><span class="res-n">${n}</span><span class="res-what"><b>${esc(c ? c.title : x.concept)}</b> · ${esc(R.mode === "mc" ? "Multiple choice" : sectionOf(q.type).name)}${x.guessed ? ` <span class="tag in">guessed</span>` : ""}${slow(x) ? ` <span class="tag in">slow</span>` : ""}</span>${x.ms ? `<span class="res-time">${mmss(x.ms)}</span>` : ""}<span class="res-pts">${x.earned}/${x.max}</span></summary>
+                    <summary><span class="res-n">${n}</span><span class="res-what"><b>${esc(c ? c.title : x.concept)}</b> · ${esc(R.mode === "mc" ? "Multiple choice" : typeLabel(q.type))}${x.guessed ? ` <span class="tag in">guessed</span>` : ""}${slow(x) ? ` <span class="tag in">slow</span>` : ""}</span>${x.ms ? `<span class="res-time">${mmss(x.ms)}</span>` : ""}<span class="res-pts">${x.earned}/${x.max}</span></summary>
                     <div class="question">${q.q}</div>
                     ${exampleRef(q)}${machineOf(q)}${q.code && q.type !== "fill" ? codeBlock(q.code) : ""}
                     ${q.type === "bug" ? `<div class="bug-code">${q.lines.map((ln, k) => `<div class="bug-line${k === q.answer ? " correct" : k === a.line ? " wrong" : ""}"><span class="ln">${k + 1}</span><code>${highlight(ln) || "&nbsp;"}</code></div>`).join("")}</div>` : ""}
@@ -733,7 +738,7 @@
                     <div class="exam-hero res${CRAMLET.buddy ? " with-buddy" : ""}">
                         <div class="score-ring" style="--p:${Math.round(R.pct)}"><span>${Math.round(R.pct)}%</span></div>
                         <div>${CRAMLET.kitchen ? `<div class="kh-eyebrow res-back"><a href="#/kitchen">${icon("chef-hat")} Test Kitchen</a></div>` : ""}<h1>${R.pct >= 85 ? "Great exam!" : R.pct >= 70 ? "Solid work." : "Good practice. Here’s what to review."}</h1>
-                        <p>${R.earned} of ${R.max} points · ${esc(LENGTHS[R.length].name)}${R.mode === "mc" ? " · multiple choice" : ""} · ${Math.max(1, Math.round((R.done - R.at) / 60000))} minutes${prev ? ` · last time ${Math.round(prev.pct)}% (${R.pct >= prev.pct ? "+" : ""}${Math.round(R.pct - prev.pct)})` : ""}${R.away ? ` · you left the exam page ${R.away} time${R.away > 1 ? "s" : ""}` : ""}</p>
+                        <p>${R.earned} of ${R.max} points · ${esc(lengthOf(R.length).name)}${R.mode === "mc" ? " · multiple choice" : ""} · ${Math.max(1, Math.round((R.done - R.at) / 60000))} minutes${prev ? ` · last time ${Math.round(prev.pct)}% (${R.pct >= prev.pct ? "+" : ""}${Math.round(R.pct - prev.pct)})` : ""}${R.away ? ` · you left the exam page ${R.away} time${R.away > 1 ? "s" : ""}` : ""}</p>
                         ${avg ? `<p class="muted">Average ${mmss(avg)} per question${share ? ` (the time limit allows ${mmss(share)})` : ""}${(() => { const g = R.items.filter(x => x.guessed).length; return g ? ` · ${g} marked as ${g > 1 ? "guesses, which go" : "a guess, which goes"} in your missed deck` : ""; })()}.</p>` : ""}
                         <div class="build-actions"><a class="btn primary" href="#/exam">${icon("arrow-clockwise")} Take another exam</a><a class="btn" href="#/exam/missed">${icon("cards")} Missed deck · ${deckCount(COURSE)}</a></div></div>
                         ${CRAMLET.buddy ? `<div class="res-buddy"><div class="end-buddy"></div><p class="buddy-say">${esc(CRAMLET.buddy.say(mood.line))}</p></div>` : ""}
@@ -782,7 +787,7 @@
                         <div class="deck-filter"><span class="side-title">Lectures</span>${lecsIn.map(l => `<label class="deck-chip" title="${esc(S.lectures[l])}"><input type="checkbox" value="${l}" ${chosen.includes(l) ? "checked" : ""}><span>L${l} · ${all.filter(x => x.q.lec.includes(l)).length}</span></label>`).join("")}</div>
                         <ol class="mistakes">${list.map(x => {
                             const c = conceptById[x.concept || x.q.concept], wins = (x.wins || []).length;
-                            return `<li style="--c:${c ? c.color : "var(--brand)"}"><span class="stripe"></span><span><b>${esc(c ? c.title : x.q.concept)}</b> · ${esc(sectionOf(x.q.type).name)} <span class="deck-dots" title="${wins} of ${DECK_WINS} sessions right">${Array.from({ length: DECK_WINS }, (_, k) => `<i class="${k < wins ? "on" : ""}"></i>`).join("")}</span><br><span class="muted">${esc(stripTags(x.q.q).slice(0, 140))}</span></span></li>`;
+                            return `<li style="--c:${c ? c.color : "var(--brand)"}"><span class="stripe"></span><span><b>${esc(c ? c.title : x.q.concept)}</b> · ${esc(typeLabel(x.q.type))} <span class="deck-dots" title="${wins} of ${DECK_WINS} sessions right">${Array.from({ length: DECK_WINS }, (_, k) => `<i class="${k < wins ? "on" : ""}"></i>`).join("")}</span><br><span class="muted">${esc(stripTags(x.q.q).slice(0, 140))}</span></span></li>`;
                         }).join("")}</ol>`
                         : `<p class="muted">Your deck is empty. Questions you miss on exams and concept quizzes will show up here.</p><a class="btn" href="#/exam">Back to exams</a>`}
                     </div>`;
@@ -827,5 +832,5 @@
     }
     const missedIds = course => Object.keys(readDeck(course));
 
-    window.CRAMLET = Object.assign(window.CRAMLET || {}, { exam: { render, latest, SECTIONS, LENGTHS, grade, pointsOf, recordAnswer, deckCount, questionsById, missedIds } });
+    window.CRAMLET = Object.assign(window.CRAMLET || {}, { exam: { render, latest, SECTIONS, grade, pointsOf, recordAnswer, deckCount, questionsById, missedIds } });
 })();
