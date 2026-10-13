@@ -16,6 +16,7 @@
 
     function render(main, ctx, parts) {
         const { S, COURSE, esc, icon, conceptById, celebrate, setKeyHandler } = ctx;
+        const K = CRAMLET.kitchen;
         const KEY = `cramlet.myths.${COURSE}`;
         const buddy = CRAMLET.buddy, progress = CRAMLET.progress;
         const state = () => read(KEY, { stats: {}, prefs: {} });
@@ -43,10 +44,16 @@
             const size = sizes.some(s => s[0] === prefs.size) ? prefs.size : 15;
             main.innerHTML = `
                 <div class="exam-start myths">
-                    <div class="exam-hero"><div>
+                    ${K ? K.header(ctx, "myths", { line: "Rapid-fire statements built from the traps behind wrong answers, like “compareTo returns -1” or “records have setters.” Decide fast, and every answer comes with the reason." }) : `<div class="exam-hero"><div>
                         <h1>${icon("lightbulb")} Myth or fact?</h1>
                         <p>Rapid-fire statements built from the misconceptions that wrong exam answers are made of, like “compareTo returns -1” or “records have setters.” Decide fast: <b>myth</b> or <b>fact</b>. Every answer comes with the reason, so you learn the trap, not just the answer.</p>
-                    </div></div>
+                    </div></div>`}
+                    <div class="build-actions${K ? " kh-slim" : ""}">
+                        ${K ? `<span class="kh-label">Seen</span><span class="kh-grow"><b>${seen}</b> of ${bank.length}${w.length ? ` · ${w.length} missed last time` : ""}. Missed ones come first in every round.</span>` : ""}
+                        <button type="button" class="btn primary" data-act="start">${icon("lightbulb")} Start a round</button>
+                        ${w.length ? `<button type="button" class="btn" data-act="weak">${icon("arrow-clockwise")} Just the ones I missed · ${w.length}</button>` : ""}
+                        ${st.round && st.round.pos < st.round.ids.length ? `<button type="button" class="btn ghost" data-act="resume">Continue my round (${st.round.pos} of ${st.round.ids.length})</button>` : ""}
+                    </div>
                     <div class="exam-setup">
                         <div class="side-box"><div class="side-title">Round</div>
                             <div class="exam-lengths">${sizes.map(([n, name, sub]) => `<label class="exam-len"><input type="radio" name="myth-size" value="${n}" ${n === size ? "checked" : ""}><span><b>${name}</b><small>${sub}</small></span></label>`).join("")}</div>
@@ -54,15 +61,11 @@
                         <div class="side-box"><div class="side-title">Options</div>
                             <label class="exam-len"><input type="checkbox" name="myth-timer" ${prefs.timer !== false ? "checked" : ""}><span><b>Beat the clock</b><small>${SECONDS} seconds per statement; running out counts as a miss</small></span></label>
                             <p class="muted myth-keys">Keys: <kbd>M</kbd> or <kbd>←</kbd> for myth, <kbd>F</kbd> or <kbd>→</kbd> for fact, <kbd>Enter</kbd> for the next one.</p>
-                            <p class="muted">You’ve seen ${seen} of ${bank.length}. Statements you missed come first in every round.</p>
+                            ${K ? "" : `<p class="muted">You’ve seen ${seen} of ${bank.length}. Statements you missed come first in every round.</p>`}
                         </div>
                     </div>
-                    <div class="build-actions">
-                        <button type="button" class="btn primary" data-act="start">${icon("lightbulb")} Start a round</button>
-                        ${w.length ? `<button type="button" class="btn" data-act="weak">${icon("arrow-clockwise")} Just the ones I missed · ${w.length}</button>` : ""}
-                        ${st.round && st.round.pos < st.round.ids.length ? `<button type="button" class="btn ghost" data-act="resume">Continue my round (${st.round.pos} of ${st.round.ids.length})</button>` : ""}
-                    </div>
                 </div>`;
+            if (K) K.mount(main);
             main.querySelector(".myths").addEventListener("click", e => {
                 const t = e.target.closest("button[data-act]");
                 if (!t) return;
@@ -216,5 +219,11 @@
         else drawStart();
     }
 
-    window.CRAMLET = Object.assign(window.CRAMLET || {}, { myths: { render, count: () => bank.length } });
+    // Statements this course's visitor got wrong the last time they saw them (for the night-before review).
+    const missed = course => { const st = read(`cramlet.myths.${course}`, { stats: {} }); return bank.filter(m => { const x = (st.stats || {})[m.id]; return x && x.last === false; }); };
+
+    // For the Test Kitchen overview: how many statements you've seen, and how many got you last time.
+    const progress = course => { const st = read(`cramlet.myths.${course}`, { stats: {} }), stats = st.stats || {}; return { seen: bank.filter(m => stats[m.id]).length, total: bank.length, missed: missed(course).length }; };
+
+    window.CRAMLET = Object.assign(window.CRAMLET || {}, { myths: { render, count: () => bank.length, missed, get: id => bank.find(m => m.id === id), progress } });
 })();
