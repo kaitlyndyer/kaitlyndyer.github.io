@@ -594,6 +594,67 @@
         });
     }
 
+    // ---------- Turing machines ----------
+    // m = { states: positions, start, accept, reject, input: Σ, tape: Γ (includes BLANK), delta: { q: { sym: [next, write, "L"|"R"] } } }
+    // A missing transition goes to the reject state (the usual shorthand in diagrams).
+    const BLANK = "␣";
+    function runTM(m, w, limit = 400) {
+        const tape = w.length ? w.split("") : [];
+        let q = m.start, head = 0;
+        const configs = [{ q, tape: tape.slice(), head }], moves = [];
+        while (q !== m.accept && q !== m.reject && moves.length < limit) {
+            const read = tape[head] ?? BLANK;
+            const t = (m.delta[q] || {})[read];
+            const [next, write, dir] = t || [m.reject, read, "R"];
+            tape[head] = write;
+            const from = head;
+            head = dir === "L" ? Math.max(0, head - 1) : head + 1;
+            moves.push({ state: q, read, next, write, dir, from, missing: !t, stuck: dir === "L" && from === 0 });
+            q = next;
+            configs.push({ q, tape: tape.slice(), head });
+        }
+        const result = q === m.accept ? "accept" : q === m.reject ? "reject" : "running";
+        return { configs, moves, result };
+    }
+
+    // Configuration as u q v, with blanks after the input trimmed (but the head's cell kept).
+    function tmConfig(c) {
+        const cells = c.tape.slice();
+        while (cells.length < c.head + 1) cells.push(BLANK);
+        let end = cells.length;
+        while (end > c.head + 1 && cells[end - 1] === BLANK) end--;
+        return { u: cells.slice(0, c.head).join(""), q: c.q, v: cells.slice(c.head, end).join("") };
+    }
+
+    // One arrow label per (from, to): "0→x,R" for writes, "0,x→R" when the symbol is left alone.
+    function tmLabel(list) {
+        const keep = {}, out = [];
+        list.forEach(([read, write, dir]) => {
+            if (read === write) (keep[dir] = keep[dir] || []).push(read);
+            else out.push(`${read}→${write},${dir}`);
+        });
+        Object.entries(keep).forEach(([dir, syms]) => out.push(`${syms.join(",")}→${dir}`));
+        return out.join(" ; ");
+    }
+
+    // A drawable stand-in for render(): each arrow gets one combined label as its only "symbol".
+    function tmDiagram(m) {
+        const byEdge = new Map();
+        Object.entries(m.delta).forEach(([q, row]) => Object.entries(row).forEach(([read, [next, write, dir]]) => {
+            const k = q + "\u0000" + next;
+            if (!byEdge.has(k)) byEdge.set(k, { q, next, list: [] });
+            byEdge.get(k).list.push([read, write, dir]);
+        }));
+        const delta = {}, alphabet = [];
+        byEdge.forEach(({ q, next, list }) => {
+            const label = tmLabel(list);
+            (delta[q] = delta[q] || {})[label] = next;
+            alphabet.push(label);
+        });
+        Object.keys(m.states).forEach(q => { delta[q] = delta[q] || {}; });
+        return { states: m.states, start: m.start, accept: [m.accept], alphabet, delta, labels: { [m.accept]: "acc", [m.reject]: "rej", ...(m.labels || {}) } };
+    }
+
     // Spots for n states (n ≤ 6) in a 520×260 box, with self-loops pointing away from the middle.
     function layout(names) {
         const n = names.length, cx = 260, cy = 130;
@@ -616,6 +677,7 @@
 
     window.CRAMLET = Object.assign(window.CRAMLET || {}, {
         automata: { runDFA, accepts, strings, eclose, move, runNFA, acceptsNFA, subsetConstruction, render, highlight, layout, stateLabel,
-            parseRegex, regexText, postorder, regexLang, byLength, regexToNFA, regexNFASteps, gnfaSteps },
+            parseRegex, regexText, postorder, regexLang, byLength, regexToNFA, regexNFASteps, gnfaSteps,
+            BLANK, runTM, tmConfig, tmDiagram },
     });
 })();

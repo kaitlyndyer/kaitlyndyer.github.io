@@ -1,0 +1,129 @@
+// "Build a DFA" exam questions (the dfa question type in ../../questions.js).
+// Each answer is one correct DFA; any DFA for the same language gets full points. Keep answers minimal, since
+// partial credit counts how many changes a wrong DFA is from the answer. meaning says what each state remembers,
+// and is shown next to the answer on the results page.
+registerExam("dfa", [
+    {
+        id: "build/even0-end1", type: "dfa",
+        q: `Build a DFA for <span class="set">{ w | w has an even number of 0s and ends in 1 }</span>.`,
+        answer: {
+            start: "q0", accept: ["q2"],
+            delta: { q0: { 0: "q1", 1: "q2" }, q1: { 0: "q0", 1: "q1" }, q2: { 0: "q1", 1: "q2" } },
+            meaning: { q0: "even 0s, doesn’t end in 1 (where ε starts)", q1: "odd 0s", q2: "even 0s, ends in 1 (accept)" },
+        },
+        explain: "It looks like two yes/no facts (even 0s? ends in 1?) and four states, but an odd count never accepts, so with odd 0s the last symbol doesn’t matter: those two states would act exactly alike, and three are enough. A 0 always flips the count (and means the string ends in 0); a 1 keeps it. A four-state DFA that tracks both facts is also correct and gets full points.",
+    },
+    {
+        id: "build/contains010", type: "dfa",
+        q: `Build a DFA for <span class="set">{ w | w contains 010 as a substring }</span>.`,
+        answer: {
+            start: "q0", accept: ["q3"],
+            delta: { q0: { 0: "q1", 1: "q0" }, q1: { 0: "q1", 1: "q2" }, q2: { 0: "q3", 1: "q0" }, q3: { 0: "q3", 1: "q3" } },
+            meaning: { q0: "no progress toward 010", q1: "the input so far ends in 0", q2: "ends in 01", q3: "has seen 010 (accept, and stays)" },
+        },
+        explain: "Each state is how much of 010 the end of the input matches. The tricky arrows are the failures: in q1 another 0 still leaves you one 0 into a match, so it loops; in q2 a 1 makes the end “011”, which matches nothing, so it goes back to q0. Once 010 appears the string is in the language whatever comes next, so q3 loops on everything.",
+    },
+    {
+        id: "build/zero-then-one", type: "dfa",
+        q: `Build a DFA for <span class="set">{ w | every 0 in w is immediately followed by a 1 }</span>.`,
+        answer: {
+            start: "q0", accept: ["q0"],
+            delta: { q0: { 0: "q1", 1: "q0" }, q1: { 0: "q2", 1: "q0" }, q2: { 0: "q2", 1: "q2" } },
+            meaning: { q0: "every 0 so far has its 1 (accept; ε is here)", q1: "just read a 0 that still needs a 1", q2: "a 0 was followed by another 0 (trap)" },
+        },
+        explain: "Two ways to break the rule: two 0s in a row, or a 0 at the very end. q1 means “a 0 is waiting for its 1”, so it can’t accept, which handles the ending. A second 0 from q1 is a mistake you can never undo, so it goes to a trap. The empty string and strings like 111 have no 0s at all, so they follow the rule: the start state accepts.",
+    },
+    {
+        id: "build/ones-mod3", type: "dfa",
+        q: `Build a DFA for <span class="set">{ w | the number of 1s in w is divisible by 3 }</span>.`,
+        answer: {
+            start: "q0", accept: ["q0"],
+            delta: { q0: { 0: "q0", 1: "q1" }, q1: { 0: "q1", 1: "q2" }, q2: { 0: "q2", 1: "q0" } },
+            meaning: { q0: "number of 1s ≡ 0 (mod 3), accept", q1: "≡ 1 (mod 3)", q2: "≡ 2 (mod 3)" },
+        },
+        explain: "Counting all the way up would need infinitely many states, but you only need the count mod 3. A 1 moves you one step around the cycle q0 → q1 → q2 → q0; a 0 changes nothing, so it loops. Zero 1s is divisible by 3, so ε and strings like 000 are accepted.",
+    },
+    {
+        id: "build/binary-mod3", type: "dfa",
+        q: `Read w as a binary number, most significant bit first (ε counts as 0). Build a DFA for <span class="set">{ w | that number is divisible by 3 }</span>.`,
+        answer: {
+            start: "q0", accept: ["q0"],
+            delta: { q0: { 0: "q0", 1: "q1" }, q1: { 0: "q2", 1: "q0" }, q2: { 0: "q1", 1: "q2" } },
+            meaning: { q0: "value so far ≡ 0 (mod 3), accept", q1: "≡ 1 (mod 3)", q2: "≡ 2 (mod 3)" },
+        },
+        explain: "Reading one more bit b turns the value v into 2v + b, so the remainder r becomes (2r + b) mod 3. That one rule fills in the whole table: from r = 1, a 0 gives 2 and a 1 gives 0; from r = 2, a 0 gives 1 and a 1 gives 2. For example 110 is 6: q0 →1 q1 →1 q0 →0 q0, accept.",
+    },
+    {
+        id: "build/second-last-1", type: "dfa",
+        q: `Build a DFA for <span class="set">{ w | the second-to-last symbol of w is 1 }</span>.`,
+        answer: {
+            start: "q0", accept: ["q2", "q3"],
+            delta: { q0: { 0: "q0", 1: "q1" }, q1: { 0: "q2", 1: "q3" }, q2: { 0: "q0", 1: "q1" }, q3: { 0: "q2", 1: "q3" } },
+            meaning: { q0: "the last two symbols are 00 (or there are fewer than two and no 1)", q1: "they end in 01 (or w is just 1)", q2: "they end in 10 (accept)", q3: "they end in 11 (accept)" },
+        },
+        explain: "A DFA can’t know which symbol will be the last, so it remembers the last two symbols it has read: four possibilities, four states. Accept when the first of those two is a 1 (10 or 11). Each new symbol shifts the window: drop the older symbol and add the new one. Short strings fit in too: ε acts like 00, and 1 acts like 01.",
+    },
+    {
+        id: "build/exactly-two-1s", type: "dfa",
+        q: `Build a DFA for <span class="set">{ w | w contains exactly two 1s }</span>.`,
+        answer: {
+            start: "q0", accept: ["q2"],
+            delta: { q0: { 0: "q0", 1: "q1" }, q1: { 0: "q1", 1: "q2" }, q2: { 0: "q2", 1: "q3" }, q3: { 0: "q3", 1: "q3" } },
+            meaning: { q0: "no 1s yet", q1: "one 1", q2: "exactly two 1s (accept)", q3: "three or more (trap)" },
+        },
+        explain: "Count the 1s, but stop counting at “too many”: once there’s a third 1, no ending can fix it, so it goes to a trap. 0s never change the count, so every state loops on 0. Leaving out the trap is fine here: a blank arrow on 1 from q2 means the same thing.",
+    },
+    {
+        id: "build/odd-positions-1", type: "dfa",
+        q: `Build a DFA for <span class="set">{ w | every odd position of w (the 1st, 3rd, 5th, …) is a 1 }</span>.`,
+        answer: {
+            start: "q0", accept: ["q0", "q1"],
+            delta: { q0: { 0: "q2", 1: "q1" }, q1: { 0: "q0", 1: "q0" }, q2: { 0: "q2", 1: "q2" } },
+            meaning: { q0: "the next symbol is at an odd position (accept; ε is here)", q1: "the next symbol is at an even position (accept)", q2: "an odd position held a 0 (trap)" },
+        },
+        explain: "The DFA only needs to know whether the next position is odd or even, plus a trap for a broken rule. At an odd position only a 1 is allowed; at an even position anything goes. Both “so far so good” states accept, because the rule has held for every position read so far, including the empty string, which has no positions to break it.",
+    },
+    {
+        id: "build/a-needs-b", type: "dfa", alphabet: ["a", "b"],
+        q: `Over Σ = {a, b}, build a DFA for <span class="set">{ w | every a in w has a b somewhere after it }</span>.`,
+        answer: {
+            start: "q0", accept: ["q0"],
+            delta: { q0: { a: "q1", b: "q0" }, q1: { a: "q1", b: "q0" } },
+            meaning: { q0: "no a is waiting for a b (accept)", q1: "some a hasn’t seen a b after it yet" },
+        },
+        explain: "One b after the last a takes care of every earlier a too, so the DFA only has to ask: is any a still waiting? That makes the language simply “ε, or ends in b”, and two states are enough. It’s a good reminder to rewrite a language in plain terms before building anything.",
+    },
+]);
+
+registerExam("closure", [
+    {
+        id: "build/odd-length-with-a", type: "dfa", alphabet: ["a", "b"],
+        q: `Over Σ = {a, b}, build a DFA for <span class="set">{ w | w has odd length and contains at least one a }</span>.`,
+        answer: {
+            start: "q0", accept: ["q3"],
+            delta: { q0: { a: "q3", b: "q1" }, q1: { a: "q2", b: "q0" }, q2: { a: "q3", b: "q3" }, q3: { a: "q2", b: "q2" } },
+            meaning: { q0: "even length, no a yet", q1: "odd length, no a yet", q2: "even length, has an a", q3: "odd length, has an a (accept)" },
+        },
+        explain: "This is an intersection, so use the product construction: one small DFA tracks odd/even length, another tracks “seen an a?”, and each state of the product is a pair. Every symbol flips the length bit; an a also sets the “seen an a” bit, which never goes back. Accept only the pair where both parts accept.",
+    },
+    {
+        id: "build/a-and-c", type: "dfa", alphabet: ["a", "b", "c"],
+        q: `Over Σ = {a, b, c}, build a DFA for <span class="set">{ w | w contains at least one a and at least one c }</span>.`,
+        answer: {
+            start: "q0", accept: ["q3"],
+            delta: { q0: { a: "q1", b: "q0", c: "q2" }, q1: { a: "q1", b: "q1", c: "q3" }, q2: { a: "q3", b: "q2", c: "q2" }, q3: { a: "q3", b: "q3", c: "q3" } },
+            meaning: { q0: "no a and no c yet", q1: "seen an a, no c yet", q2: "seen a c, no a yet", q3: "seen both (accept, and stays)" },
+        },
+        explain: "Another product: “seen an a?” times “seen a c?” gives four states. b never changes anything, so every state loops on b. Order doesn’t matter (ac and ca both get to q3), which is why there are two paths into the accept state.",
+    },
+    {
+        id: "build/not-end-01", type: "dfa",
+        q: `Build a DFA for <span class="set">{ w | w does not end in 01 }</span>.`,
+        answer: {
+            start: "q0", accept: ["q0", "q1"],
+            delta: { q0: { 0: "q1", 1: "q0" }, q1: { 0: "q1", 1: "q2" }, q2: { 0: "q1", 1: "q0" } },
+            meaning: { q0: "no progress toward ending in 01 (accept; ε is here)", q1: "ends in 0 (accept)", q2: "ends in 01" },
+        },
+        explain: "Build the DFA for “ends in 01” first, then use closure under complement: keep every arrow and swap accept and non-accept states. That only works when every state has an arrow for every symbol. If you leave a trap out, add it back before you swap, or the strings that fell into it would wrongly stay rejected.",
+    },
+]);

@@ -321,3 +321,53 @@ table.threads .dot.acc { background: var(--good); box-shadow: 0 0 0 3px color-mi
 .fline.ok { border-color: var(--good); background: var(--good-bg); }
 .fline.bad { border-color: var(--bad); background: var(--bad-bg); animation: shake .35s; }
 @media (max-width: 800px) { .proof-cols { grid-template-columns: minmax(0, 1fr); } }
+
+/* Build-a-DFA exam questions (questions.js) */
+.dq-meta { font-size: 14px; color: var(--ink-2); margin: 0 0 12px; }
+.dq .count-row .dq-reset { margin-left: auto; }
+table.delta.edit select.missing { border-color: var(--warn); background: var(--warn-soft); }
+.dq-checks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.dq-chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; padding: 4px 10px; border-radius: 999px; }
+.dq-chk svg { width: 15px; height: 15px; flex: none; }
+.dq-chk.ok { background: var(--good-bg); color: var(--good); }
+.dq-chk.warn { background: var(--warn-soft); color: var(--warn-ink); }
+.dq-review { display: grid; gap: 14px; margin: 10px 0 14px; }
+.dq-head { margin: 0; }
+.dq-head .muted { display: block; font-size: 14px; margin-top: 4px; }
+.dq-ce { display: grid; gap: 8px; padding: 12px 14px; border-radius: 14px; background: var(--oops-bg); border: 2px solid var(--oops-line); }
+.dq-ce .side-title { margin: 0; }
+.dq-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.dq-str { font: 600 18px var(--font-code); padding: 2px 10px; border-radius: 10px; background: var(--surface); }
+.dq-res { font-weight: 800; padding: 1px 9px; border-radius: 999px; }
+.dq-res.yes { background: var(--good-bg); color: var(--good); }
+.dq-res.no { background: var(--bad-bg); color: var(--bad); }
+.dq-trace { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font: 600 14px var(--font-code); }
+.dq-chip { padding: 1px 7px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); }
+.dq-chip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+.dq-chip.trap { color: var(--bad); }
+.dq-arrow { color: var(--muted); font-size: 12.5px; }
+.dq-side { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.dq-side > div { min-width: 0; }
+@media (max-width: 760px) { .dq-side { grid-template-columns: minmax(0, 1fr); } }
+.dq-meaning { margin: 8px 0 0; padding: 0; list-style: none; font-size: 14px; display: grid; gap: 3px; }
+.dq-st { font: 600 13.5px var(--font-code); display: inline-block; min-width: 30px; }
+.dq-rubric { border-radius: 14px; background: var(--surface-2); padding: 10px 14px; font-size: 14.5px; }
+.dq-rubric summary { cursor: pointer; font-weight: 800; }
+.dq-rubric li { color: var(--ink-2); }
+.dq-rubric li.on { font-weight: 800; color: var(--ink); }
+.dq-rubric p { margin: 6px 0 0; }
+.dq-fixes { margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--warn-soft); }
+.dq-fixes .side-title { margin: 0 0 4px; }
+.dq-fixes ul { margin: 0; padding-left: 20px; }
+
+/* ---------- Turing machine runner ---------- */
+.tm-tape { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding-left: 4px; padding-bottom: 16px; }
+.tm-tape .cell { flex: none; }
+.tm-tape .cell.is-blank { color: var(--muted); font-weight: 400; }
+.tm-tape .cell.wrote:not(.head) { border-color: color-mix(in srgb, var(--c) 45%, var(--line)); }
+.tm-trace { overflow-x: auto; }
+.tm-trace li { font-family: var(--font-code); font-size: 13px; white-space: nowrap; line-height: 1.9; }
+.tm-trace li.more { color: var(--muted); font-family: inherit; }
+.tm-runner .tm-blank { color: var(--muted); }
+.tm-runner .formal { overflow-x: auto; }
+.tm-runner .formal td, .tm-runner .formal th { font-size: 12px; white-space: nowrap; padding-left: 6px; padding-right: 6px; }

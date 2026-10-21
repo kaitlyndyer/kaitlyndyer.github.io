@@ -8,7 +8,7 @@ window.STUDY = {
     id: "toc",
     storeKey: "cramlet.toc.v1",
     title: "Theory of Computation",
-    tagline: "What can a computer compute? Automata, regular expressions, and their limits, with machines you can run.",
+    tagline: "What can a computer compute? Automata, regular expressions, their limits, and Turing machines, with machines you can run.",
   },
 
   lectures: {
@@ -17,6 +17,8 @@ window.STUDY = {
     2: "Nondeterminism & Closure",
     3: "Regular Expressions",
     4: "Non-Regular Languages",
+    5: "Turing Machines",
+    6: "TM Variants & the Church–Turing Thesis",
   },
 
   groups: [
@@ -59,6 +61,15 @@ window.STUDY = {
         { id: "pumping", title: "The Pumping Lemma", icon: "arrow-clockwise", color: "#e08a00", lectures: [4] },
       ],
     },
+    {
+      id: "turing",
+      title: "Turing Machines",
+      icon: "gear-six",
+      concepts: [
+        { id: "turing-machines", title: "Turing Machines", icon: "gear-six", color: "#d9534f", lectures: [5] },
+        { id: "church-turing", title: "TM Variants & Church–Turing", icon: "stack", color: "#b5487a", lectures: [6] },
+      ],
+    },
   ],
 
   // Filled in by registerConcept().
@@ -66,8 +77,8 @@ window.STUDY = {
   settings: {
     exam: {
       lengths: {
-        full: { name: "Full exam", minutes: 75, mix: { choice: 25 } },
-        quick: { name: "Quick check", minutes: 0, mix: { choice: 10 } },
+        full: { name: "Full exam", minutes: 75, mix: { choice: 20, build: 4 } },
+        quick: { name: "Quick check", minutes: 0, mix: { choice: 8, build: 2 } },
       },
       intro: "A closed-book exam drawn fresh from {course}’s question bank. Notes, search, and hints are hidden until you submit, so you find out what you know without the definitions in front of you.",
     },
