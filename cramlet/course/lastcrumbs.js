@@ -95,7 +95,7 @@
             else if (q.code) media += codeBlock(q.code);
             const opts = q.options && ["mc", "design", "multi"].includes(q.type)
                 ? `<ol class="lc-opts">${q.options.map((o, k) => `<li><span class="opt-letter">${letter(k)}</span><span>${o}</span></li>`).join("")}</ol>` : "";
-            const how = { mc: "Pick one", design: "Pick one, and know why", multi: "Pick every one that’s true", tf: "True or false?", trace: "What happens?", bug: "Which line is the bug?", fill: "Fill in the blanks", parsons: "Picture the code", write: "Sketch the code in your head" }[q.type] || "";
+            const how = { mc: "Pick one", design: "Pick one, and know why", multi: "Pick every one that’s true", tf: "True or false?", trace: "What happens?", bug: "Which line is the bug?", fill: "Fill in the blanks", parsons: "Picture the code", write: "Sketch the code in your head" }[q.type] || ((CRAMLET.exam.types[q.type] || {}).how) || "";
             return `<div class="lc-prompt">${how}</div><div class="lc-big">${q.q}</div>${media}${opts}`;
         }
         function backOf(card) {
@@ -112,6 +112,7 @@
             else if (q.type === "fill") ans = q.blanks.map((b, k) => `${k + 1}: <code>${esc(b[0])}</code>`).join(" · ");
             else if (q.type === "parsons") ans = codeBlock(q.lines.join("\n"));
             else if (q.type === "write") ans = codeBlock(q.model);
+            else if (CRAMLET.exam.types[q.type] && CRAMLET.exam.types[q.type].answer) ans = CRAMLET.exam.types[q.type].answer(q);
             return `<div class="lc-answer"><div class="side-title">Answer</div>${ans}</div>
                 ${q.type === "design" && q.model ? `<p>${q.model}</p>` : ""}
                 ${q.explain ? `<p>${q.explain}</p>` : ""}`;

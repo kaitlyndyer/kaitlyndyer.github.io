@@ -1862,4 +1862,123 @@
 
         load(0);
     };
+
+    // ======================================================================
+    // Turing machine runner: step a TM on an input. Shows the tape and head, the state diagram,
+    // the configuration u q v after every step, and the transition table.
+    // config: { machines: [{ id, name, lang, decides, machine, examples: [] }] }
+    //   decides: false marks a machine that can loop (it recognizes but doesn't decide).
+    // ======================================================================
+    W["tm-runner"] = function (el, config, ctx) {
+        const { icon, esc } = ctx;
+        const B = A.BLANK, LIMIT = 300;
+        let x, m, w = "", run, k = 0, player;
+
+        el.innerHTML = `
+            <div class="runner tm-runner">
+                <div class="pick-row" role="group" aria-label="Choose a machine">
+                    ${config.machines.map((t, i) => `<button type="button" class="pick" data-m="${i}">${esc(t.name)}</button>`).join("")}
+                </div>
+                <div class="lang-row">
+                    <span class="lang-q">What does this machine do?</span>
+                    <span class="lang-a" hidden></span>
+                    <button type="button" class="btn small" data-act="reveal">Show L(M)</button>
+                </div>
+                <div class="diagram"></div>
+                <div class="tape tm-tape" aria-label="Tape"></div>
+                ${statusHTML}
+                ${inputHTML(12)}
+                ${playerHTML(icon)}
+                ${sideHTML([["Configurations", `<ol class="trace tm-trace"></ol>`], ["Transition function δ", `<div class="formal"></div>`]])}
+            </div>`;
+        const $ = s => el.querySelector(s);
+        const input = $(".input-w input");
+        const st = q => (q === m.accept ? "q<sub>accept</sub>" : q === m.reject ? "q<sub>reject</sub>" : sub(q));
+        const sym = c => (c === B ? `<span class="tm-blank">${B}</span>` : esc(c));
+        // Long runs of blanks (a machine wandering right) shrink to ␣ⁿ so the line stays readable.
+        const run2html = str => str.replace(new RegExp(`${B}{4,}|[^${B}]+|${B}+`, "g"), part =>
+            part[0] === B && part.length >= 4 ? `<span class="tm-blank">${B}</span><sup>${part.length}</sup>` : part.split("").map(sym).join(""));
+        const cfg = c => { const { u, q, v } = A.tmConfig(c); return `${run2html(u)} <b>${st(q)}</b> ${run2html(v)}`; };
+
+        function loadMachine(i) {
+            x = config.machines[i]; m = x.machine;
+            el.querySelectorAll(".pick").forEach((b, j) => b.setAttribute("aria-pressed", j === i));
+            $(".diagram").innerHTML = A.render(A.tmDiagram(m), { label: "State diagram of the Turing machine" });
+            $(".lang-a").hidden = true; $('[data-act="reveal"]').hidden = false;
+            $(".lang-a").innerHTML = x.lang;
+            $(".examples").innerHTML = exampleChips(esc, x.examples);
+            drawFormal();
+            setInput(x.examples[0]);
+        }
+        function setInput(str) {
+            if (player) player.stop();
+            w = str.split("").filter(c => m.input.includes(c)).join("");
+            input.value = w;
+            run = A.runTM(m, w, LIMIT);
+            k = 0;
+            draw();
+        }
+        const max = () => run.moves.length;
+
+        function draw() {
+            const c = run.configs[k], mv = k > 0 ? run.moves[k - 1] : null;
+            const end = k === max();
+            const result = end && run.result !== "running" ? run.result : null;
+            A.highlight($(".diagram svg"), { states: [c.q], edge: mv && !mv.missing && { from: mv.state, to: mv.next }, result });
+
+            // Show the used tape plus a couple of blanks. On long tapes, show a window around the head.
+            const width = Math.max(c.tape.length, c.head + 1) + 2, SHOW = 18;
+            const lo = width <= SHOW ? 0 : Math.max(0, Math.min(c.head - 9, width - SHOW)), hi = Math.min(width, lo + SHOW);
+            $(".tape").innerHTML = (lo > 0 ? `<span class="cell end" aria-hidden="true" title="${lo} more cells to the left">…</span>` : "")
+                + Array.from({ length: hi - lo }, (_, i) => {
+                    const j = lo + i, s = c.tape[j] ?? B;
+                    return `<span class="cell${s === B ? " is-blank" : ""}${j === c.head ? " head" : ""}${mv && j === mv.from ? " wrote" : ""}">${esc(s)}</span>`;
+                }).join("") + `<span class="cell end" aria-hidden="true">…</span>`;
+
+            if (k === 0) setStatus(el, ctx, `Start in ${st(m.start)} with the head on the leftmost cell. Press <b>Step</b> or <b>Play</b>.`);
+            else if (!end || run.result === "running") {
+                const how = mv.missing
+                    ? `There’s no arrow for ${st(mv.state)} reading <b>${sym(mv.read)}</b>, so the machine goes to q<sub>reject</sub>.`
+                    : `In ${st(mv.state)} reading <b>${sym(mv.read)}</b>: write <b>${sym(mv.write)}</b>, move <b>${mv.dir === "L" ? "left" : "right"}</b>${mv.stuck ? " (already at the left end, so the head stays put)" : ""}, go to ${st(mv.next)}.`;
+                if (end) setStatus(el, ctx, `${how}<br>Still running after ${LIMIT} steps. This machine <b class="no">loops</b> on ${esc(w || "ε")}: it never accepts or rejects, so ${esc(w || "ε")} ∉ L(M).`, "no", "bad");
+                else setStatus(el, ctx, how);
+            } else {
+                const ok = run.result === "accept";
+                const how = mv.missing ? `No arrow for ${st(mv.state)} reading <b>${sym(mv.read)}</b>, so it goes to q<sub>reject</sub>. ` : `In ${st(mv.state)} reading <b>${sym(mv.read)}</b>: write <b>${sym(mv.write)}</b>, move ${mv.dir === "L" ? "left" : "right"}, enter ${st(mv.next)}. `;
+                setStatus(el, ctx, `${how}The machine halts and <b class="${ok ? "yes" : "no"}">${ok ? "accepts" : "rejects"}</b> ${esc(w || "ε")} after ${k} step${k === 1 ? "" : "s"}.`, ok ? "yes" : "no", ok ? "good" : "bad");
+            }
+
+            // Configuration list: show the last few around the current step so long runs stay readable.
+            const from = Math.max(0, k - 7);
+            $(".trace").innerHTML = (from > 0 ? `<li class="more">… ${from} earlier</li>` : "")
+                + run.configs.slice(from, k + 1).map((cc, j) => `<li class="${from + j === k ? "now" : ""}">C<sub>${from + j + 1}</sub> = ${cfg(cc)}</li>`).join("");
+            el.querySelectorAll(".formal td[data-q]").forEach(td =>
+                td.classList.toggle("now", !!mv && !mv.missing && td.dataset.q === mv.state && td.dataset.a === mv.read));
+            if (player) player.sync();
+        }
+        function drawFormal() {
+            const Q = Object.keys(m.states).filter(q => q !== m.accept && q !== m.reject);
+            const short = q => (q === m.accept ? "acc" : q === m.reject ? "rej" : sub(q));
+            const cell = (q, a) => { const t = (m.delta[q] || {})[a]; return t ? `${short(t[0])},${sym(t[1])},${t[2]}` : `<span class="muted">rej</span>`; };
+            $(".formal").innerHTML = `
+                <p>Σ = {${m.input.join(", ")}}, Γ = {${m.tape.map(sym).join(", ")}}</p>
+                <table class="delta"><thead><tr><th>δ</th>${m.tape.map(a => `<th>${sym(a)}</th>`).join("")}</tr></thead>
+                <tbody>${Q.map(q => `<tr><th>${q === m.start ? "→" : ""}${st(q)}</th>${m.tape.map(a => `<td data-q="${esc(q)}" data-a="${esc(a)}">${cell(q, a)}</td>`).join("")}</tr>`).join("")}</tbody></table>
+                <p class="muted">Each entry is (next state, write, move). acc = q<sub>accept</sub>; rej = no arrow, so the machine rejects.</p>`;
+        }
+
+        player = bindPlayer(el, ctx, {
+            pos: () => k, max, go: v => { k = v; draw(); },
+            counter: (j, n) => (j === 0 ? "Not started" : `Step ${j} of ${n}${run.result === "running" ? "+" : ""}`),
+        });
+        $(".pick-row").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (b) loadMachine(+b.dataset.m); });
+        $(".examples").addEventListener("click", e => { const b = e.target.closest("[data-w]"); if (b) setInput(b.dataset.w); });
+        input.addEventListener("input", () => {
+            const clean = input.value.split("").filter(c => m.input.includes(c)).join("");
+            if (clean !== input.value) input.value = clean;
+            setInput(clean);
+        });
+        $('[data-act="reveal"]').addEventListener("click", e => { $(".lang-a").hidden = false; e.currentTarget.hidden = true; });
+        loadMachine(0);
+    };
 })();

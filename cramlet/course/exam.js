@@ -15,6 +15,12 @@
 //   write  { q, starter?, rubric: [{ text, re? }], model, explain } write code; the rubric is partly checked automatically
 // Any question can add ref: "<example id>" to show a collapsible shared lecture example (<course>/data/examples.js).
 //
+// A course can add its own question types (e.g. ToC's "build a DFA") with
+//   registerQuestionType(type, { section: { id, name }, how, points(q), answered(a), brief(q, a), grade(q, a),
+//                                draw(q, a), mount(el, q, a, save), review(q, a), mountReview(el, q, a), answer(q) })
+// draw → the answer area's HTML; mount wires it up (save(patch) stores the answer); review → the answer part of a
+// results card; answer → the right answer on its own (Crumb Run flips). Every hook but grade and draw is optional.
+//
 // Modes: "mixed" uses every type above; "mc" (multiple choice only) uses mc + design questions, all 1 point,
 // with no written justification. Answer options are shuffled per exam (E.perm), but answers are stored and
 // graded by the question's original option index, so shuffling never changes grading.
@@ -36,11 +42,21 @@
         { id: "write", name: "Write the code", types: ["write"] },
     ];
     const sectionOf = type => SECTIONS.find(s => s.types.includes(type));
+    // Question types added by a course (see registerQuestionType above), by type.
+    const TYPES = {};
+    window.registerQuestionType = (type, spec) => {
+        TYPES[type] = spec;
+        const sec = spec.section || { id: type, name: type };
+        const have = SECTIONS.find(s => s.id === sec.id);
+        if (have) have.types.push(type); else SECTIONS.push({ id: sec.id, name: sec.name, types: [type] });
+    };
     // Exam sizes come from the course's settings (CRAMLET.settings → exam.lengths); retakes of the missed deck use this one.
     const DECK_LENGTH = { name: "Missed deck", minutes: 0, mix: {}, hidden: true };
     const countOf = L => Object.values(L.mix).reduce((a, b) => a + b, 0);
     const MC_TYPES = ["mc", "design"]; // the "multiple choice only" pool: one right answer out of a few options
     const DECK_WINS = 2;               // right answers, in different sessions, needed to leave the missed deck
+    // Lowercase a name mid-sentence, but keep acronyms: "Build a DFA" → "build a DFA".
+    const lower = t => t.replace(/\b[A-Z](?![A-Z])/g, c => c.toLowerCase());
     const stripTags = t => String(t || "").replace(/<[^>]+>/g, "");
     // Options that refer to other options ("all of the above", "both A and B") must keep their order.
     const fixedOrder = list => (list || []).some(o => /\b(all|none) of the above\b|\b(both|either|neither) [A-D] (and|or|nor) [A-D]\b|^\s*[A-D] and [A-D]\b/i.test(stripTags(o)));
@@ -63,6 +79,7 @@
 
     function pointsOf(q, mode) {
         if (mode === "mc" && MC_TYPES.includes(q.type)) return 1;
+        if (TYPES[q.type]) return TYPES[q.type].points ? TYPES[q.type].points(q) : 1;
         return { mc: 1, tf: 1, multi: 2, bug: q.fixes ? 2 : 1, trace: 2, fill: (q.blanks || []).length, parsons: 3, design: 2, write: (q.rubric || []).length }[q.type] || 1;
     }
 
@@ -115,7 +132,7 @@
                 const checks = (q.rubric || []).map((r, i) => (self && self.items && i in self.items ? !!self.items[i] : autoFound(r, a.code)));
                 return { earned: checks.filter(Boolean).length, max, needsSelf: true, checks };
             }
-            default: return { earned: 0, max };
+            default: return TYPES[q.type] ? { ...TYPES[q.type].grade(q, a), max } : { earned: 0, max };
         }
     }
     // Does the code obviously contain what this rubric item looks for? (Only items with a pattern can be found automatically.)
@@ -231,7 +248,7 @@
             const deckN = deckCount(COURSE);
             // The kinds of questions this course's bank has. With only one kind, there's no Mixed vs multiple choice to pick.
             const kinds = counts(lectures).filter(([, n]) => n).map(([sec]) => secLabel(sec));
-            const mixedLine = kinds.map((k, i) => (i ? k.toLowerCase() : k)).join(", ").replace(/, ([^,]*)$/, kinds.length > 2 ? ", and $1" : " and $1");
+            const mixedLine = kinds.map((k, i) => (i ? lower(k) : k)).join(", ").replace(/, ([^,]*)$/, kinds.length > 2 ? ", and $1" : " and $1");
             main.innerHTML = `
                 <div class="exam-start">
                     ${K ? K.header(ctx, "exam") : `<div class="exam-hero"><div><h1>${icon("list-checks")} Practice exam</h1>
@@ -275,7 +292,7 @@
                 }
                 const c = counts(lecs), total = c.reduce((a, [, n]) => a + n, 0);
                 const have = c.filter(([, n]) => n);
-                main.querySelector(".exam-bank").innerHTML = `<p class="muted">${total} questions in the bank for these lectures${have.length > 1 ? `: ${have.map(([s, n]) => `${n} ${secLabel(s).toLowerCase()}`).join(" · ")}` : ""}${total >= countOf(lengthOf(main.querySelector('[name="exam-len"]:checked').value)) * 2 ? `, enough for about ${Math.floor(total / countOf(lengthOf(main.querySelector('[name="exam-len"]:checked').value)))} exams without repeats` : ""}.</p>`;
+                main.querySelector(".exam-bank").innerHTML = `<p class="muted">${total} questions in the bank for these lectures${have.length > 1 ? `: ${have.map(([s, n]) => `${n} ${lower(secLabel(s))}`).join(" · ")}` : ""}${total >= countOf(lengthOf(main.querySelector('[name="exam-len"]:checked').value)) * 2 ? `, enough for about ${Math.floor(total / countOf(lengthOf(main.querySelector('[name="exam-len"]:checked').value)))} exams without repeats` : ""}.</p>`;
             };
             main.querySelectorAll(".exam-lec input, [name=exam-mode], [name=exam-len]").forEach(x => x.addEventListener("change", drawBank));
             drawBank();
@@ -307,7 +324,7 @@
             if (!E) { location.hash = "#/exam"; return; }
             document.body.classList.add("exam-focus");
             const Q = byId(), qs = E.ids.map(id => Q[id]).filter(Boolean);
-            const answered = i => { const a = E.answers[qs[i].id]; return !!a && Object.values(a).some(v => (Array.isArray(v) ? v.length : v !== "" && v !== undefined && v !== null)); };
+            const answered = i => { const a = E.answers[qs[i].id], T = TYPES[qs[i].type]; if (T && T.answered) return T.answered(a || {}); return !!a && Object.values(a).some(v => (Array.isArray(v) ? v.length : v !== "" && v !== undefined && v !== null)); };
             const mcMode = E.mode === "mc", plainMap = mcMode || E.length === "deck";
             const secName = q => (mcMode ? "Multiple choice" : typeLabel(q.type));
             // Time spent on each question (for the results page). Time away from the page isn't counted on resume.
@@ -361,6 +378,7 @@
                 if (q.type === "fill") return (a.blanks || []).some(Boolean) ? (a.blanks || []).map((b, k) => `<code>${esc(b || "—")}</code>`).join(" · ") : "";
                 if (q.type === "parsons") return (a.order || []).length ? `${a.order.length} line${a.order.length > 1 ? "s" : ""} placed` : "";
                 if (q.type === "write") { const n = (a.code || "").split("\n").filter(l => l.trim()).length; return n ? `${n} line${n > 1 ? "s" : ""} of code` : ""; }
+                if (TYPES[q.type] && TYPES[q.type].brief) return TYPES[q.type].brief(q, a);
                 return "";
             }
 
@@ -464,6 +482,8 @@
                     </div>`;
                 } else if (q.type === "design") {
                     body = media(q) + opts(q.options) + (mcMode ? "" : `<label class="q-sub" for="why">Why? Justify your choice in one or two sentences.</label><textarea id="why" class="text-in" rows="3" data-why>${esc(a.why || "")}</textarea>`);
+                } else if (TYPES[q.type]) {
+                    body = media(q) + `<div class="qt-body">${TYPES[q.type].draw(q, a)}</div>`;
                 } else if (q.type === "write") {
                     body = media(q) + `<textarea class="code-in big" rows="16" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Your code" placeholder="Write your code here. No autocomplete, just like on paper.">${esc(a.code !== undefined ? a.code : (q.starter || ""))}</textarea><p class="muted">Tab inserts four spaces.</p>`;
                 }
@@ -479,6 +499,7 @@
                         </span>
                         <button type="button" class="btn primary" data-act="${i < qs.length - 1 ? "next" : "review"}">${i < qs.length - 1 ? "Next →" : "Review answers →"}</button>
                     </div>`;
+                if (TYPES[q.type] && TYPES[q.type].mount) TYPES[q.type].mount($(".qt-body"), q, a, patch => store(patch));
                 drawMap();
             }
 
@@ -723,12 +744,12 @@
                 if (!q) return "";
                 const a = R.answers[x.id] || {}, c = conceptById[x.concept];
                 const full = x.earned >= x.max, none = x.earned === 0;
-                return `<details class="res-q ${full ? "full" : none ? "zero" : "part-cred"}"${full ? "" : " open"}>
+                return `<details class="res-q ${full ? "full" : none ? "zero" : "part-cred"}"${full ? "" : " open"} data-qid="${esc(x.id)}">
                     <summary><span class="res-n">${n}</span><span class="res-what"><b>${esc(c ? c.title : x.concept)}</b> · ${esc(R.mode === "mc" ? "Multiple choice" : typeLabel(q.type))}${x.guessed ? ` <span class="tag in">guessed</span>` : ""}${slow(x) ? ` <span class="tag in">slow</span>` : ""}</span>${x.ms ? `<span class="res-time">${mmss(x.ms)}</span>` : ""}<span class="res-pts">${x.earned}/${x.max}</span></summary>
                     <div class="question">${q.q}</div>
                     ${exampleRef(q)}${machineOf(q)}${q.code && q.type !== "fill" ? codeBlock(q.code) : ""}
                     ${q.type === "bug" ? `<div class="bug-code">${q.lines.map((ln, k) => `<div class="bug-line${k === q.answer ? " correct" : k === a.line ? " wrong" : ""}"><span class="ln">${k + 1}</span><code>${highlight(ln) || "&nbsp;"}</code></div>`).join("")}</div>` : ""}
-                    ${q.whys && ["mc", "design", "multi"].includes(q.type) ? whyList(q, a) : `<div class="res-ans"><div><div class="side-title">Your answer</div>${yours(q, a)}</div><div><div class="side-title">Model answer</div>${model(q)}</div></div>`}
+                    ${TYPES[q.type] && TYPES[q.type].review ? TYPES[q.type].review(q, a) : q.whys && ["mc", "design", "multi"].includes(q.type) ? whyList(q, a) : `<div class="res-ans"><div><div class="side-title">Your answer</div>${yours(q, a)}</div><div><div class="side-title">Model answer</div>${model(q)}</div></div>`}
                     ${q.explain ? `<div class="callout tip done">${icon("lightbulb", "callout-ic")}<div class="callout-body"><span class="callout-label">Why</span>${q.explain}</div></div>` : ""}
                     ${c ? `<a class="btn small" href="#/c/${c.id}/${q.sec ? `details/${q.sec}` : "summary"}">${icon("note")} Review ${esc(q.sec && secTitle(c.id, q.sec) ? secTitle(c.id, q.sec) : c.title)}</a>` : ""}
                 </details>`;
@@ -759,6 +780,10 @@
                     <div class="res-list">${R.items.map((x, n) => qCard(x, n + 1)).join("")}</div>
                 </div>`;
             if (CRAMLET.buddy) CRAMLET.buddy.react(main.querySelector(".res-buddy .end-buddy"), mood.face, mood.anim);
+            main.querySelectorAll(".res-q[data-qid]").forEach(el => {
+                const q = Q[el.dataset.qid], T = q && TYPES[q.type];
+                if (T && T.mountReview) T.mountReview(el, q, R.answers[q.id] || {});
+            });
         }
 
         // ---------- Missed deck ----------
@@ -832,5 +857,5 @@
     }
     const missedIds = course => Object.keys(readDeck(course));
 
-    window.CRAMLET = Object.assign(window.CRAMLET || {}, { exam: { render, latest, SECTIONS, grade, pointsOf, recordAnswer, deckCount, questionsById, missedIds } });
+    window.CRAMLET = Object.assign(window.CRAMLET || {}, { exam: { render, latest, SECTIONS, types: TYPES, grade, pointsOf, recordAnswer, deckCount, questionsById, missedIds } });
 })();
