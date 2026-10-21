@@ -1,5 +1,5 @@
-// Test Kitchen: one home for every exam-prep tool (practice exams, the missed deck, Myth or fact, Crumb Run and
-// the Cookie Sheet). Every tool page shares one header card with tabs along its bottom edge, followed by a slim
+// Test Kitchen: one home for every exam-prep tool (practice exams, the missed deck, Myth or fact, the Recipe Box,
+// Crumb Run and the Cookie Sheet). Every tool page shares one header card with tabs along its bottom edge, followed by a slim
 // row for that page's own controls, so moving between tools never changes the frame.
 //   CRAMLET.kitchen.header(ctx, toolId, { line }) → the shared header's HTML (toolId "overview" for the hub)
 //   CRAMLET.kitchen.mount(root)                   → wakes up the buddy in a header after it's on the page
@@ -17,6 +17,8 @@
             line: "Every question you missed or guessed. Each one leaves once you get it right in two different sessions.", has: () => !!CRAMLET.exam },
         { id: "myths", name: "Myth or fact?", icon: "lightbulb", href: "#/myths", group: "practice",
             line: "Rapid-fire statements built from the traps behind wrong answers. Decide fast, then learn why.", has: () => !!(CRAMLET.myths && CRAMLET.myths.count()) },
+        { id: "recipes", name: "Recipe Box", icon: "scroll", href: "#/recipes", group: "practice",
+            line: "How to think through each kind of problem: a quick card to follow, and a full walkthrough with a worked example.", has: () => !!(CRAMLET.recipes && CRAMLET.recipes.count()) },
         { id: "run", name: "Crumb Run", icon: "hourglass-medium", href: "#/last-crumbs", group: "last",
             line: "A short recall session: Tonight before bed, then the Morning of to relearn the tricky ones.", has: S => !!CRAMLET.lastCrumbs && hasCards(S) },
         { id: "sheet", name: "Cookie Sheet", icon: "note", href: "#/last-crumbs/sheet", group: "last",
@@ -30,7 +32,7 @@
     const hasCards = S => !!(S.cast && S.cast.length) || Object.values(S.content || {}).some(d => (d.flashcards || []).length);
     const toolsFor = S => TOOLS.filter(t => t.has(S));
     // Which page of the course belongs to the Test Kitchen (for the sidebar).
-    const owns = parts => ["kitchen", "exam", "myths", "last-crumbs", "review"].includes(parts[0]);
+    const owns = parts => ["kitchen", "exam", "myths", "recipes", "last-crumbs", "review"].includes(parts[0]);
 
     function header(ctx, active, opts = {}) {
         const { S, esc, icon } = ctx;
@@ -81,6 +83,7 @@
             myths: myth ? [String(myth.seen), `of ${myth.total} seen${myth.missed ? ` · ${myth.missed} missed` : ""}`] : ["", ""],
             run: lcSession ? ["…", "session in progress"] : lastNight ? [String(lastNight.hard.length), "tricky cards for the morning"] : ["25", "minutes tonight"],
             sheet: [String((sheet.known || []).length), `of ${points} points stickered`],
+            recipes: [String(CRAMLET.recipes ? CRAMLET.recipes.count() : 0), "problem types"],
         };
 
         // What to do right now: finish what's open, then go by the time of day.
