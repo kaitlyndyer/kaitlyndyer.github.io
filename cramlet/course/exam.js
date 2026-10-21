@@ -20,6 +20,12 @@
 //                                draw(q, a), mount(el, q, a, save), review(q, a), mountReview(el, q, a), answer(q) })
 // draw → the answer area's HTML; mount wires it up (save(patch) stores the answer); review → the answer part of a
 // results card; answer → the right answer on its own (Crumb Run flips). Every hook but grade and draw is optional.
+// A type graded partly by you (like a written proof) adds check(q, a, self) → the HTML for its part of the
+// "Check your written answers" page, using checkboxes with data-item="<question id>" data-k="<item index>";
+// grade and review then get the ticks as their third argument (self.items).
+//
+// An exam length can also limit a section to some types and weight its points, e.g. a real exam's true/false part:
+//   { name, minutes, mix: { choice: 10 }, types: { choice: ["tf"] }, weight: { choice: 2 } }
 //
 // Modes: "mixed" uses every type above; "mc" (multiple choice only) uses mc + design questions, all 1 point,
 // with no written justification. Answer options are shuffled per exam (E.perm), but answers are stored and
@@ -132,7 +138,7 @@
                 const checks = (q.rubric || []).map((r, i) => (self && self.items && i in self.items ? !!self.items[i] : autoFound(r, a.code)));
                 return { earned: checks.filter(Boolean).length, max, needsSelf: true, checks };
             }
-            default: return TYPES[q.type] ? { ...TYPES[q.type].grade(q, a), max } : { earned: 0, max };
+            default: return TYPES[q.type] ? { ...TYPES[q.type].grade(q, a, self), max, needsSelf: !!TYPES[q.type].check } : { earned: 0, max };
         }
     }
     // Does the code obviously contain what this rubric item looks for? (Only items with a pattern can be found automatically.)
@@ -195,6 +201,10 @@
             return pool.filter(q => q.lec.some(l => lecs.includes(l)));
         }
 
+        // A length can limit a section to some types (types) and weight its points (weight); see the top of this file.
+        const allowed = (L, secId, type) => !L.types || !L.types[secId] || L.types[secId].includes(type);
+        const weightOf = (E, q) => ((lengthOf(E.length).weight || {})[sectionOf(q.type).id]) || 1;
+
         // Pick questions for each section, spreading them across concepts and preferring ones not seen recently.
         function build(lengthId, lecs, mode) {
             const L = lengthOf(lengthId), pool = poolFor(lecs), seen = read(`${KEY}.seen`, {});
@@ -215,7 +225,7 @@
             let carry = 0;
             SECTIONS.forEach(sec => {
                 let want = (L.mix[sec.id] || 0) + (sec.id === "choice" ? 0 : 0);
-                const cands = shuffle(pool.filter(q => sec.types.includes(q.type) && !used.has(q.id)));
+                const cands = shuffle(pool.filter(q => sec.types.includes(q.type) && allowed(L, sec.id, q.type) && !used.has(q.id)));
                 const picked = [];
                 while (picked.length < want && cands.length) {
                     cands.sort((x, y) => ((perConcept[x.concept] || 0) - (perConcept[y.concept] || 0)) || ((seen[x.id] || 0) - (seen[y.id] || 0)));
@@ -227,7 +237,7 @@
             });
             // Not enough of some types yet: top up with more multiple choice.
             if (carry > 0) {
-                const extra = shuffle(pool.filter(q => sectionOf(q.type).id === "choice" && !used.has(q.id)))
+                const extra = shuffle(pool.filter(q => sectionOf(q.type).id === "choice" && allowed(L, "choice", q.type) && !used.has(q.id)))
                     .sort((x, y) => (seen[x.id] || 0) - (seen[y.id] || 0)).slice(0, carry);
                 const at = out.findIndex(q => sectionOf(q.type).id !== "choice");
                 out.splice(at < 0 ? out.length : at, 0, ...extra);
@@ -442,7 +452,7 @@
                 syncReviewBtn();
                 if (E.pausedAt) return drawPaused();
                 if (E.review) return drawReview();
-                const i = E.cur, q = qs[i], a = E.answers[q.id] || {}, pts = pointsOf(q, E.mode);
+                const i = E.cur, q = qs[i], a = E.answers[q.id] || {}, pts = pointsOf(q, E.mode) * weightOf(E, q);
                 const head = `<div class="q-head"><span class="q-sec">${esc(secName(q))}</span><span class="q-num">Question ${i + 1} of ${qs.length} · ${pts} pt${pts > 1 ? "s" : ""}</span></div>`;
                 let body = "";
                 // attr: which answer field the buttons set (pick, toggle for select-all, fix for bug fixes)
@@ -600,15 +610,21 @@
             const E = exam();
             if (!E) { location.hash = "#/exam"; return; }
             const Q = byId(), qs = E.ids.map(id => Q[id]).filter(Boolean);
-            const toCheck = qs.map((q, i) => ({ q, i })).filter(({ q }) => q.type === "write" || (q.type === "design" && E.mode !== "mc"));
+            const toCheck = qs.map((q, i) => ({ q, i })).filter(({ q }) => q.type === "write" || (q.type === "design" && E.mode !== "mc") || (TYPES[q.type] && TYPES[q.type].check));
             E.self = E.self || {};
             if (!toCheck.length) return finalize();
             main.innerHTML = `
                 <div class="exam-start">
                     <h1>${icon("check")} Check your written answers</h1>
-                    <p>Everything else is graded automatically. For these, compare your answer with the model answer and tick what you really did. Items marked <span class="auto-tag">found</span> were spotted in your code automatically.</p>
+                    <p>Everything else is graded automatically. For these, compare your answer with the model answer and tick what you really did.${toCheck.some(({ q }) => q.type === "write") ? ` Items marked <span class="auto-tag">found</span> were spotted in your code automatically.` : " Be strict, like a grader would."}</p>
                     ${toCheck.map(({ q, i }) => {
                         const a = E.answers[q.id] || {};
+                        if (TYPES[q.type] && TYPES[q.type].check) return `
+                            <section class="detail check-q" data-q="${esc(q.id)}">
+                                <h3>Question ${i + 1} <span class="q-sec">${esc(typeLabel(q.type))}</span></h3>
+                                <div class="question">${q.q}</div>
+                                ${TYPES[q.type].check(q, a, E.self[q.id] || {})}
+                            </section>`;
                         if (q.type === "design") return `
                             <section class="detail check-q" data-q="${esc(q.id)}">
                                 <h3>Question ${i + 1} <span class="q-sec">Design decision</span></h3>
@@ -654,7 +670,8 @@
         function finalize() {
             const E = exam(), Q = byId(), qs = E.ids.map(id => Q[id]).filter(Boolean);
             const items = qs.map(q => {
-                const g = grade(q, E.answers[q.id], (E.self || {})[q.id], E.mode);
+                const g = grade(q, E.answers[q.id], (E.self || {})[q.id], E.mode), w = weightOf(E, q);
+                g.earned *= w; g.max *= w;
                 return { id: q.id, concept: q.concept, lec: q.lec, sec: q.sec || null, type: q.type, earned: g.earned, max: g.max, guessed: (E.guess || []).includes(q.id), ms: (E.t || {})[q.id] || 0 };
             });
             const earned = items.reduce((a, x) => a + x.earned, 0), max = items.reduce((a, x) => a + x.max, 0);
@@ -749,7 +766,7 @@
                     <div class="question">${q.q}</div>
                     ${exampleRef(q)}${machineOf(q)}${q.code && q.type !== "fill" ? codeBlock(q.code) : ""}
                     ${q.type === "bug" ? `<div class="bug-code">${q.lines.map((ln, k) => `<div class="bug-line${k === q.answer ? " correct" : k === a.line ? " wrong" : ""}"><span class="ln">${k + 1}</span><code>${highlight(ln) || "&nbsp;"}</code></div>`).join("")}</div>` : ""}
-                    ${TYPES[q.type] && TYPES[q.type].review ? TYPES[q.type].review(q, a) : q.whys && ["mc", "design", "multi"].includes(q.type) ? whyList(q, a) : `<div class="res-ans"><div><div class="side-title">Your answer</div>${yours(q, a)}</div><div><div class="side-title">Model answer</div>${model(q)}</div></div>`}
+                    ${TYPES[q.type] && TYPES[q.type].review ? TYPES[q.type].review(q, a, (R.self || {})[x.id] || {}) : q.whys && ["mc", "design", "multi"].includes(q.type) ? whyList(q, a) : `<div class="res-ans"><div><div class="side-title">Your answer</div>${yours(q, a)}</div><div><div class="side-title">Model answer</div>${model(q)}</div></div>`}
                     ${q.explain ? `<div class="callout tip done">${icon("lightbulb", "callout-ic")}<div class="callout-body"><span class="callout-label">Why</span>${q.explain}</div></div>` : ""}
                     ${c ? `<a class="btn small" href="#/c/${c.id}/${q.sec ? `details/${q.sec}` : "summary"}">${icon("note")} Review ${esc(q.sec && secTitle(c.id, q.sec) ? secTitle(c.id, q.sec) : c.title)}</a>` : ""}
                 </details>`;

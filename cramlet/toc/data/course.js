@@ -77,9 +77,11 @@ window.STUDY = {
   settings: {
     exam: {
       lengths: {
-        full: { name: "Full exam", minutes: 75, mix: { choice: 20, build: 4 } },
-        quick: { name: "Quick check", minutes: 0, mix: { choice: 8, build: 2 } },
+        midterm: { name: "Midterm 1", minutes: 75, mix: { choice: 10, build: 2, nfa: 2, pump: 2 }, types: { choice: ["tf"] }, weight: { choice: 2 } },
+        full: { name: "Full exam", minutes: 75, mix: { choice: 20, build: 2, nfa: 2, pump: 1 } },
+        quick: { name: "Quick check", minutes: 0, mix: { choice: 8, build: 1, nfa: 1 } },
       },
+      sections: { choice: "Concept checks" },
       intro: "A closed-book exam drawn fresh from {course}’s question bank. Notes, search, and hints are hidden until you submit, so you find out what you know without the definitions in front of you.",
     },
     myths: {
