@@ -840,3 +840,62 @@ code { font-family: var(--font-code); font-size: .88em; }
 .mt-help code { font-size: 12px; padding: 0 4px; border-radius: 5px; background: var(--surface-2); }
 .mt-preview { margin-top: 10px; padding: 10px 14px; border-radius: 12px; background: var(--surface-2); }
 .mt-out { font-size: 15px; line-height: 1.6; min-height: 1.6em; }
+
+/* ---------- Recipe Box (recipes.js) ---------- */
+.res-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.rc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; align-items: start; }
+.rc {
+    display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 18px; background: var(--surface);
+    border: 1px solid var(--line); border-top: 5px solid var(--c); box-shadow: var(--shadow); font-size: 14.5px; line-height: 1.5;
+}
+.rc-head { display: flex; align-items: center; gap: 10px; }
+.rc-head h3 { margin: 0; font: 700 18px var(--font-head); }
+.rc-ic { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; color: var(--c); background: color-mix(in srgb, var(--c) 14%, var(--paper)); flex: none; }
+.rc-ic .ic { width: 20px; height: 20px; }
+.rc-when { margin: 0; color: var(--ink-2); font-style: italic; }
+.rc-steps { margin: 0; padding-left: 22px; display: grid; gap: 5px; }
+.rc-steps li::marker { font-weight: 800; color: var(--c); }
+.rc-label { display: inline-flex; align-items: center; gap: 6px; font: 800 11.5px var(--font-body); text-transform: uppercase; letter-spacing: .5px; color: var(--ink-2); }
+.rc-check { padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--c) 9%, var(--paper)); }
+.rc-check ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 3px; font-size: 13.5px; }
+.rc-more { align-self: flex-start; font-weight: 800; color: color-mix(in srgb, var(--c) 75%, var(--deep)); text-decoration: none; }
+.rc-more:hover { text-decoration: underline; }
+.rc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rc-table th { text-align: left; font: 800 11px var(--font-body); text-transform: uppercase; letter-spacing: .4px; color: var(--ink-2); padding: 4px 6px; border-bottom: 2px solid var(--line); }
+.rc-table td { padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.rf { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 22px; align-items: start; }
+.rf-card { position: sticky; top: 84px; }
+.rf-card .rc-more { display: none; }
+.rf-body h2 { font: 700 22px var(--font-head); margin: 0 0 10px; }
+.rf-intro { font-size: 16px; line-height: 1.6; margin: 0 0 18px; }
+.rf-steps { margin: 0 0 20px; padding: 0; list-style: none; counter-reset: rf; display: grid; gap: 12px; }
+.rf-steps > li { counter-increment: rf; position: relative; padding: 12px 16px 12px 52px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); line-height: 1.6; }
+.rf-steps > li::before { content: counter(rf); position: absolute; left: 14px; top: 12px; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; font: 800 13px var(--font-body); color: #fff; background: var(--c); }
+.rf-steps h3 { margin: 0 0 4px; font: 700 16px var(--font-head); }
+.rf-steps p { margin: 0 0 6px; }
+.rf-skeleton { font-family: var(--font-code); font-size: 13.5px; line-height: 1.9; padding: 10px 14px; border-radius: 12px; background: var(--surface-2); }
+.rf-example { padding: 16px 18px; border-radius: 18px; background: color-mix(in srgb, var(--c) 8%, var(--paper)); border: 1px solid color-mix(in srgb, var(--c) 30%, var(--line)); margin-bottom: 18px; line-height: 1.6; }
+.rf-example h3 { margin: 4px 0 8px; font: 700 18px var(--font-head); }
+.rf-fig { margin: 12px 0 0; }
+.rf-fig .diagram { background: var(--surface); border-radius: 14px; padding: 8px; display: flex; justify-content: center; }
+.rf-fig .diagram svg { max-width: 100%; height: auto; }
+.rf-fig figcaption { font-size: 13px; color: var(--ink-2); margin-top: 4px; text-align: center; }
+.rf-practice { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0; }
+.rf-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 18px; }
+@media (max-width: 900px) { .rf { grid-template-columns: minmax(0, 1fr); } .rf-card { position: static; } .rc-grid { grid-template-columns: minmax(0, 1fr); } }
+@media print {
+    .recipes .kh-slim, .rf-nav, .rf-practice, .rc-more { display: none !important; }
+    .rc-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .rc { box-shadow: none; padding: 8px 10px; font-size: 10.5px; line-height: 1.35; gap: 4px; break-inside: avoid; border-top-width: 3px; }
+    .rc-head h3 { font-size: 13px; }
+    .rc-ic { width: 22px; height: 22px; }
+    .rc-steps { gap: 2px; }
+    .rc-check ul { font-size: 10px; }
+    .rc-table { font-size: 9.5px; }
+    .recipes .kh { padding: 6px 0; margin-bottom: 6px; }
+    .recipes .kh p { display: none; }
+    .rf { display: block; }
+    .rf-card { display: none; }
+    .rf-steps > li, .rf-example, .rf-fig { break-inside: avoid; }
+}
+@media print { dialog { display: none !important; } }

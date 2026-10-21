@@ -1025,6 +1025,11 @@
             renderNav("kitchen");
             CRAMLET.myths.render(main, { S, COURSE, esc, icon, conceptById, celebrate, setKeyHandler }, parts);
             document.title = "Myth or fact? · " + S.course.title + " · cramlet";
+        } else if (parts[0] === "recipes" && CRAMLET.recipes && CRAMLET.recipes.count()) {
+            renderNav("kitchen");
+            CRAMLET.recipes.render(main, { S, COURSE, esc, icon, conceptById }, parts);
+            const r = parts[1] && CRAMLET.recipes.list().find(x => x.id === parts[1]);
+            document.title = (r ? r.title + " · " : "") + "Recipe Box · " + S.course.title + " · cramlet";
         } else if ((parts[0] === "last-crumbs" || parts[0] === "review") && CRAMLET.kitchen && CRAMLET.kitchen.has(S, "run")) {
             renderNav("kitchen");
             const sheet = parts[0] === "review" || parts[1] === "reference" || parts[1] === "sheet";

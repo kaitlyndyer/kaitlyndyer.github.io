@@ -16,6 +16,9 @@
 
     apply();
     if (media && media.addEventListener) media.addEventListener("change", () => { if (!saved()) apply(); });
+    // Always print in light mode, so a printed page isn't a sheet of dark ink.
+    window.addEventListener("beforeprint", () => { root.dataset.theme = "light"; });
+    window.addEventListener("afterprint", apply);
 
     // Sun/moon button. Shows the theme you'd switch TO.
     function mountToggle(btn) {

@@ -768,7 +768,7 @@
                     ${q.type === "bug" ? `<div class="bug-code">${q.lines.map((ln, k) => `<div class="bug-line${k === q.answer ? " correct" : k === a.line ? " wrong" : ""}"><span class="ln">${k + 1}</span><code>${highlight(ln) || "&nbsp;"}</code></div>`).join("")}</div>` : ""}
                     ${TYPES[q.type] && TYPES[q.type].review ? TYPES[q.type].review(q, a, (R.self || {})[x.id] || {}) : q.whys && ["mc", "design", "multi"].includes(q.type) ? whyList(q, a) : `<div class="res-ans"><div><div class="side-title">Your answer</div>${yours(q, a)}</div><div><div class="side-title">Model answer</div>${model(q)}</div></div>`}
                     ${q.explain ? `<div class="callout tip done">${icon("lightbulb", "callout-ic")}<div class="callout-body"><span class="callout-label">Why</span>${q.explain}</div></div>` : ""}
-                    ${c ? `<a class="btn small" href="#/c/${c.id}/${q.sec ? `details/${q.sec}` : "summary"}">${icon("note")} Review ${esc(q.sec && secTitle(c.id, q.sec) ? secTitle(c.id, q.sec) : c.title)}</a>` : ""}
+                    <div class="res-links">${c ? `<a class="btn small" href="#/c/${c.id}/${q.sec ? `details/${q.sec}` : "summary"}">${icon("note")} Review ${esc(q.sec && secTitle(c.id, q.sec) ? secTitle(c.id, q.sec) : c.title)}</a>` : ""}${CRAMLET.recipes ? CRAMLET.recipes.linkFor(q, icon) : ""}</div>
                 </details>`;
             };
             main.innerHTML = `
