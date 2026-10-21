@@ -2,7 +2,8 @@
 // Each item: { id, c: concept id, sec: Details section id, s: the statement, fact: true|false, why }.
 // Lectures come from the concept. Keep the ids stable: they key each statement's history.
 // Σ = {0, 1} unless a statement says otherwise.
-registerMyths([
+// They also join the practice exam's true/false pool (the Midterm 1 exam is all true/false in that part).
+const TOC_MYTHS = [
   // ---------- Strings & languages ----------
   { id: "empty-has-eps", c: "languages", sec: "languages", fact: false,
     s: "The empty language ∅ contains the empty string ε.",
@@ -342,4 +343,54 @@ registerMyths([
   { id: "ct-locality", c: "church-turing", sec: "locality", fact: true,
     s: "You can check whether one TM configuration yields the next by looking only at small windows around each position.",
     why: "A step only changes the cells next to the head, so checking every 2 × 3 window of the two configurations is enough." },
-]);
+
+  // ---------- More practice (sets, logic, constructions) ----------
+  { id: "product-size-15", c: "languages", sec: "sets", fact: true,
+    s: "If |A| = 3 and |B| = 5, then |A × B| = 15.",
+    why: "A × B has one pair (a, b) for every choice of a and every choice of b: 3 · 5 = 15." },
+  { id: "powerset-product", c: "languages", sec: "powerset", fact: true,
+    s: "If |A| = 2 and |B| = 3, then the power set of A × B has 2⁶ = 64 elements.",
+    why: "A × B has 2 · 3 = 6 elements, and a set with 6 elements has 2⁶ subsets." },
+  { id: "binary-strings-3", c: "languages", sec: "strings", fact: false,
+    s: "{0, 1}³ has 6 elements.",
+    why: "Each of the 3 positions has 2 choices, so there are 2³ = 8 strings of length 3." },
+  { id: "functions-count", c: "languages", sec: "functions", fact: true,
+    s: "There are 3⁴ = 81 different functions from a 4-element set to a 3-element set.",
+    why: "Each of the 4 inputs picks one of 3 outputs, independently: 3 · 3 · 3 · 3." },
+  { id: "functions-count-flip", c: "languages", sec: "functions", fact: false,
+    s: "There are 4³ = 64 different functions from a 4-element set to a 3-element set.",
+    why: "It’s (number of outputs)^(number of inputs) = 3⁴ = 81. Each input picks an output, not the other way around." },
+  { id: "powerset-empty", c: "languages", sec: "powerset", fact: false,
+    s: "The power set of ∅ is ∅.",
+    why: "∅ has one subset, itself. So the power set of ∅ is {∅}, which has 1 element (2⁰ = 1)." },
+  { id: "vacuous-powerset", c: "logic-proofs", sec: "logic", fact: true,
+    s: "“For every set S, if the power set of S has exactly 5 elements, then S has 100 elements” is true.",
+    why: "A power set always has 2ⁿ elements, never 5, so the “if” part is always false. An implication with a false “if” part is true." },
+  { id: "implication-false-if", c: "logic-proofs", sec: "logic", fact: false,
+    s: "An implication “if A then B” is false whenever A is false.",
+    why: "It’s the other way around: when A is false, “if A then B” is automatically true. It’s only false when A is true and B is false." },
+  { id: "nfa-constructions", c: "closure", sec: "union", fact: true,
+    s: "The ε-arrow constructions for union, concatenation, and star work just as well when you start from NFAs instead of DFAs.",
+    why: "They only add a few states and ε-arrows around the machines, and never rely on the machines being deterministic." },
+  { id: "two-dfas-same", c: "dfa", sec: "language", fact: true,
+    s: "Two DFAs with different numbers of states can recognize the same language.",
+    why: "A 1-state DFA that accepts everything and a 2-state DFA that accepts everything both recognize Σ*. Extra states don’t have to change the language." },
+  { id: "dfa-five-parts", c: "dfa", sec: "formal", fact: true,
+    s: "A DFA’s formal description lists five things: Q, Σ, δ, the start state, and F.",
+    why: "M = (Q, Σ, δ, q₀, F): states, alphabet, transition function, start state, accept states." },
+  { id: "substring-regular", c: "closure", sec: "concatenation", fact: true,
+    s: "If B is regular, then Σ*BΣ*, the strings that contain some string of B as a substring, is regular.",
+    why: "Σ* is regular, and regular languages are closed under concatenation, so Σ*BΣ* is regular." },
+  { id: "pump-cases", c: "pumping", sec: "choosing-w", fact: true,
+    s: "A pumping proof sometimes needs separate cases for what y could contain.",
+    why: "If w doesn’t start with p copies of one symbol, y could land in different kinds of places. Then you show the pumped string fails in every case." },
+  { id: "tm-describe", c: "turing-machines", sec: "describing", fact: false,
+    s: "A tape-head level description of a TM has to list every state and transition.",
+    why: "That’s a state diagram. A tape-head level description just explains how the head moves and what it writes, like pseudocode for the tape." },
+];
+registerMyths(TOC_MYTHS);
+if (window.registerExam) {
+  const byConcept = {};
+  TOC_MYTHS.forEach(m => (byConcept[m.c] = byConcept[m.c] || []).push({ id: `myth/${m.id}`, type: "tf", sec: m.sec, q: m.s, answer: m.fact, explain: m.why }));
+  Object.entries(byConcept).forEach(([c, qs]) => registerExam(c, qs));
+}

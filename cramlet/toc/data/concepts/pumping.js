@@ -152,6 +152,14 @@ registerConcept({
         ],
       },
     },
+    {
+      id: "write-proof",
+      title: "Write the proof",
+      lec: [4],
+      intro: `<p>The exam asks you to <b>write</b> pumping-lemma proofs, so practice them three ways. <b>Pick each step</b> walks you through the four moves of the game. <b>Build from steps</b> has you put a full proof in order. <b>Write it</b> is exam-style: type the proof, then grade yourself against a model proof and the same five-point checklist the practice exam uses.</p>`,
+      widget: "proof-trainer",
+      config: {},
+    },
   ],
 
   flashcards: [

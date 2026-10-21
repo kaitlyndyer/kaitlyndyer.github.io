@@ -1485,6 +1485,213 @@
     };
 
     // ======================================================================
+    // Pumping proof trainer: the same proofs (STUDY.pumpProofs, data/exam/pumping-proofs.js) in three modes.
+    //   Pick each step: four multiple-choice questions, one per move in the game (w, what y is, i, why it's out).
+    //   Build from steps: put the proof's lines in order, leaving out the ones that don't belong.
+    //   Write it: type the whole proof, then compare with the model and tick a checklist (like the exam).
+    // config: { } (the proofs come from the data file)
+    // ======================================================================
+    W["proof-trainer"] = function (el, config, ctx) {
+        const { icon, esc, buddy, progress, course } = ctx;
+        const P = window.STUDY.pumpProofs || [];
+        const shuffle = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(x => x[1]);
+        const KEY = "cramlet.toc.solved";
+        const solvedList = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } };
+        const markSolved = id => { const sv = solvedList(); if (!sv.includes(id)) { sv.push(id); try { localStorage.setItem(KEY, JSON.stringify(sv)); } catch (e) { /* ignore */ } } };
+        const MODES = [["mc", "Pick each step", "list-checks"], ["build", "Build from steps", "puzzle-piece"], ["write", "Write it", "note-pencil"]];
+        let pi = 0, mode = "mc", st = {};
+
+        el.innerHTML = `
+            <div class="proofs ptrain">
+                <div class="pick-row" role="group" aria-label="Choose a language"></div>
+                <div class="seg pt-modes" role="tablist">${MODES.map(([id, name, ic]) => `<button type="button" class="seg-btn" data-mode="${id}" role="tab">${icon(ic)} ${name}</button>`).join("")}</div>
+                <div class="challenge"><div class="ch-lang"></div><div class="ch-meta"></div></div>
+                <div class="pt-body"></div>
+                <div class="verdict" aria-live="polite" hidden></div>
+            </div>`;
+        const $ = s => el.querySelector(s);
+        const cur = () => P[pi];
+        const doneId = m => `pump-${m}-${cur().id}`;
+
+        function drawPicks() {
+            const sv = solvedList();
+            $(".pick-row").innerHTML = P.map((x, i) => {
+                const n = ["mc", "build", "write"].filter(m => sv.includes(`pump-${m}-${x.id}`)).length;
+                return `<button type="button" class="pick" data-p="${i}" aria-pressed="${i === pi}">${n === 3 ? `<span class="done">${icon("check")}</span>` : ""}${x.lang.replace(/^L = /, "")}</button>`;
+            }).join("");
+            el.querySelectorAll("[data-mode]").forEach(b => { b.classList.toggle("active", b.dataset.mode === mode); b.setAttribute("aria-selected", b.dataset.mode === mode); });
+        }
+        function verdict(html, ok, big) {
+            const v = $(".verdict");
+            v.hidden = false; v.className = "verdict " + (ok ? "yes" : "no");
+            v.innerHTML = `<span class="fb-av"></span><div>${html}</div>`;
+            buddy.react(v.querySelector(".fb-av"), ok ? (big ? "cheer" : "happy") : "oops", ok ? (big ? "party" : "bounce") : "wobble");
+        }
+        function win(m, at) {
+            if (!solvedList().includes(doneId(m))) ctx.celebrate(at);
+            progress.award("challenge", `${course}:pump-${m}:${cur().id}`, { at });
+            markSolved(doneId(m));
+            drawPicks();
+        }
+        function load(i, m) {
+            pi = i; if (m) mode = m;
+            const p = cur();
+            $(".verdict").hidden = true;
+            $(".ch-lang").innerHTML = `<span class="ptype">Prove it</span> ${p.lang} is not regular.`;
+            $(".ch-meta").innerHTML = {
+                mc: "Answer one question for each move in the pumping game. A wrong pick shows why it fails.",
+                build: "Click steps to add them to your proof, then put them in order. <b>Some steps don’t belong</b>: leave those out.",
+                write: "Write the whole proof yourself, the way you would on the exam. Then compare it with a model proof and tick what you really did.",
+            }[mode];
+            st = mode === "mc" ? { q: 0, missed: false, picked: null, qs: mcQuestions(p) }
+                : mode === "build" ? { pool: shuffle([...p.steps.map((h, k) => ({ id: "s" + k, html: h })), ...p.distractors.map((d, k) => ({ id: "d" + k, html: d.text, why: d.why }))]), mine: [], marks: null }
+                : { text: st.keep && st.keepFor === p.id ? st.text : "", shown: false, ticks: [] };
+            drawPicks();
+            draw();
+        }
+
+        // ---------- Pick each step ----------
+        function mcQuestions(p) {
+            return [
+                { q: "1. The adversary has picked p. Which w should you choose?",
+                  opts: shuffle([{ t: `w = ${p.w}`, ok: true, why: p.wIn }, ...p.badW.map(b => ({ t: `w = ${b.w}`, ok: false, why: b.why }))]) },
+                { q: "2. The adversary splits w = xyz with |xy| ≤ p and |y| ≥ 1. What do you know about y, for <b>every</b> such split?",
+                  opts: shuffle([
+                      { t: p.yShort || "y = 0ᵏ for some 1 ≤ k ≤ p", ok: true, why: p.y || "The first p symbols of w are all 0s, and |xy| ≤ p keeps y inside them. |y| ≥ 1 makes k ≥ 1." },
+                      { t: p.yNot || "y contains at least one 1", ok: false, why: p.yNot ? "Not for every split. The adversary picks the split, so you have to cover every place y could be in the first p symbols." : "|xy| ≤ p, and the first p symbols of w are all 0s, so y can’t reach a 1." },
+                      { t: `y = ${p.sym || "0"}, because you choose the split`, ok: false, why: "The adversary chooses the split, so your argument must work for every y the rules allow." },
+                      { t: "Nothing: y could be any part of w", ok: false, why: "The rule |xy| ≤ p pins y to the first p symbols. That’s what makes the proof work." },
+                  ]) },
+                { q: "3. Which i wins for you, whatever k is?",
+                  opts: shuffle(p.iOpts.map(o => ({ t: `i = ${o.i}`, ok: o.ok, why: o.why }))) },
+                { q: `4. With i = ${p.i}, xyⁱz = ${p.pumped}. Why is that not in L?`,
+                  opts: shuffle([
+                      { t: p.notIn, ok: true, why: "That’s the last step. Then the pumped string isn’t in L, which contradicts the pumping lemma, so L isn’t regular." },
+                      { t: `Because |xy${["⁰", "¹", "²"][p.i]}z| ≥ p, and strings that long can’t be in L.`, ok: false, why: "Length alone doesn’t matter: L has strings of every large length. You have to show the pumped string breaks L’s rule." },
+                      { t: "Because the adversary had to put y in the middle of w.", ok: false, why: "The adversary can put y anywhere in the first p symbols. The argument must not depend on where." },
+                  ]) },
+            ];
+        }
+        function drawMC() {
+            const Q = st.qs[st.q];
+            $(".pt-body").innerHTML = `
+                <div class="pt-steps">${st.qs.map((_, k) => `<span class="pt-dot${k < st.q ? " done" : k === st.q ? " now" : ""}"></span>`).join("")}</div>
+                <div class="pt-q">${Q.q}</div>
+                <div class="pt-opts">${Q.opts.map((o, k) => {
+                    const picked = st.picked && st.picked.includes(k);
+                    return `<button type="button" class="pt-opt${picked ? (o.ok ? " ok" : " bad") : ""}" data-opt="${k}" ${st.right ? "disabled" : ""}><span class="pt-t">${o.t}</span>${picked ? `<span class="mwhy">${o.why}</span>` : ""}</button>`;
+                }).join("")}</div>
+                ${st.right ? `<div class="build-actions"><button type="button" class="btn primary" data-act="next">${st.q === st.qs.length - 1 ? `${icon("check")} See the whole proof` : "Next →"}</button></div>` : ""}`;
+        }
+        function pickMC(k) {
+            const o = st.qs[st.q].opts[k];
+            st.picked = (st.picked || []).concat(k);
+            if (o.ok) st.right = true; else st.missed = true;
+            drawMC();
+        }
+        function nextMC() {
+            if (st.q < st.qs.length - 1) { st.q++; st.picked = null; st.right = false; drawMC(); return; }
+            const p = cur();
+            $(".pt-body").innerHTML = `<div class="callout key done">${icon("push-pin", "callout-ic")}<div class="callout-body"><span class="callout-label">The whole proof</span>${p.model}</div></div>
+                <div class="build-actions"><button type="button" class="btn primary" data-go="build">${icon("puzzle-piece")} Now build it from steps</button><button type="button" class="btn ghost" data-act="again">${icon("arrow-clockwise")} Again</button></div>`;
+            if (st.missed) verdict("<b>Done!</b> You found every move, with a few wrong turns along the way. Try it again, or move on to building the proof.", true);
+            else { verdict("<b>Every move right on the first try!</b> Next, build the whole proof yourself.", true, true); win("mc", $(".pt-body .btn")); }
+        }
+
+        // ---------- Build from steps ----------
+        function drawBuild() {
+            const marks = st.marks || [];
+            $(".pt-body").innerHTML = `
+                <div class="proof-cols">
+                    <div class="side-box"><div class="side-title">Steps to choose from</div>
+                        <div class="pool">${st.pool.length ? st.pool.map((x, i) => `<button type="button" class="pstep" data-pool="${i}">${x.html}</button>`).join("") : `<p class="muted">You’ve used every step.</p>`}</div></div>
+                    <div class="side-box"><div class="side-title">Your proof</div>
+                        ${st.mine.length ? `<ol class="mine">${st.mine.map((x, i) => `<li class="${marks[i] || ""}">
+                            <span class="mnum">${i + 1}</span><span class="mtext">${x.html}${marks[i] === "bad" ? `<span class="mwhy">${x.why}</span>` : marks[i] === "place" ? `<span class="mwhy">This step belongs in the proof, but not here.</span>` : ""}</span>
+                            <span class="mctl"><button type="button" class="ctl small" data-up="${i}" aria-label="Move up" ${i === 0 ? "disabled" : ""}>↑</button><button type="button" class="ctl small" data-down="${i}" aria-label="Move down" ${i === st.mine.length - 1 ? "disabled" : ""}>↓</button><button type="button" class="ctl small" data-out="${i}" aria-label="Remove">✕</button></span>
+                        </li>`).join("")}</ol>` : `<p class="muted">Click a step on the left to start your proof.</p>`}</div>
+                </div>
+                <div class="build-actions">
+                    <button type="button" class="btn primary" data-act="check">${icon("check")} Check my proof</button>
+                    <button type="button" class="btn ghost" data-act="hint">${icon("lightbulb")} Hint</button>
+                    <button type="button" class="btn ghost" data-act="again">${icon("arrow-clockwise")} Start over</button>
+                </div>
+                <div class="callout tip ch-hint done" hidden></div>`;
+        }
+        function gradeBuild() {
+            const marks = st.mine.map((x, i) => (x.id[0] === "d" ? "bad" : x.id === "s" + i ? "ok" : "place"));
+            const ok = marks.filter(m => m === "ok").length, n = cur().steps.length;
+            return { marks, ok, solved: ok === n && st.mine.length === n };
+        }
+        function checkBuild() {
+            const g = gradeBuild();
+            st.marks = g.marks; drawBuild();
+            if (g.solved) { verdict("<b>That’s a complete, correct proof!</b> Now try writing it from scratch.", true, true); win("build", $('[data-act="check"]')); return; }
+            const bad = g.marks.filter(m => m === "bad").length, place = g.marks.filter(m => m === "place").length, missing = cur().steps.length - g.ok;
+            verdict(`<b>Not yet.</b> ${[g.ok ? `${g.ok} step${g.ok > 1 ? "s are" : " is"} in the right place (green).` : "", place ? `${place} belong${place > 1 ? "" : "s"} somewhere else (orange).` : "", bad ? `${bad} ${bad > 1 ? "don’t" : "doesn’t"} belong at all (red); read why.` : "", missing ? `${missing} step${missing > 1 ? "s are" : " is"} still missing or out of place.` : ""].filter(Boolean).join(" ")}`, false);
+        }
+        function hintBuild() {
+            const p = cur(), h = $(".ch-hint"), first = st.mine.findIndex((x, i) => x.id !== "s" + i);
+            const at = first < 0 ? st.mine.length : first;
+            const text = at >= p.steps.length ? "Every step is in place. Remove anything extra, then press <b>Check my proof</b>." : `${first < 0 ? "So far so good. The next" : `Step ${at + 1} should be`}${first < 0 ? " step is" : ""}: <i>${p.steps[at]}</i>`;
+            h.innerHTML = `${icon("lightbulb", "callout-ic")}<div class="callout-body"><span class="callout-label">Hint</span>${text}</div>`;
+            h.hidden = false;
+        }
+
+        // ---------- Write it ----------
+        function drawWrite() {
+            const p = cur(), n = st.ticks.filter(Boolean).length;
+            $(".pt-body").innerHTML = `
+                ${st.shown ? `<div class="side-title">Your proof</div><div class="pq-yours">${CRAMLET.mathText.format(st.text)}</div>` : `<textarea class="pq-in" rows="10" spellcheck="true" aria-label="Your proof" placeholder="Assume L is regular. Let p be the pumping length. Choose w = 0^p …">${esc(st.text)}</textarea>`}
+                ${st.shown ? `
+                    <div class="callout key done">${icon("push-pin", "callout-ic")}<div class="callout-body"><span class="callout-label">Model proof</span>${p.model}</div></div>
+                    <div class="side-box"><div class="side-title">Checklist: tick only what your proof really does · ${n}/${p.checklist.length}</div>
+                        ${p.checklist.map((c, k) => `<label class="self-item"><input type="checkbox" data-tick="${k}" ${st.ticks[k] ? "checked" : ""}> <span>${c}</span></label>`).join("")}
+                        <p class="muted">A different w or i is fine if your argument works for every split. On the exam this checklist is worth one point per line.</p></div>
+                    <div class="build-actions"><button type="button" class="btn ghost" data-act="edit">${icon("note-pencil")} Keep editing</button><button type="button" class="btn ghost" data-act="again">${icon("arrow-clockwise")} Start over</button></div>`
+                : `<div class="build-actions"><button type="button" class="btn primary" data-act="compare" ${st.text.trim() ? "" : "disabled"}>${icon("check")} Compare with the model</button></div>`}`;
+        }
+        function tick(k, on) {
+            st.ticks[k] = on;
+            const p = cur(), n = st.ticks.filter(Boolean).length;
+            el.querySelector(".side-box .side-title").textContent = `Checklist: tick only what your proof really does · ${n}/${p.checklist.length}`;
+            if (n === p.checklist.length) { verdict("<b>All five, a full-credit proof!</b>", true, true); win("write", $(".side-box")); }
+            else $(".verdict").hidden = true;
+        }
+
+        function draw() { ({ mc: drawMC, build: drawBuild, write: drawWrite })[mode](); }
+        // The write box gets the symbol bar and live preview after each redraw.
+        const drawWriteBase = drawWrite;
+        drawWrite = function () {
+            drawWriteBase();
+            const t = $(".pq-in");
+            if (t) CRAMLET.mathText.mount(t, { onChange: v => { st.text = v; st.keep = true; st.keepFor = cur().id; const b = $('[data-act="compare"]'); if (b) b.disabled = !v.trim(); } });
+        };
+
+        el.addEventListener("change", e => { if (e.target.dataset.tick !== undefined) tick(+e.target.dataset.tick, e.target.checked); });
+        el.addEventListener("click", e => {
+            const t = e.target.closest("button");
+            if (!t || !el.contains(t)) return;
+            const d = t.dataset;
+            if (d.p !== undefined) load(+d.p);
+            else if (d.mode) load(pi, d.mode);
+            else if (d.go) load(pi, d.go);
+            else if (d.opt !== undefined) pickMC(+d.opt);
+            else if (d.act === "next") nextMC();
+            else if (d.pool !== undefined) { st.mine.push(st.pool.splice(+d.pool, 1)[0]); st.marks = null; $(".verdict").hidden = true; drawBuild(); }
+            else if (d.up !== undefined) { const i = +d.up; [st.mine[i - 1], st.mine[i]] = [st.mine[i], st.mine[i - 1]]; st.marks = null; drawBuild(); }
+            else if (d.down !== undefined) { const i = +d.down; [st.mine[i + 1], st.mine[i]] = [st.mine[i], st.mine[i + 1]]; st.marks = null; drawBuild(); }
+            else if (d.out !== undefined) { st.pool.push(st.mine.splice(+d.out, 1)[0]); st.marks = null; $(".verdict").hidden = true; drawBuild(); }
+            else if (d.act === "check") checkBuild();
+            else if (d.act === "hint") hintBuild();
+            else if (d.act === "compare") { st.shown = true; drawWrite(); }
+            else if (d.act === "edit") { st.shown = false; st.ticks = []; $(".verdict").hidden = true; drawWrite(); }
+            else if (d.act === "again") { st.keep = false; load(pi); }
+        });
+        load(0);
+    };
+
+    // ======================================================================
     // Write a regex: type a regex for a language; check it on every string up to length 10.
     // config: { alphabet, challenges: [{ id, name, lang, test(w), hint }] }
     // ======================================================================

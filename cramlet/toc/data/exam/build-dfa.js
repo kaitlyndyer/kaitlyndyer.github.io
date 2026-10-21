@@ -1,12 +1,14 @@
-// "Build a DFA" exam questions (the dfa question type in ../../questions.js).
+// "Build a DFA" exam questions, each also asking for a regex (answer.regex; any regex for the language gets full points) (the dfa question type in ../../questions.js).
 // Each answer is one correct DFA; any DFA for the same language gets full points. Keep answers minimal, since
 // partial credit counts how many changes a wrong DFA is from the answer. meaning says what each state remembers,
 // and is shown next to the answer on the results page.
 registerExam("dfa", [
     {
         id: "build/even0-end1", type: "dfa",
-        q: `Build a DFA for <span class="set">{ w | w has an even number of 0s and ends in 1 }</span>.`,
+        q: `Build a DFA <b>and</b> a regular expression for <span class="set">{ w | w has an even number of 0s and ends in 1 }</span>.`,
         answer: {
+            regex: "(1 ∪ 01*0)*1",
+            regexWhy: "(1 ∪ 01*0)* is every string with an even number of 0s: each block is a lone 1 or a pair of 0s with 1s between. Then end with a 1.",
             start: "q0", accept: ["q2"],
             delta: { q0: { 0: "q1", 1: "q2" }, q1: { 0: "q0", 1: "q1" }, q2: { 0: "q1", 1: "q2" } },
             meaning: { q0: "even 0s, doesn’t end in 1 (where ε starts)", q1: "odd 0s", q2: "even 0s, ends in 1 (accept)" },
@@ -15,8 +17,10 @@ registerExam("dfa", [
     },
     {
         id: "build/contains010", type: "dfa",
-        q: `Build a DFA for <span class="set">{ w | w contains 010 as a substring }</span>.`,
+        q: `Build a DFA <b>and</b> a regular expression for <span class="set">{ w | w contains 010 as a substring }</span>.`,
         answer: {
+            regex: "(0 ∪ 1)*010(0 ∪ 1)*",
+            regexWhy: "Anything, then 010, then anything.",
             start: "q0", accept: ["q3"],
             delta: { q0: { 0: "q1", 1: "q0" }, q1: { 0: "q1", 1: "q2" }, q2: { 0: "q3", 1: "q0" }, q3: { 0: "q3", 1: "q3" } },
             meaning: { q0: "no progress toward 010", q1: "the input so far ends in 0", q2: "ends in 01", q3: "has seen 010 (accept, and stays)" },
@@ -25,8 +29,10 @@ registerExam("dfa", [
     },
     {
         id: "build/zero-then-one", type: "dfa",
-        q: `Build a DFA for <span class="set">{ w | every 0 in w is immediately followed by a 1 }</span>.`,
+        q: `Build a DFA <b>and</b> a regular expression for <span class="set">{ w | every 0 in w is immediately followed by a 1 }</span>.`,
         answer: {
+            regex: "(1 ∪ 01)*",
+            regexWhy: "Cut the string into pieces: every 0 starts a 01 piece, and every other symbol is a lone 1.",
             start: "q0", accept: ["q0"],
             delta: { q0: { 0: "q1", 1: "q0" }, q1: { 0: "q2", 1: "q0" }, q2: { 0: "q2", 1: "q2" } },
             meaning: { q0: "every 0 so far has its 1 (accept; ε is here)", q1: "just read a 0 that still needs a 1", q2: "a 0 was followed by another 0 (trap)" },
@@ -35,8 +41,10 @@ registerExam("dfa", [
     },
     {
         id: "build/ones-mod3", type: "dfa",
-        q: `Build a DFA for <span class="set">{ w | the number of 1s in w is divisible by 3 }</span>.`,
+        q: `Build a DFA <b>and</b> a regular expression for <span class="set">{ w | the number of 1s in w is divisible by 3 }</span>.`,
         answer: {
+            regex: "0*(10*10*10*)*",
+            regexWhy: "Some 0s, then any number of groups that each hold exactly three 1s (with 0s mixed in).",
             start: "q0", accept: ["q0"],
             delta: { q0: { 0: "q0", 1: "q1" }, q1: { 0: "q1", 1: "q2" }, q2: { 0: "q2", 1: "q0" } },
             meaning: { q0: "number of 1s ≡ 0 (mod 3), accept", q1: "≡ 1 (mod 3)", q2: "≡ 2 (mod 3)" },
@@ -45,8 +53,10 @@ registerExam("dfa", [
     },
     {
         id: "build/binary-mod3", type: "dfa",
-        q: `Read w as a binary number, most significant bit first (ε counts as 0). Build a DFA for <span class="set">{ w | that number is divisible by 3 }</span>.`,
+        q: `Read w as a binary number, most significant bit first (ε counts as 0). Build a DFA <b>and</b> a regular expression for <span class="set">{ w | that number is divisible by 3 }</span>.`,
         answer: {
+            regex: "(0 ∪ 1(01*0)*1)*",
+            regexWhy: "Ripping q1 and q2 out of the DFA leaves one loop on q0: a 0, or a trip out to q1 and back, 1(01*0)*1.",
             start: "q0", accept: ["q0"],
             delta: { q0: { 0: "q0", 1: "q1" }, q1: { 0: "q2", 1: "q0" }, q2: { 0: "q1", 1: "q2" } },
             meaning: { q0: "value so far ≡ 0 (mod 3), accept", q1: "≡ 1 (mod 3)", q2: "≡ 2 (mod 3)" },
@@ -55,8 +65,10 @@ registerExam("dfa", [
     },
     {
         id: "build/second-last-1", type: "dfa",
-        q: `Build a DFA for <span class="set">{ w | the second-to-last symbol of w is 1 }</span>.`,
+        q: `Build a DFA <b>and</b> a regular expression for <span class="set">{ w | the second-to-last symbol of w is 1 }</span>.`,
         answer: {
+            regex: "(0 ∪ 1)*1(0 ∪ 1)",
+            regexWhy: "Anything, then a 1, then exactly one more symbol.",
             start: "q0", accept: ["q2", "q3"],
             delta: { q0: { 0: "q0", 1: "q1" }, q1: { 0: "q2", 1: "q3" }, q2: { 0: "q0", 1: "q1" }, q3: { 0: "q2", 1: "q3" } },
             meaning: { q0: "the last two symbols are 00 (or there are fewer than two and no 1)", q1: "they end in 01 (or w is just 1)", q2: "they end in 10 (accept)", q3: "they end in 11 (accept)" },
@@ -65,8 +77,10 @@ registerExam("dfa", [
     },
     {
         id: "build/exactly-two-1s", type: "dfa",
-        q: `Build a DFA for <span class="set">{ w | w contains exactly two 1s }</span>.`,
+        q: `Build a DFA <b>and</b> a regular expression for <span class="set">{ w | w contains exactly two 1s }</span>.`,
         answer: {
+            regex: "0*10*10*",
+            regexWhy: "Two 1s, with any number of 0s before, between, and after.",
             start: "q0", accept: ["q2"],
             delta: { q0: { 0: "q0", 1: "q1" }, q1: { 0: "q1", 1: "q2" }, q2: { 0: "q2", 1: "q3" }, q3: { 0: "q3", 1: "q3" } },
             meaning: { q0: "no 1s yet", q1: "one 1", q2: "exactly two 1s (accept)", q3: "three or more (trap)" },
@@ -75,8 +89,10 @@ registerExam("dfa", [
     },
     {
         id: "build/odd-positions-1", type: "dfa",
-        q: `Build a DFA for <span class="set">{ w | every odd position of w (the 1st, 3rd, 5th, …) is a 1 }</span>.`,
+        q: `Build a DFA <b>and</b> a regular expression for <span class="set">{ w | every odd position of w (the 1st, 3rd, 5th, …) is a 1 }</span>.`,
         answer: {
+            regex: "(1(0 ∪ 1))*(1 ∪ ε)",
+            regexWhy: "Pairs where the first symbol (an odd position) is 1, plus maybe one last 1 if the length is odd.",
             start: "q0", accept: ["q0", "q1"],
             delta: { q0: { 0: "q2", 1: "q1" }, q1: { 0: "q0", 1: "q0" }, q2: { 0: "q2", 1: "q2" } },
             meaning: { q0: "the next symbol is at an odd position (accept; ε is here)", q1: "the next symbol is at an even position (accept)", q2: "an odd position held a 0 (trap)" },
@@ -85,8 +101,10 @@ registerExam("dfa", [
     },
     {
         id: "build/a-needs-b", type: "dfa", alphabet: ["a", "b"],
-        q: `Over Σ = {a, b}, build a DFA for <span class="set">{ w | every a in w has a b somewhere after it }</span>.`,
+        q: `Over Σ = {a, b}, build a DFA <b>and</b> a regular expression for <span class="set">{ w | every a in w has a b somewhere after it }</span>.`,
         answer: {
+            regex: "ε ∪ (a ∪ b)*b",
+            regexWhy: "Every a has a b after it exactly when the string doesn’t end in a, so: empty, or ends in b.",
             start: "q0", accept: ["q0"],
             delta: { q0: { a: "q1", b: "q0" }, q1: { a: "q1", b: "q0" } },
             meaning: { q0: "no a is waiting for a b (accept)", q1: "some a hasn’t seen a b after it yet" },
@@ -98,8 +116,10 @@ registerExam("dfa", [
 registerExam("closure", [
     {
         id: "build/odd-length-with-a", type: "dfa", alphabet: ["a", "b"],
-        q: `Over Σ = {a, b}, build a DFA for <span class="set">{ w | w has odd length and contains at least one a }</span>.`,
+        q: `Over Σ = {a, b}, build a DFA <b>and</b> a regular expression for <span class="set">{ w | w has odd length and contains at least one a }</span>.`,
         answer: {
+            regex: "((a ∪ b)(a ∪ b))*a((a ∪ b)(a ∪ b))* ∪ (a ∪ b)((a ∪ b)(a ∪ b))*a(a ∪ b)((a ∪ b)(a ∪ b))*",
+            regexWhy: "Split around one a: the parts before and after must have even total length, so both even or both odd.",
             start: "q0", accept: ["q3"],
             delta: { q0: { a: "q3", b: "q1" }, q1: { a: "q2", b: "q0" }, q2: { a: "q3", b: "q3" }, q3: { a: "q2", b: "q2" } },
             meaning: { q0: "even length, no a yet", q1: "odd length, no a yet", q2: "even length, has an a", q3: "odd length, has an a (accept)" },
@@ -108,8 +128,10 @@ registerExam("closure", [
     },
     {
         id: "build/a-and-c", type: "dfa", alphabet: ["a", "b", "c"],
-        q: `Over Σ = {a, b, c}, build a DFA for <span class="set">{ w | w contains at least one a and at least one c }</span>.`,
+        q: `Over Σ = {a, b, c}, build a DFA <b>and</b> a regular expression for <span class="set">{ w | w contains at least one a and at least one c }</span>.`,
         answer: {
+            regex: "Σ*aΣ*cΣ* ∪ Σ*cΣ*aΣ*",
+            regexWhy: "Σ means any one symbol. Either an a comes before some c, or a c comes before some a.",
             start: "q0", accept: ["q3"],
             delta: { q0: { a: "q1", b: "q0", c: "q2" }, q1: { a: "q1", b: "q1", c: "q3" }, q2: { a: "q3", b: "q2", c: "q2" }, q3: { a: "q3", b: "q3", c: "q3" } },
             meaning: { q0: "no a and no c yet", q1: "seen an a, no c yet", q2: "seen a c, no a yet", q3: "seen both (accept, and stays)" },
@@ -118,12 +140,86 @@ registerExam("closure", [
     },
     {
         id: "build/not-end-01", type: "dfa",
-        q: `Build a DFA for <span class="set">{ w | w does not end in 01 }</span>.`,
+        q: `Build a DFA <b>and</b> a regular expression for <span class="set">{ w | w does not end in 01 }</span>.`,
         answer: {
+            regex: "ε ∪ 0 ∪ 1 ∪ (0 ∪ 1)*(00 ∪ 10 ∪ 11)",
+            regexWhy: "Strings shorter than 2 are all fine; longer ones must end in any pair except 01.",
             start: "q0", accept: ["q0", "q1"],
             delta: { q0: { 0: "q1", 1: "q0" }, q1: { 0: "q1", 1: "q2" }, q2: { 0: "q1", 1: "q0" } },
             meaning: { q0: "no progress toward ending in 01 (accept; ε is here)", q1: "ends in 0 (accept)", q2: "ends in 01" },
         },
         explain: "Build the DFA for “ends in 01” first, then use closure under complement: keep every arrow and swap accept and non-accept states. That only works when every state has an arrow for every symbol. If you leave a trap out, add it back before you swap, or the strings that fell into it would wrongly stay rejected.",
+    },
+    {
+        id: "build/no-11", type: "dfa",
+        q: `Build a DFA <b>and</b> a regular expression for <span class="set">{ w | w does not contain 11 }</span>.`,
+        answer: {
+            regex: "(0 ∪ 10)*(ε ∪ 1)",
+            regexWhy: "Every 1 except possibly the last must be followed by a 0, so cut the string into 0 and 10 pieces, with maybe one 1 at the end.",
+            start: "q0", accept: ["q0", "q1"],
+            delta: { q0: { 0: "q0", 1: "q1" }, q1: { 0: "q0", 1: "q2" }, q2: { 0: "q2", 1: "q2" } },
+            meaning: { q0: "no 11 yet, last symbol isn’t 1 (accept)", q1: "no 11 yet, last symbol is 1 (accept)", q2: "saw 11 (trap)" },
+        },
+        explain: "The only thing to remember is whether the last symbol was a 1, because a 1 right after it makes 11. Once 11 appears, nothing can fix it, so that state is a trap.",
+    },
+    {
+        id: "build/different-ends", type: "dfa",
+        q: `Build a DFA <b>and</b> a regular expression for <span class="set">{ w | w starts and ends with different symbols }</span>.`,
+        answer: {
+            regex: "0Σ*1 ∪ 1Σ*0",
+            regexWhy: "Σ means any one symbol. Either it starts with 0 and ends with 1, or the other way around.",
+            start: "q0", accept: ["q2", "q4"],
+            delta: { q0: { 0: "q1", 1: "q3" }, q1: { 0: "q1", 1: "q2" }, q2: { 0: "q1", 1: "q2" }, q3: { 0: "q4", 1: "q3" }, q4: { 0: "q4", 1: "q3" } },
+            meaning: { q0: "nothing read yet", q1: "starts with 0, ends with 0", q2: "starts with 0, ends with 1 (accept)", q3: "starts with 1, ends with 1", q4: "starts with 1, ends with 0 (accept)" },
+        },
+        explain: "Remember two things: the first symbol (which never changes) and the last symbol. That’s two separate halves of the DFA after the first move. ε and single symbols start and end with the same symbol, so they’re rejected.",
+    },
+    {
+        id: "build/two-0s", type: "dfa",
+        q: `Build a DFA <b>and</b> a regular expression for <span class="set">{ w | w contains at least two 0s }</span>.`,
+        answer: {
+            regex: "1*01*0(0 ∪ 1)*",
+            regexWhy: "Skip 1s to the first 0, skip 1s to the second 0, then anything.",
+            start: "q0", accept: ["q2"],
+            delta: { q0: { 0: "q1", 1: "q0" }, q1: { 0: "q2", 1: "q1" }, q2: { 0: "q2", 1: "q2" } },
+            meaning: { q0: "no 0s yet", q1: "one 0", q2: "two or more 0s (accept, and stays)" },
+        },
+        explain: "Count the 0s up to 2 and stop counting there: “two or more” is all that matters, so q2 loops on everything.",
+    },
+    {
+        id: "build/ends-00-or-11", type: "dfa",
+        q: `Build a DFA <b>and</b> a regular expression for <span class="set">{ w | w ends in 00 or 11 }</span>.`,
+        answer: {
+            regex: "(0 ∪ 1)*(00 ∪ 11)",
+            regexWhy: "Anything, then a doubled final pair.",
+            start: "q0", accept: ["q3", "q4"],
+            delta: { q0: { 0: "q1", 1: "q2" }, q1: { 0: "q3", 1: "q2" }, q2: { 0: "q1", 1: "q4" }, q3: { 0: "q3", 1: "q2" }, q4: { 0: "q1", 1: "q4" } },
+            meaning: { q0: "nothing read yet", q1: "ends in 0, not 00", q2: "ends in 1, not 11", q3: "ends in 00 (accept)", q4: "ends in 11 (accept)" },
+        },
+        explain: "The NFA for this guesses where the last pair starts. A DFA can’t guess, so it remembers the last symbol and whether the last two matched. Compare with the 4-state NFA in the NFA lesson.",
+    },
+    {
+        id: "build/starts1-odd", type: "dfa",
+        q: `Build a DFA <b>and</b> a regular expression for <span class="set">{ w | w starts with 1 and has odd length }</span>.`,
+        answer: {
+            regex: "1((0 ∪ 1)(0 ∪ 1))*",
+            regexWhy: "A 1, then pairs of symbols keep the length odd.",
+            start: "q0", accept: ["q1"],
+            delta: { q0: { 0: "q3", 1: "q1" }, q1: { 0: "q2", 1: "q2" }, q2: { 0: "q1", 1: "q1" }, q3: { 0: "q3", 1: "q3" } },
+            meaning: { q0: "nothing read yet", q1: "started with 1, odd length (accept)", q2: "started with 1, even length", q3: "started with 0 (trap)" },
+        },
+        explain: "After the first symbol, only the length’s parity matters, so q1 and q2 swap on every symbol. A string that starts with 0 can never be accepted, so it goes to a trap.",
+    },
+    {
+        id: "build/1-then-00", type: "dfa",
+        q: `Build a DFA <b>and</b> a regular expression for <span class="set">{ w | every 1 in w is immediately followed by 00 }</span>.`,
+        answer: {
+            regex: "(0 ∪ 100)*",
+            regexWhy: "Cut the string into pieces: a lone 0, or a 1 with its two 0s.",
+            start: "q0", accept: ["q0"],
+            delta: { q0: { 0: "q0", 1: "q1" }, q1: { 0: "q2", 1: "q3" }, q2: { 0: "q0", 1: "q3" }, q3: { 0: "q3", 1: "q3" } },
+            meaning: { q0: "every 1 so far has its 00 (accept)", q1: "just read a 1, need 00", q2: "read 10, need one more 0", q3: "a 1 came too soon, or the string ended early (trap)" },
+        },
+        explain: "After a 1, the DFA needs exactly two 0s before anything else. A 1 in the middle of that, or the string ending there, means some 1 didn’t get its 00.",
     },
 ]);
