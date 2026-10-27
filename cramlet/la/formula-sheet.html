@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formula Sheet · Linear Algebra · cramlet</title>
+    <meta name="description" content="A one-page formula sheet for Linear Algebra Test 2: image and kernel, subspaces, independence, basis and dimension, orthogonal complements, projections, coordinates, the B-matrix, and similarity.">
+    <script src="../theme.js"></script>
+    <link rel="stylesheet" href="la.css?v=1025">
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #fffaf5; --paper: #ffffff; --ink: #2b2340; --muted: #6b6380; --line: #eadfd6; --accent: #e0567c; --soft: #fdeef2; }
+        @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #17131f; --paper: #211b2c; --ink: #f1ecf8; --muted: #a99fbb; --line: #3a3149; --accent: #ff8fae; --soft: #3a2131; } }
+        :root[data-theme="dark"] { --bg: #17131f; --paper: #211b2c; --ink: #f1ecf8; --muted: #a99fbb; --line: #3a3149; --accent: #ff8fae; --soft: #3a2131; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--ink); font: 400 14px/1.45 "Nunito", system-ui, sans-serif; }
+        .wrap { max-width: 1100px; margin: 0 auto; padding: 20px 16px 40px; }
+        .top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 12px; }
+        .top a { color: var(--accent); font-weight: 800; text-decoration: none; }
+        h1 { font: 600 24px "Fredoka", sans-serif; margin: 0; flex: 1; }
+        button { font: 800 14px "Nunito", sans-serif; color: #fff; background: var(--accent); border: 0; border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+        .note { background: var(--soft); border-radius: 12px; padding: 10px 14px; margin: 0 0 14px; }
+        .sheet { columns: 3 300px; column-gap: 14px; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+        section { break-inside: avoid; margin: 0 0 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
+        h2 { font: 800 12.5px "Nunito", sans-serif; text-transform: uppercase; letter-spacing: .5px; color: var(--accent); margin: 0 0 4px; }
+        ul { margin: 0; padding-left: 16px; }
+        li { margin: 1px 0; }
+        b { font-weight: 800; }
+        .t1 { font-size: 10px; letter-spacing: 0; text-transform: none; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 6px; margin-left: 4px; vertical-align: 1px; }
+        @media print {
+            @page { size: letter; margin: 0.35in; }
+            body { background: #fff; color: #000; font-size: 8.6px; line-height: 1.28; }
+            .top, .note { display: none; }
+            .wrap { padding: 0; max-width: none; }
+            .sheet { border: 0; padding: 0; columns: 3; column-gap: 8px; background: #fff; }
+            section { border-color: #bbb; padding: 4px 6px; margin-bottom: 5px; }
+            h2 { color: #000; font-size: 8.6px; }
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="top">
+        <a href="./">← Linear Algebra</a>
+        <h1>Test 2 formula sheet</h1>
+        <button type="button" onclick="window.print()">Print</button>
+    </div>
+    <p class="note"><b>Heads up:</b> Practice Test 2C says the sheet must be <b>one page, handwritten</b>. Use this as the draft and copy it out by hand. Copying it is good review too. Leave out anything you already know cold, and add your own trouble spots.</p>
+
+    <div class="sheet">
+        <section>
+            <h2>Linear systems &amp; rref <span class="t1">Test 1</span></h2>
+            <ul>
+                <li>Row ops: swap rows, scale a row by k ≠ 0, add a multiple of one row to another.</li>
+                <li>rref: each pivot is a 1, zeros above and below it, pivots step right, zero rows at the bottom.</li>
+                <li>Free variables = non-pivot columns. x = particular + s(…) + t(…).</li>
+                <li>Inconsistent ⇔ a row [0 … 0 | 1]. Consistent: no free vars ⇒ 1 solution; free vars ⇒ ∞.</li>
+                <li>A is n×m: rank ≤ n and ≤ m. rank = n ⇒ Ax = b always consistent. rank = m ⇒ at most one solution.</li>
+                <li>Square A: unique solution for every b ⇔ rank = n. Ax = b inconsistent for some b ⇔ rank &lt; n.</li>
+                <li>Parameters (h, k): row reduce, find where a pivot becomes 0, test each such value separately.</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Matrix algebra <span class="t1">Test 1</span></h2>
+            <ul>
+                <li>(n×p)(p×m) = n×m. Entry (i, j) of AB = row i of A · column j of B.</li>
+                <li>Ax = x₁(col 1) + … + x_m(col m): Ax is a linear combination of the columns.</li>
+                <li>AB ≠ BA in general. Commute: write B = [[a, b], [c, d]], set AB = BA, solve.</li>
+                <li>AB = 0 does not force A = 0 or B = 0. But A invertible and AC = 0 ⇒ C = 0.</li>
+                <li>v, w solve Ax = b ⇒ v − w solves Ax = 0. All solutions = one solution + ker A.</li>
+                <li>A(x + y) = Ax + Ay, A(kx) = kAx, (AB)C = A(BC), A(B + C) = AB + AC.</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Linear transformations <span class="t1">Test 1</span></h2>
+            <ul>
+                <li>T is linear ⇔ T(x + y) = T(x) + T(y) and T(kx) = kT(x) ⇔ T(x) = Ax.</li>
+                <li>Not linear if T(0) ≠ 0, or any constant, x², xy, |x| appears.</li>
+                <li><b>A = [T(e₁) … T(e_m)]</b>. T: ℝ<sup>m</sup> → ℝ<sup>n</sup> ⇒ A is n×m.</li>
+                <li>Given T(vᵢ) = wᵢ: write x as a combination of the vᵢ, or A[v₁ … v_m] = [w₁ … w_m] ⇒ A = [w₁ … w_m][v₁ … v_m]<sup>−1</sup>.</li>
+                <li><b>“T, then S” = BA</b> (B for S, A for T): the first map goes on the right.</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Geometry in ℝ² <span class="t1">Test 1</span></h2>
+            <ul>
+                <li>Rotate θ counterclockwise: [[cos θ, −sin θ], [sin θ, cos θ]]. Clockwise θ: [[cos θ, sin θ], [−sin θ, cos θ]].</li>
+                <li>90° CCW: [[0, −1], [1, 0]]. 180°: −I. 45°: cos = sin = 1/√2.</li>
+                <li>Scale by k: kI. Rotation-scaling: [[a, −b], [b, a]].</li>
+                <li>Shear: [[1, k], [0, 1]] (horizontal), [[1, 0], [k, 1]] (vertical).</li>
+                <li>Project onto line through w: P = 1/(w₁² + w₂²) [[w₁², w₁w₂], [w₁w₂, w₂²]]. Not invertible.</li>
+                <li>Reflect in that line: 2P − I = [[a, b], [b, −a]] with a² + b² = 1. Own inverse.</li>
+                <li>Reflect in x-axis [[1, 0], [0, −1]], y-axis [[−1, 0], [0, 1]], y = x [[0, 1], [1, 0]], y = −x [[0, −1], [−1, 0]].</li>
+                <li>ℝ³: reflect in xy-plane diag(1, 1, −1); project onto yz-plane diag(0, 1, 1).</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Image &amp; kernel (A is n×m)</h2>
+            <ul>
+                <li><b>ker A</b> = {x : Ax = 0} ⊆ ℝ<sup>m</sup> (# columns). <b>im A</b> = span(columns) ⊆ ℝ<sup>n</sup> (# rows).</li>
+                <li>Kernel basis: rref, free vars s, t, …; x = s(…) + t(…).</li>
+                <li>Image basis: <b>pivot columns of A</b> (not rref!).</li>
+                <li>Non-pivot col of rref = coefficients on the pivot cols of A.</li>
+                <li>b ∈ im A ⇔ [A | b] consistent. Rows of zeros in [A | y] give im A = ker B.</li>
+                <li>ker B ⊆ ker AB; im AB ⊆ im A. A² = 0 ⇔ im A ⊆ ker A ⇒ rank ≤ n/2.</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Rank–nullity</h2>
+            <ul>
+                <li><b>dim ker A + dim im A = m</b> (# columns).</li>
+                <li>rank = # pivots = dim im ≤ min(n, m).</li>
+                <li>ker A = {0} ⇔ rank = m. im A = ℝ<sup>n</sup> ⇔ rank = n.</li>
+                <li>A = BC with B n×k, C k×n, k &lt; n ⇒ ker C ≠ {0} ⇒ A not invertible.</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Subspace test</h2>
+            <ul>
+                <li>(1) 0 ∈ W (2) u + v ∈ W (3) kv ∈ W.</li>
+                <li>Equations = 0 → <b>ker</b>, rows = coefficients. Parameters → <b>im</b>, columns = vectors multiplying each parameter.</li>
+                <li>Not: specific counterexample. Red flags: constants, x², xy, ≥, a ≥ 0.</li>
+                <li>V ∩ W always a subspace; V ∪ W usually not.</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Independence, span, basis</h2>
+            <ul>
+                <li>Independent ⇔ only trivial relation ⇔ ker[v₁ … v_m] = {0} ⇔ rank = m.</li>
+                <li>&gt; n vectors in ℝ<sup>n</sup> ⇒ dependent. Nonzero ⊥ vectors ⇒ independent.</li>
+                <li>Kernel vector (c₁, …, c_m) ⇔ relation c₁v₁ + … + c_m v_m = 0.</li>
+                <li>Basis = spans + independent ⇔ unique representation.</li>
+                <li>dim V = m: m independent vectors in V ⇒ basis; m spanning ⇒ basis.</li>
+                <li>v₁…vₙ basis of ℝ<sup>n</sup> ⇔ [v₁ … vₙ] invertible.</li>
+                <li>Extend: rref[v₁ … v_p | e₁ … eₙ], keep pivot cols.</li>
+                <li>dim(V + W) = dim V + dim W − dim(V ∩ W).</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Inverses <span class="t1">Test 1</span></h2>
+            <ul>
+                <li>[[a, b], [c, d]]<sup>−1</sup> = 1/(ad − bc) [[d, −b], [−c, a]]; invertible ⇔ ad − bc ≠ 0.</li>
+                <li>Any size: rref[A | I] = [I | A<sup>−1</sup>]. Left side not I ⇒ not invertible.</li>
+                <li>Ax = b ⇒ <b>x = A<sup>−1</sup>b</b>. Check: AA<sup>−1</sup> = I.</li>
+                <li>(AB)<sup>−1</sup> = B<sup>−1</sup>A<sup>−1</sup> (order flips). (A<sup>k</sup>)<sup>−1</sup> = (A<sup>−1</sup>)<sup>k</sup>. A, B invertible ⇒ AB, A<sup>k</sup> invertible.</li>
+                <li>Square: AB = I ⇒ BA = I and B = A<sup>−1</sup>. rank(AB…) = n ⇒ every factor invertible.</li>
+                <li>Inverse of rotation by θ = rotation by −θ. Reflection = its own inverse. Projections aren’t invertible.</li>
+                <li>Is A − kI invertible? Compute it, then row reduce (or 2×2: check ad − bc).</li>
+                <li><b>Invertible n×n A ⇔</b> rref A = Iₙ ⇔ rank n ⇔ ker A = {0} ⇔ im A = ℝ<sup>n</sup> ⇔ cols independent ⇔ cols span ⇔ cols a basis ⇔ Ax = b has a unique solution ∀b.</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Orthogonal complement</h2>
+            <ul>
+                <li>V<sup>⊥</sup> = {x : x · v = 0 ∀v ∈ V} = <b>ker(matrix with rows = spanning set of V)</b>.</li>
+                <li>dim V + dim V<sup>⊥</sup> = n; V ∩ V<sup>⊥</sup> = {0}; (V<sup>⊥</sup>)<sup>⊥</sup> = V.</li>
+                <li>Basis V + basis V<sup>⊥</sup> = basis of ℝ<sup>n</sup>.</li>
+                <li>V = ker(rows = basis of V<sup>⊥</sup>).</li>
+                <li>V ∩ W = {0} does NOT imply W = V<sup>⊥</sup>.</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Orthonormal &amp; projections</h2>
+            <ul>
+                <li>‖v‖ = √(v·v). Orthonormal: uᵢ·uⱼ = 0, uᵢ·uᵢ = 1. u = v/‖v‖.</li>
+                <li><b>proj<sub>V</sub>x = (u₁·x)u₁ + … + (u_m·x)u_m</b> (orthonormal basis!).</li>
+                <li>Orthogonal basis: Σ (vᵢ·x)/(vᵢ·vᵢ) vᵢ.</li>
+                <li>x<sup>⊥</sup> = x − x<sup>∥</sup> ∈ V<sup>⊥</sup>: check x<sup>⊥</sup>·vᵢ = 0.</li>
+                <li><b>P = u₁u₁ᵀ + … + u_m u_mᵀ</b>; im P = V, ker P = V<sup>⊥</sup>, P² = P.</li>
+                <li>Line: proj = (x·w)/(w·w) w; ref = 2 proj − x.</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Coordinates</h2>
+            <ul>
+                <li>[x]<sub>B</sub> = (c₁, …, c_m) ⇔ x = c₁v₁ + … + c_m v_m.</li>
+                <li><b>x = S[x]<sub>B</sub></b>, S = [v₁ … v_m]. ℝⁿ basis: [x]<sub>B</sub> = S<sup>−1</sup>x.</li>
+                <li>Subspace basis: row reduce [S | x]; inconsistent ⇒ x ∉ V.</li>
+                <li>[x]<sub>B</sub> has m = dim V entries.</li>
+            </ul>
+        </section>
+        <section>
+            <h2>B-matrix</h2>
+            <ul>
+                <li>[T(x)]<sub>B</sub> = B[x]<sub>B</sub>.</li>
+                <li><b>B = S<sup>−1</sup>AS</b>, AS = SB, A = SBS<sup>−1</sup>.</li>
+                <li>Column j of B = <b>[T(vⱼ)]<sub>B</sub></b> (coordinates, not T(vⱼ)).</li>
+                <li>Diagonal ⇔ T(vⱼ) = cⱼvⱼ. Proj onto L: diag(1, 0). Reflect: diag(1, −1). Proj onto plane in ℝ³: diag(1, 1, 0).</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Similar matrices</h2>
+            <ul>
+                <li>A ∼ B ⇔ AS = SB, S <b>invertible</b>.</li>
+                <li>Show ∼: S = [[a, b], [c, d]], solve AS = SB, pick det S ≠ 0.</li>
+                <li>Show ≁: different rank / nullity / invertibility; kI ∼ only kI.</li>
+                <li>Equivalence relation. A ∼ B ⇒ Aᵗ ∼ Bᵗ, A + kI ∼ B + kI.</li>
+            </ul>
+        </section>
+        <section>
+            <h2>T/F quick checks</h2>
+            <ul>
+                <li>Try: zero matrix, I, [[0, 1], [0, 0]], a line in ℝ², w = 0.</li>
+                <li>“Always” claims die to one counterexample.</li>
+                <li>Count dimensions with rank–nullity first.</li>
+            </ul>
+        </section>
+    </div>
+</div>
+<script src="la.js?v=1025"></script>
+</body>
+</html>
