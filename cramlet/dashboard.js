@@ -12,6 +12,7 @@
     const COURSES = [
         { id: "pdi", url: "pdi/", title: "Program Design & Implementation", desc: "Designing programs in Java: interfaces, inheritance, generics, specs, and more.", color: "#7c5cff", icon: "coffee" },
         { id: "toc", url: "toc/", title: "Theory of Computation", desc: "Automata, regular expressions, and the pumping lemma, with machines you can run step by step.", color: "#11a8a0", icon: "automaton" },
+        { id: "la", url: "la/", title: "Linear Algebra", desc: "Kernels, images, subspaces, bases, orthogonal complements, coordinates, and similar matrices.", color: "#e0567c", icon: "stack" },
     ];
     const TAB_NAME = { summary: "Summary", details: "Details", playground: "Playground", code: "Code", practice: "Practice" };
 
