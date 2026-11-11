@@ -8,7 +8,7 @@ window.STUDY = {
     id: "toc",
     storeKey: "cramlet.toc.v1",
     title: "Theory of Computation",
-    tagline: "What can a computer compute? Automata, regular expressions, their limits, and Turing machines, with machines you can run.",
+    tagline: "What can a computer compute? Automata, regular expressions, their limits, Turing machines, and the problems no algorithm can solve, with machines you can run.",
   },
 
   lectures: {
@@ -19,6 +19,8 @@ window.STUDY = {
     4: "Non-Regular Languages",
     5: "Turing Machines",
     6: "TM Variants & the Church–Turing Thesis",
+    7: "Countability & Undecidability",
+    8: "Reductions",
   },
 
   groups: [
@@ -68,6 +70,15 @@ window.STUDY = {
       concepts: [
         { id: "turing-machines", title: "Turing Machines", icon: "gear-six", color: "#d9534f", lectures: [5] },
         { id: "church-turing", title: "TM Variants & Church–Turing", icon: "stack", color: "#b5487a", lectures: [6] },
+      ],
+    },
+    {
+      id: "decidability",
+      title: "Decidability",
+      icon: "prohibit",
+      concepts: [
+        { id: "countability", title: "Countability & Diagonalization", icon: "infinity", color: "#7a5cc9", lectures: [7] },
+        { id: "reductions", title: "Reductions & Undecidable Problems", icon: "shuffle", color: "#4a6fd1", lectures: [7, 8] },
       ],
     },
   ],

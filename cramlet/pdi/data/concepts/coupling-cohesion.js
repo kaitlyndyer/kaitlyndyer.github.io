@@ -41,7 +41,7 @@ registerConcept({
       html: `
         <p>A <code>DeviceHub</code> with <code>addLights(Light[])</code> and <code>addFans(Fan[])</code> is coupled to <code>Light</code>, <code>Fan</code>, and transitively <code>IoTDevice</code>. A change to any Light or Fan method can break the hub, even though the hub didn’t change. Implementations change often, so harm is likely.</p>
         <p>With <code>addDevices(IoTDevice[])</code>, the hub can’t reach device-specific operations, so Light/Fan changes that keep their public spec don’t affect it. It’s still coupled to <code>IoTDevice</code>, but <b>interfaces change rarely</b>.</p>
-        <p class="callout">Best practice: depend on interfaces and abstract classes, not specific implementations.</p>
+        <p class="callout tip">Best practice: depend on interfaces and abstract classes, not specific implementations.</p>
         <p>A parameter is also coupled to <b>how data is organized</b>: an array (fixed Java construct), a <code>List</code> (standard interface, very unlikely to change), or a custom <code>MyList</code> (may change often, so riskiest). Prefer coupling to modules less likely to change.</p>`,
     },
     {

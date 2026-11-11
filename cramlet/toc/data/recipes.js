@@ -341,6 +341,67 @@
                 practice: [{ label: "Myth or fact?", href: "#/myths" }, { label: "Closure lesson", href: "#/c/closure/details/closed" }],
             },
         },
+        // ======================================================================
+        {
+            id: "countable", c: "countability", title: "Countable or not?", icon: "infinity",
+            when: "“Is this set countable?” or “Show that this set is uncountable.”",
+            for: { concepts: ["countability"] },
+            card: {
+                steps: [
+                    "<b>Finite descriptions?</b> If every element can be written as its own finite string (numbers, fractions, tuples, machines, programs), the set is <b>countable</b>.",
+                    "<b>Countable:</b> give a one-to-one map <b>into</b> ℕ (or into Σ*, which is countable). Check that two different elements never get the same number.",
+                    "<b>Infinite objects?</b> If elements are infinite sequences, real numbers, sets of naturals, or languages, suspect <b>uncountable</b>.",
+                    "<b>Uncountable:</b> diagonalize directly, or give a one-to-one map <b>from</b> the infinite binary sequences into your set.",
+                ],
+                check: ["Your map goes the right way: into ℕ for countable, from an uncountable set for uncountable.", "You checked one-to-one: different inputs give different outputs."],
+            },
+            full: {
+                intro: "Every question about sizes of infinite sets is answered with a one-to-one function. The only decisions are which way it points and what it is.",
+                steps: [
+                    { t: "Look at one element", html: "<p>Can you write a single element down completely, in finitely many symbols? A fraction (“−3/4”), a tuple (“(2,7,1)”), a DFA’s 5-tuple, a Java program: yes, so the set is probably countable. An infinite sequence, a real number like π, an infinite language: no, so it’s probably uncountable.</p>" },
+                    { t: "Countable: map into ℕ", html: "<p>Turn each element into a string (in a fixed format), then use the strings-to-numbers map x ↦ 1x in binary. Make sure the format is unique: “1/2” and “2/4” are the same rational, so write fractions in lowest terms.</p>" },
+                    { t: "Uncountable: map from the sequences", html: "<p>Given a sequence a₁a₂a₃…, build an element of your set from it so that different sequences give different elements. Typical choices: the set { i | aᵢ = 1 }, the decimal 0.a₁a₂a₃…, the language { ⟨i⟩ | aᵢ = 1 }.</p>" },
+                    { t: "Or diagonalize directly", html: "<p>Assume the set can be listed e₁, e₂, …. Build a new element that differs from eᵢ in its i-th “coordinate.” It isn’t on the list: contradiction. This needs elements with infinitely many coordinates.</p>" },
+                ],
+                example: {
+                    title: "The lecture’s two directions",
+                    html: "<p><b>ℚ is countable.</b> Write m/n in lowest terms as a string over {−, 0, …, 9, /}. Different rationals give different strings, and strings are countable, so |ℚ| ≤ |ℕ|.</p><p><b>The set of all languages over {0,1} is uncountable.</b> Map the sequence a₁a₂a₃… to the language { ⟨i⟩ | aᵢ = 1 }. Two different sequences differ at some i, and then exactly one of their languages contains ⟨i⟩. So the map is one-to-one from an uncountable set.</p>",
+                },
+                traps: ["“It’s infinite, so it’s uncountable.” ℕ is infinite.", "“It’s a proper subset of ℕ, so it’s smaller.” The evens are the same size as ℕ.", "Pointing the map the wrong way: a map from ℕ into A only shows A is infinite.", "Diagonalizing over finite strings: there’s no i-th symbol for every i."],
+                practice: [{ label: "Flip the diagonal", href: "#/c/countability/playground/diagonal" }, { label: "Countable sets", href: "#/c/countability/details/countable" }],
+            },
+        },
+        // ======================================================================
+        {
+            id: "undecidable", c: "reductions", title: "Prove it’s undecidable", icon: "shuffle",
+            when: "“Show that this language about Turing machines is undecidable.”",
+            for: { concepts: ["reductions"] },
+            card: {
+                steps: [
+                    "<b>Assume</b> a decider D<sub>B</sub> for the new language B.",
+                    "<b>Build</b> D<sub>A</sub> for A<sub>TM</sub>: on ⟨M, w⟩, write down a machine M′<sub>w</sub> whose answer to B’s question depends on whether M accepts w. Then ask D<sub>B</sub> about it.",
+                    "<b>Halts?</b> D<sub>A</sub> only writes code and calls D<sub>B</sub>. It never runs M on w by itself.",
+                    "<b>Right?</b> State the key point: M′<sub>w</sub> ∈ B ⇔ M accepts w. Check accept, reject, and loop.",
+                    "<b>Conclude:</b> D<sub>A</sub> decides A<sub>TM</sub>, which is impossible, so B is undecidable.",
+                ],
+                check: ["The known undecidable language (A<sub>TM</sub>) is the one you build a decider for.", "You covered the case where M loops on w."],
+            },
+            full: {
+                intro: "Every reduction from lecture fits one skeleton. The only creative part is designing M′<sub>w</sub>.",
+                steps: [
+                    { t: "The skeleton", html: "<p class=\"rf-skeleton\">Suppose, for contradiction, that D<sub>B</sub> decides B.<br>Build D<sub>A</sub>(⟨M, w⟩): construct ⟨M′<sub>w</sub>⟩ = ____; output D<sub>B</sub>(⟨M′<sub>w</sub>⟩).<br>D<sub>A</sub> always halts, because building ⟨M′<sub>w</sub>⟩ is finite and D<sub>B</sub> always halts.<br>Key point: ____ ⇔ M accepts w.<br>So D<sub>A</sub> decides A<sub>TM</sub>, a contradiction. So B is undecidable.</p>" },
+                    { t: "Design M′<sub>w</sub>", html: "<p>Ask: what kind of machine is <b>in</b> B, and what kind is <b>out</b>? Make M′<sub>w</sub> look like an “in” machine when M accepts w, and an “out” machine when it doesn’t. The usual trick is “ignore x and run M(w),” which accepts everything or nothing. If B is about the language being special (regular, equal to something), add a part that accepts a fixed language first, like the 0ⁿ1ⁿ strings.</p>" },
+                    { t: "Check the three cases", html: "<p>Go through M accepts w, M rejects w, and M loops on w. In the last two, M′<sub>w</sub> treats inputs the same way (looping and rejecting both mean “not accepted”), but say so explicitly.</p>" },
+                    { t: "Name the direction", html: "<p>Write “we reduce A<sub>TM</sub> to B.” That means building a decider for A<sub>TM</sub> out of one for B. If your construction builds a decider for B out of one for A<sub>TM</sub>, it’s backwards.</p>" },
+                ],
+                example: {
+                    title: "E<sub>TM</sub> = { ⟨M⟩ | M accepts ε } (from lecture)",
+                    html: "<ol><li>Suppose D<sub>E</sub> decides E<sub>TM</sub>.</li><li>D<sub>A</sub>(⟨M, w⟩): build M′<sub>w</sub>(x) = “ignore x, run M on w, output what it outputs”; output D<sub>E</sub>(⟨M′<sub>w</sub>⟩).</li><li>D<sub>A</sub> halts: it only writes code, and D<sub>E</sub> always halts.</li><li>Key point: M′<sub>w</sub> accepts ε ⇔ M accepts w. (If M rejects or loops on w, M′<sub>w</sub> rejects or loops on ε.)</li><li>So D<sub>A</sub> decides A<sub>TM</sub>, which is impossible. E<sub>TM</sub> is undecidable.</li></ol>",
+                },
+                traps: ["Running M on w inside D<sub>A</sub> (it might loop).", "Reducing B to A<sub>TM</sub> (backwards).", "Forgetting the loop case, or treating “loops” as “accepts.”", "Assuming a decider for A<sub>TM</sub> instead of for B."],
+                practice: [{ label: "Walk through a reduction", href: "#/c/reductions/playground/walkthrough" }, { label: "Reduction proof puzzles", href: "#/c/reductions/playground/puzzles" }],
+            },
+        },
     ]);
 
     // For the tests: the examples' languages.

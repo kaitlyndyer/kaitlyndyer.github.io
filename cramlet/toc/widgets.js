@@ -2188,4 +2188,240 @@
         $('[data-act="reveal"]').addEventListener("click", e => { $(".lang-a").hidden = false; e.currentTarget.hidden = true; });
         loadMachine(0);
     };
+
+    // ======================================================================
+    // Diagonalization: flip the diagonal of a list to build a row that isn't on it.
+    // config: { kind: "sequences" | "machines" }. Cells are clickable, so you can try to sneak the new row onto the list.
+    // ======================================================================
+    W["diagonal"] = function (el, config, ctx) {
+        const { icon } = ctx;
+        const N = 6, seqs = config.kind !== "machines";
+        const PRESET = seqs
+            ? ["010110", "111001", "001011", "100010", "011110", "110010"]
+            : ["100101", "100010", "011001", "101010", "000100", "111011"];
+        let grid = PRESET.map(r => r.split("").map(Number)), k = 0, player, edits = 0, lastEdit = null;
+        // "Your turn" mode: you fill in the new row yourself (null = not filled), then check it.
+        let mode = "watch", guess = Array(N).fill(null), checked = false;
+        const L = seqs
+            ? { row: i => `s<sub>${i + 1}</sub>`, col: j => `${j + 1}`, star: "s*", val: v => v, starVal: v => v, rowsAre: "sequences" }
+            : { row: i => `M<sub>${i + 1}</sub>`, col: j => `⟨M<sub>${j + 1}</sub>⟩`, star: "D", val: v => (v ? "✓" : "✗"), starVal: v => (v ? "✓" : "✗"), rowsAre: "TMs" };
+        const diag = i => grid[i][i];
+        const star = i => 1 - diag(i);
+        const max = () => 2 * N + 1;
+        // Phase of step k: 0 = intro, 1..N = flip bit k, N+1..2N = compare with row k−N, 2N+1 = conclusion.
+        const built = () => (k <= N ? k : N);
+        const comparing = () => (k > N && k <= 2 * N ? k - N - 1 : -1);
+        const compared = () => (k > 2 * N ? N : k > N ? k - N : 0);
+
+        el.innerHTML = `
+            <div class="runner dgw${seqs ? "" : " dg-m"}">
+                <div class="seg dg-mode" role="group" aria-label="Mode">
+                    <button type="button" class="seg-btn active" data-mode="watch">${icon("play")} Watch it</button>
+                    <button type="button" class="seg-btn" data-mode="turn">${icon("hand-pointing")} Your turn</button>
+                </div>
+                <div class="dg-wrap"><table class="dg-table"></table></div>
+                ${statusHTML}
+                <div class="run-controls">
+                    <button type="button" class="btn small" data-act="shuffle">${icon("shuffle")} New list</button>
+                    <button type="button" class="btn small dg-turn-only" data-act="check" hidden>${icon("check")} Check ${L.star}</button>
+                    <span class="muted dg-hint"></span>
+                </div>
+                <div class="dg-watch-only">
+                    ${playerHTML(icon)}
+                    ${sideHTML([[`How ${L.star} is built`, `<ol class="trace dg-build"></ol>`], [`Is ${L.star} on the list?`, `<ol class="trace dg-check"></ol>`]])}
+                </div>
+            </div>`;
+        const $ = s => el.querySelector(s);
+
+        function cellTxt(v) { return seqs ? `${v}` : (v ? "✓" : "✗"); }
+        function draw() {
+            const ci = comparing();
+            $(".dg-table").innerHTML = `
+                <thead><tr><th></th>${Array.from({ length: N }, (_, j) => `<th class="${ci === j ? "on" : ""}">${L.col(j)}</th>`).join("")}<th class="dg-more">…</th></tr></thead>
+                <tbody>
+                    ${grid.map((r, i) => `<tr class="${ci === i ? "on" : ""}"><th>${L.row(i)}</th>${r.map((v, j) =>
+                        `<td><button type="button" class="dg-cell${i === j ? " diag" : ""}${i === j && (mode === "turn" || i < built()) ? " used" : ""}${ci === i && j === i ? " hit" : ""}${lastEdit && lastEdit[0] === i && lastEdit[1] === j ? " edited" : ""} v${v}" data-i="${i}" data-j="${j}" aria-label="${L.row(i).replace(/<[^>]+>/g, "")}, ${L.col(j).replace(/<[^>]+>/g, "")}: ${seqs ? v : v ? "accepts" : "doesn’t accept"}">${cellTxt(v)}</button></td>`).join("")}<td class="dg-more">…</td></tr>`).join("")}
+                    <tr class="dg-dots"><th>⋮</th>${Array.from({ length: N + 1 }, () => "<td></td>").join("")}</tr>
+                    <tr class="dg-star"><th>${L.star}</th>${Array.from({ length: N }, (_, j) => mode === "turn"
+                        ? `<td><button type="button" class="dg-cell star guess${guess[j] === null ? " blank" : ` v${guess[j]}`}${checked && guess[j] !== star(j) ? " wrong" : ""}${checked && guess[j] === star(j) ? " right" : ""}" data-g="${j}" aria-label="${L.star}, ${L.col(j).replace(/<[^>]+>/g, "")}: ${guess[j] === null ? "not filled in" : cellTxt(guess[j])}. Click to change.">${guess[j] === null ? "?" : cellTxt(guess[j])}</button></td>`
+                        : `<td><span class="dg-cell star v${star(j)}${j < built() ? "" : " blank"}${ci === j ? " hit" : ""}">${j < built() ? cellTxt(star(j)) : "?"}</span></td>`).join("")}<td class="dg-more">…</td></tr>
+                </tbody>`;
+            $(".dg-build").innerHTML = Array.from({ length: built() }, (_, i) =>
+                `<li class="${k === i + 1 ? "now" : ""}">${seqs ? `bit ${i + 1}: s<sub>${i + 1}</sub> has ${diag(i)}, so s* gets <b>${star(i)}</b>` : `⟨M<sub>${i + 1}</sub>⟩: M<sub>${i + 1}</sub> ${diag(i) ? "accepts" : "doesn’t accept"} it, so D must <b>${star(i) ? "accept" : "reject"}</b>`}</li>`).join("")
+                || `<li class="more">${seqs ? "Bit i of s* will be the opposite of bit i of s<sub>i</sub>." : "D(⟨M<sub>i</sub>⟩) will be the opposite of M<sub>i</sub>(⟨M<sub>i</sub>⟩)."}</li>`;
+            $(".dg-check").innerHTML = Array.from({ length: compared() }, (_, i) =>
+                `<li class="${ci === i ? "now" : ""}">${L.row(i)}: ${seqs ? `differs at bit ${i + 1}` : `disagrees on ⟨M<sub>${i + 1}</sub>⟩`} (${cellTxt(diag(i))} vs ${cellTxt(star(i))}) ✗</li>`).join("")
+                || `<li class="more">Step through to compare ${L.star} with every row.</li>`;
+            status();
+            if (player) player.sync();
+        }
+
+        function status() {
+            const S = seqs ? "s*" : "D";
+            if (mode === "turn") return turnStatus();
+            if (lastEdit) {
+                const [i, j] = lastEdit;
+                const msg = i === j
+                    ? `You changed the diagonal ${seqs ? "bit" : "cell"} of ${L.row(i)}, so ${S} flips its ${seqs ? `bit ${i + 1}` : `answer on ⟨M<sub>${i + 1}</sub>⟩`} too. ${L.row(i)} and ${S} <b>still differ</b> there. You can’t catch it.`
+                    : `${L.row(i)} changed at ${seqs ? `bit ${j + 1}` : `⟨M<sub>${j + 1}</sub>⟩`}, but ${S} is built from the diagonal only, so it ignores this cell. ${L.row(i)} still differs from ${S} at ${seqs ? `bit ${i + 1}` : `⟨M<sub>${i + 1}</sub>⟩`}.`;
+                return setStatus(el, ctx, msg, "", edits === 3 ? "good" : "");
+            }
+            if (k === 0) return setStatus(el, ctx, seqs
+                ? "Suppose someone hands you a list s<sub>1</sub>, s<sub>2</sub>, s<sub>3</sub>, … that they claim contains <b>every</b> infinite binary sequence. Row i is s<sub>i</sub>; column j is its j-th bit. Press <b>Step</b> to build a sequence they missed."
+                : "<b>How to read the table:</b> each <b>row</b> is a machine doing the running. Each <b>column</b> is an input: some machine’s code. ✓ means the row’s machine accepts that input; ✗ means it rejects or loops. So the shaded <b>diagonal</b> is each machine run on its <b>own</b> code. Suppose D decides SU<sub>TM</sub> (the machines that don’t accept their own code). Press <b>Step</b> to work out what D’s row must be.");
+            if (k <= N) {
+                const i = k - 1;
+                return setStatus(el, ctx, seqs
+                    ? `Bit ${k} of s<sub>${k}</sub> is <b>${diag(i)}</b>, so bit ${k} of s* is the opposite: <b>${star(i)}</b>.`
+                    : `M<sub>${k}</sub> ${diag(i) ? "<b>accepts</b>" : "<b>doesn’t accept</b>"} its own description, so ⟨M<sub>${k}</sub>⟩ ${diag(i) ? "∉" : "∈"} SU<sub>TM</sub>, and D must <b>${star(i) ? "accept" : "reject"}</b> ⟨M<sub>${k}</sub>⟩.`, "", k === N ? "good" : "");
+            }
+            if (k <= 2 * N) {
+                const i = k - N - 1;
+                return setStatus(el, ctx, seqs
+                    ? `Is s* equal to s<sub>${i + 1}</sub>? No: at bit ${i + 1}, s<sub>${i + 1}</sub> has ${diag(i)} and s* has ${star(i)}. That’s true for any list, because s* was built that way.`
+                    : `Could D be M<sub>${i + 1}</sub>? No: on input ⟨M<sub>${i + 1}</sub>⟩, M<sub>${i + 1}</sub> ${diag(i) ? "accepts" : "doesn’t accept"} but D ${star(i) ? "accepts" : "rejects"}.`, "no");
+            }
+            return setStatus(el, ctx, seqs
+                ? "s* differs from <b>every</b> s<sub>i</sub> (from s<sub>i</sub> at bit i), so it isn’t on the list. But the list was supposed to hold every sequence. Contradiction: <b>the infinite binary sequences are uncountable</b>. Now click some bits and try to make a row equal s*."
+                : "D disagrees with every M<sub>i</sub> on ⟨M<sub>i</sub>⟩, so D is <b>none of the machines</b> on the list. But the list holds every TM, and D would be a TM. (If D were M<sub>k</sub>, cell (k, k) would have to be its own opposite.) So <b>no TM decides SU<sub>TM</sub></b>.", "yes", "great");
+        }
+
+        function turnStatus() {
+            const S = L.star, filled = guess.filter(g => g !== null).length;
+            if (!checked) return setStatus(el, ctx, seqs
+                ? `<b>Your turn:</b> build s* yourself. Click each <b>?</b> to set bit i of s* (click again to change it). Make bit i the <b>opposite</b> of the shaded diagonal bit in row s<sub>i</sub>. Then press <b>Check s*</b>. ${filled ? `(${filled} of ${N} filled in.)` : ""}`
+                : `<b>Your turn:</b> fill in D’s row. D decides SU<sub>TM</sub>, so D must <b>accept</b> ⟨M<sub>i</sub>⟩ (✓) exactly when M<sub>i</sub> does <b>not</b> accept its own code (✗ on the diagonal). Click each <b>?</b>, then press <b>Check D</b>. ${filled ? `(${filled} of ${N} filled in.)` : ""}`, "ask");
+            const bad = guess.map((g, j) => (g === star(j) ? -1 : j)).filter(j => j >= 0);
+            if (!bad.length) return setStatus(el, ctx, seqs
+                ? "All right! s* differs from s<sub>1</sub> at bit 1, from s<sub>2</sub> at bit 2, and so on, so it isn’t any row. Press <b>New list</b> and do it again, or switch to <b>Watch it</b> to see the rest of the proof."
+                : "All right! D disagrees with every M<sub>i</sub> on input ⟨M<sub>i</sub>⟩, so D isn’t any machine on the list. But every TM is on the list, so no TM decides SU<sub>TM</sub>. Press <b>New list</b> to try another.", "yes", "great");
+            const j = bad[0];
+            return setStatus(el, ctx, guess[j] === null
+                ? `Some ${S} cells are still <b>?</b>. Fill in every one, then check again.`
+                : seqs
+                    ? `Bit ${j + 1} is off (red). Row s<sub>${j + 1}</sub> has <b>${diag(j)}</b> on the diagonal, so s* needs the opposite there: <b>${star(j)}</b>. ${bad.length > 1 ? `${bad.length} bits need fixing.` : ""}`
+                    : `⟨M<sub>${j + 1}</sub>⟩ is off (red). M<sub>${j + 1}</sub> ${diag(j) ? "<b>accepts</b>" : "<b>doesn’t accept</b>"} its own code, so ⟨M<sub>${j + 1}</sub>⟩ ${diag(j) ? "∉" : "∈"} SU<sub>TM</sub>, and D must ${star(j) ? "accept (✓)" : "reject (✗)"}. ${bad.length > 1 ? `${bad.length} cells need fixing.` : ""}`, "no");
+        }
+        function setMode(m) {
+            mode = m; guess = Array(N).fill(null); checked = false; lastEdit = null;
+            if (player) player.stop();
+            el.querySelectorAll(".dg-mode .seg-btn").forEach(b => { const on = b.dataset.mode === m; b.classList.toggle("active", on); b.setAttribute("aria-pressed", on); });
+            $(".dg-watch-only").hidden = m === "turn";
+            $('[data-act="check"]').hidden = m !== "turn";
+            $(".dg-hint").innerHTML = m === "turn" ? "" : `Click any ${seqs ? "bit" : "cell"} to change the list.`;
+            if (m === "watch") k = 0;
+            draw();
+        }
+        el.querySelector(".dg-mode").addEventListener("click", e => { const b = e.target.closest("[data-mode]"); if (b && b.dataset.mode !== mode) setMode(b.dataset.mode); });
+        $('[data-act="check"]').addEventListener("click", () => {
+            checked = true; draw();
+            if (guess.every((g, j) => g === star(j))) ctx.progress.award("challenge", `${ctx.course}:diagonal-turn:${config.kind || "sequences"}`, { at: $(".rs-av") });
+        });
+
+        player = bindPlayer(el, ctx, {
+            pos: () => k, max, go: v => { k = v; lastEdit = null; draw(); },
+            counter: (j, n) => (j === 0 ? "Not started" : j <= N ? `Flip ${j} of ${N}` : j <= 2 * N ? `Check ${j - N} of ${N}` : "Done"),
+        });
+        $(".dg-table").addEventListener("click", e => {
+            const g = e.target.closest("button[data-g]");
+            if (g) { const j = +g.dataset.g; guess[j] = guess[j] === null ? (seqs ? 0 : 1) : guess[j] === (seqs ? 0 : 1) ? 1 - guess[j] : null; checked = false; draw(); return; }
+            if (mode === "turn") return;
+            const b = e.target.closest("button[data-i]");
+            if (!b) return;
+            const i = +b.dataset.i, j = +b.dataset.j;
+            grid[i][j] = 1 - grid[i][j];
+            edits++; lastEdit = [i, j];
+            if (k < max()) k = max();
+            draw();
+            if (edits === 3) ctx.progress.award("challenge", `${ctx.course}:diagonal:${config.kind || "sequences"}`, { at: $(".rs-av") });
+        });
+        $('[data-act="shuffle"]').addEventListener("click", () => {
+            grid = grid.map(r => r.map(() => (Math.random() < 0.5 ? 1 : 0)));
+            k = 0; lastEdit = null; guess = Array(N).fill(null); checked = false; draw();
+        });
+        setMode("watch");
+    };
+
+    // ======================================================================
+    // String numberer: the one-to-one map {0,1}* → ℕ, x ↦ the number with binary form 1x.
+    // ======================================================================
+    W["string-numberer"] = function (el, config, ctx) {
+        const { esc } = ctx;
+        const FIRST = ["", "0", "1", "00", "01", "10", "11", "000", "001", "010", "011", "100", "101", "110", "111"];
+        el.innerHTML = `
+            <div class="numberer">
+                <div class="sn-row">
+                    <label class="input-w">x = <input type="text" inputmode="numeric" maxlength="16" spellcheck="false" autocomplete="off" aria-label="String x" value="01"></label>
+                    <span class="sn-or">or</span>
+                    <label class="input-w">n = <input type="number" min="1" max="131071" aria-label="Number n" class="sn-n"></label>
+                </div>
+                <div class="sn-out" aria-live="polite"></div>
+                <div class="sn-strip" role="group" aria-label="The first 15 strings and their numbers"></div>
+            </div>`;
+        const $ = s => el.querySelector(s);
+        const xin = $('input[type="text"]'), nin = $(".sn-n");
+        function show(x) {
+            const n = parseInt("1" + x, 2);
+            $(".sn-out").innerHTML = `<span class="dq-str">${x === "" ? "ε" : esc(x)}</span> → put a 1 in front → <span class="dq-str">1${esc(x)}<sub>2</sub></span> = <b>${n}</b>`;
+            nin.value = n;
+            $(".sn-strip").innerHTML = FIRST.map((s, i) => `<button type="button" class="sn-chip${s === x ? " on" : ""}" data-x="${s}"><span>${s === "" ? "ε" : s}</span><b>${i + 1}</b></button>`).join("");
+        }
+        xin.addEventListener("input", () => { xin.value = xin.value.replace(/[^01]/g, ""); show(xin.value); });
+        nin.addEventListener("input", () => {
+            const n = Math.floor(+nin.value);
+            if (!(n >= 1 && n <= 131071)) { $(".sn-out").innerHTML = `Pick a whole number from 1 up. (0 has no string: every number here starts with a 1 bit.)`; return; }
+            const x = n.toString(2).slice(1);
+            xin.value = x; show(x);
+        });
+        $(".sn-strip").addEventListener("click", e => { const b = e.target.closest("[data-x]"); if (b) { xin.value = b.dataset.x; show(b.dataset.x); } });
+        show("01");
+    };
+
+    // ======================================================================
+    // Reduction walkthrough picture (a figure for the shared stepper, ../course/stepper.js).
+    // It shows the example machine M, the code the decider writes (with the current w filled in), a table of the
+    // helper machine on a few inputs, and a case check that fills in as each case is answered.
+    // spec: { provider: "reduction", machine?: html, decider: [lines], helper?: [lines], helperName?: html,
+    //         cases?: [{ w, does }], decide: html (name of the reduction's decider output, e.g. "D<sub>A</sub> says") }
+    // Lines may use {w} (the current string) and {Mw} (the helper's name with the current w).
+    // step.fig: { hl?: { d: [i], h: [i] } (lines to light up while this step is open or just done),
+    //             w?: string (switch to this case), samples?: [[x, result]] (replace the helper table),
+    //             row?: { w, inA, says } (fill a case-check row) }
+    // ======================================================================
+    CRAMLET.stepFigures = CRAMLET.stepFigures || {};
+    CRAMLET.stepFigures.reduction = function (el, spec, steps, ctx) {
+        const { icon, esc } = ctx;
+        const shw = w => (w === "" ? "ε" : esc(w));
+        const name = w => (spec.helperName || "M′<sub>w</sub>").replace("<sub>w</sub>", `<sub>${w === null ? "w" : shw(w)}</sub>`);
+        function fill(line, w) {
+            return line.replace(/\{Mw\}/g, name(w)).replace(/\{w\}/g, w === null ? "w" : w === "" ? "ε" : `“${esc(w)}”`);
+        }
+        function show(i, pending) {
+            let w = null, samples = null, hl = null;
+            const rows = {};
+            steps.slice(0, i).forEach(s => {
+                const f = s.fig || {};
+                if (f.w !== undefined) { w = f.w; samples = null; }
+                if (f.samples) samples = f.samples;
+                if (f.row) rows[f.row.w] = f.row;
+                if (f.hl) hl = f.hl;
+            });
+            if (pending && pending.fig && pending.fig.hl) hl = pending.fig.hl;
+            if (pending && pending.fig && pending.fig.w !== undefined && pending.fig.preview && pending.fig.w !== w) { w = pending.fig.w; samples = null; }
+            const code = (lines, on) => lines.map((t, j) => `<span class="rf-line${on && on.includes(j) ? " on" : ""}">${fill(t, w)}</span>`).join("\n");
+            const cur = spec.cases && w !== null ? spec.cases.find(c => c.w === w) : null;
+            el.innerHTML = `
+                ${spec.machine ? `<div class="rf-m"><span class="rf-k">Our example M</span><div>${spec.machine}</div></div>` : ""}
+                ${cur ? `<div class="rf-now"><span class="rf-k">Now testing</span> w = <b class="rf-w">${shw(cur.w)}</b> <span class="rf-does ${cur.cls}">M ${cur.does} on it</span></div>` : ""}
+                <div><span class="rf-k">The code</span><pre class="pseudo rf-code">${code(spec.decider, hl && hl.d)}</pre>
+                ${spec.helper ? `<pre class="pseudo rf-code helper">${code(spec.helper, hl && hl.h)}</pre>` : ""}</div>
+                ${samples ? `<div><span class="rf-k">${name(w)} on a few inputs</span><table class="rf-table"><thead><tr><th>input x</th><th>${name(w)}(x)</th></tr></thead><tbody>
+                    ${samples.map(([x, r]) => `<tr><td class="mono">${shw(x)}</td><td class="rf-r ${/accept/.test(r) ? "yes" : /loop/.test(r) ? "loop" : "no"}">${r}</td></tr>`).join("")}</tbody></table></div>` : ""}
+                ${spec.cases ? `<div><span class="rf-k">Case check</span><table class="rf-table"><thead><tr><th>w</th><th>M on w</th><th>Right answer</th><th>${spec.decide}</th></tr></thead><tbody>
+                    ${spec.cases.map(c => { const r = rows[c.w]; return `<tr class="${r ? "ok" : ""}${cur && cur.w === c.w ? " now" : ""}"><td class="mono">${shw(c.w)}</td><td>${c.does}</td>
+                        <td>${r ? (r.inA ? "accept" : "reject") : "?"}</td><td>${r ? `${r.says} ${r.says === (r.inA ? "accept" : "reject") ? icon("check") : "✗"}` : "?"}</td></tr>`; }).join("")}</tbody></table></div>` : ""}`;
+        }
+        show(0, steps[0]);
+        return { show };
+    };
 })();
