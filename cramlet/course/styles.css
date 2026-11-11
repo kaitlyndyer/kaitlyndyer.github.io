@@ -298,6 +298,20 @@ code { font-family: var(--font-code); font-size: .88em; }
 }
 .detail.flash { border-color: var(--c); box-shadow: 0 0 0 5px color-mix(in srgb, var(--c) 20%, transparent); }
 .detail h3 { font: 600 20px var(--font-head); margin: 0 0 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* "Your turn": practice at the end of a Details section (course/app.js) */
+.your-turn {
+    margin-top: 18px; padding: 14px 16px 16px; border-radius: 14px;
+    background: color-mix(in srgb, var(--c, var(--brand)) 6%, var(--paper));
+    border: 2px dashed color-mix(in srgb, var(--c, var(--brand)) 45%, var(--line));
+}
+.yt-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.yt-head .ic { width: 20px; height: 20px; color: var(--c, var(--brand)); }
+.yt-label { font: 600 17px var(--font-head); color: color-mix(in srgb, var(--c, var(--brand)) 80%, var(--deep)); }
+.yt-title { font-weight: 800; color: var(--ink-2); }
+.yt-title::before { content: "·"; margin-right: 8px; color: var(--muted); }
+.your-turn > .prose { margin-bottom: 12px; }
+.your-turn > .prose > :first-child { margin-top: 0; }
+.your-turn > .prose > :last-child { margin-bottom: 0; }
 .prose p { margin: 0 0 10px; }
 .prose ul, .prose ol { margin: 0 0 10px; padding-left: 22px; }
 .prose li { margin-bottom: 4px; }
@@ -525,7 +539,7 @@ code { font-family: var(--font-code); font-size: .88em; }
 
 /* ========== Smaller screens (basic support; full mobile pass later) ========== */
 @media (max-width: 900px) {
-    .layout { grid-template-columns: 1fr; }
+    .layout { grid-template-columns: minmax(0, 1fr); }
     .sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); }
     .main { padding: 24px 18px 48px; }
     .def-grid { grid-template-columns: 1fr; }
@@ -899,3 +913,9 @@ code { font-family: var(--font-code); font-size: .88em; }
     .rf-steps > li, .rf-example, .rf-fig { break-inside: avoid; }
 }
 @media print { dialog { display: none !important; } }
+
+/* Let wide-content blocks shrink to the page instead of stretching it (their tab rows scroll, their chip rows wrap). */
+.kh, .kh-tabs, .cs-controls, .kh-slim, .review-page, .lc, .kitchen, .recipes { min-width: 0; max-width: 100%; }
+/* Note boxes and tables inside lesson text keep their own spacing (.prose p would otherwise zero a callout's top margin) */
+.prose p.callout, .prose div.callout { margin: 14px 0; }
+.prose .table-wrap { margin: 12px 0 14px; }

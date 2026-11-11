@@ -1,0 +1,56 @@
+/* Step-by-step walkthroughs (course/stepper.js), shared by every course.
+   With a picture (.has-fig): beside the steps on wide screens, above them (and pinned) on narrow ones. */
+.st { display: grid; gap: 14px; container-type: inline-size; }
+.st-problem { padding: 12px 14px; border-radius: 14px; background: var(--surface-2); }
+.st-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 800; font-size: 14px; color: var(--muted); }
+.st-dots { display: flex; gap: 5px; flex-wrap: wrap; }
+.st-dots span { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+.st-dots span.done { background: var(--good); }
+.st-dots span.shown { background: var(--warn); }
+.st-dots span.now { background: var(--c, var(--brand)); }
+.st-body { display: grid; gap: 14px; align-items: start; }
+.st-log { display: grid; gap: 14px; min-width: 0; }
+.st-step { border: 2px solid var(--line); border-radius: 14px; padding: 12px 14px; background: var(--surface); scroll-margin-top: var(--fig-h, 0px); }
+.st-step.now { border-color: var(--c, var(--brand)); }
+.st-step h4 { margin: 0 0 6px; font-size: 15px; }
+.st-ask { margin: 0 0 8px; font-weight: 700; }
+.st-show { margin: 8px 0; overflow-x: auto; }
+.st-choices { display: grid; gap: 8px; margin: 8px 0; }
+.st-choice { text-align: left; font: inherit; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: 12px; padding: 9px 12px; cursor: pointer; }
+.st-choice:hover:not(:disabled) { border-color: var(--c, var(--brand)); }
+.st-choice.ok { border-color: var(--good); background: var(--good-bg); }
+.st-choice.bad { border-color: var(--bad); background: var(--bad-bg); }
+.st-choice:disabled { cursor: default; }
+.st-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.st-msg { margin-top: 8px; font-weight: 700; }
+.st-msg.ok { color: var(--good); }
+.st-msg.bad { color: var(--bad); }
+.st-hint, .st-why { margin-top: 8px; padding: 9px 12px; border-radius: 10px; font-size: 14.5px; }
+.st-hint { background: var(--warn-soft); }
+.st-why { background: var(--tip-soft, var(--surface-2)); }
+.st-end { text-align: center; padding: 14px; border-radius: 14px; background: var(--surface-2); font-weight: 700; }
+.st-done { margin-top: 8px; font-weight: 600; text-align: left; }
+.st-gap { margin: 8px 0 0; padding: 8px 12px; border-radius: 10px; background: var(--bad-bg); color: var(--bad); font-weight: 700; }
+.st-fig { border: 2px solid var(--line); border-radius: 14px; background: var(--surface); padding: 10px 12px; display: grid; gap: 8px; min-width: 0; }
+.st.has-fig .st-body { grid-template-columns: minmax(0, 1fr); }
+.st.has-fig .st-fig { order: -1; position: sticky; top: calc(var(--topbar-h) + 62px); z-index: 3; }
+@container (min-width: 760px) {
+    .st.has-fig .st-body { grid-template-columns: minmax(0, 1fr) minmax(300px, 44%); }
+    .st.has-fig .st-fig { order: 0; }
+}
+/* Fill-in boxes inside a step's show html */
+input.blank {
+    width: 3.2em; min-width: 2.6em; padding: 2px 4px; font: 700 15px var(--font-code, monospace); text-align: center; color: var(--ink);
+    background: var(--surface); border: 2px dashed var(--c, var(--brand)); border-radius: 6px;
+}
+input.blank.wide { width: 4.6em; }
+input.blank.ok { border: 2px solid var(--good); background: var(--good-bg); }
+input.blank.bad { border: 2px solid var(--bad); background: var(--bad-bg); }
+input.blank:disabled { opacity: 1; color: var(--ink); }
+
+/* Several walkthroughs in one widget */
+.st-set { display: grid; gap: 12px; }
+.st-walk-intro > :first-child { margin-top: 0; }
+.st-walk-intro > :last-child { margin-bottom: 0; }
+/* Subscripts in the picker chips (A<sub>TM</sub>) sit tight against their letters */
+.st-picks sub { font-size: .72em; line-height: 0; }

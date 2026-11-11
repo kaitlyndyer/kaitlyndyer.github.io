@@ -32,7 +32,7 @@ registerConcept({
       html: `
         <p>Picture a great novel delivered as a messy handwritten draft, with inconsistent sentences, three different words for the same thing, and chapters named at random. The story is fine; the <b>presentation</b> makes it hard to enjoy.</p>
         <p>Code is the same: it can be correct and even efficient, yet hard to read. Readable code is <b>understood better, used more, and extended more easily</b>. The good news is that code has more and tighter structure than prose, so there are fewer ways to say the same thing, and it’s easier to make readable.</p>
-        <p class="callout">Caveat: readability is <b>subjective</b>. Few rules are universally and objectively “more readable.”</p>`,
+        <p class="callout warn">Caveat: readability is <b>subjective</b>. Few rules are universally and objectively “more readable.”</p>`,
     },
     {
       id: "style",

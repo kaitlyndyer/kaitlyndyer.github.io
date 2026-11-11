@@ -541,12 +541,23 @@
                     <div class="prose">${s.html}</div>
                     ${s.widget === "hierarchy" ? `<div class="hierarchy" id="hierarchy"></div>` : ""}
                     ${s.widget && s.widget !== "hierarchy" ? `<div class="widget" data-widget="${s.widget}" data-sec="${s.id}"></div>` : ""}
+                    ${turns(s).map((t, k) => `
+                        <div class="your-turn">
+                            <div class="yt-head">${icon("hand-pointing")}<span class="yt-label">Your turn</span>${t.title ? `<span class="yt-title">${t.title}</span>` : ""}</div>
+                            ${t.intro ? `<div class="prose">${t.intro}</div>` : ""}
+                            <div class="widget" data-widget="${t.widget || "stepper"}" data-sec="${s.id}" data-turn="${k}"></div>
+                        </div>`).join("")}
                 </section>`).join("")}
         `;
         if (d.hierarchy) mountHierarchy(document.getElementById("hierarchy"), d.hierarchy);
-        panel.querySelectorAll("[data-widget]").forEach(el =>
-            mountWidget(el, el.dataset.widget, d.details.find(s => s.id === el.dataset.sec).config, c));
+        panel.querySelectorAll("[data-widget]").forEach(el => {
+            const s = d.details.find(x => x.id === el.dataset.sec);
+            mountWidget(el, el.dataset.widget, el.dataset.turn !== undefined ? turns(s)[+el.dataset.turn].config : s.config, c);
+        });
     }
+    // "Your turn" boxes at the end of a Details section: practice doing what the section just explained.
+    // section.yourTurn = { title?, intro?, widget? (default "stepper"), config } or a list of them.
+    const turns = s => [].concat(s.yourTurn || []);
 
     // ---------- Playground: interactive widgets ----------
 
