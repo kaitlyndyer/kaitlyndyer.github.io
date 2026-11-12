@@ -81,6 +81,7 @@ window.STUDY = {
         { id: "countability", title: "Countability & Diagonalization", icon: "infinity", color: "#7a5cc9", lectures: [7] },
         { id: "reductions", title: "Reductions & Undecidable Problems", icon: "shuffle", color: "#4a6fd1", lectures: [7, 8] },
         { id: "rice", title: "Rice’s Theorem", icon: "magnifying-glass", color: "#2f8f9d", lectures: [9] },
+        { id: "recognizability", title: "Recognizable & Unrecognizable", icon: "venn", color: "#4f9a5a", lectures: [9] },
       ],
     },
   ],
@@ -88,6 +89,7 @@ window.STUDY = {
   // Filled in by registerConcept().
   // What the shared pages say and do for this course (see course/settings.js for every option).
   settings: {
+    mathTitles: true,
     exam: {
       lengths: {
         midterm: { name: "Midterm 1", minutes: 75, mix: { choice: 10, build: 2, nfa: 2, pump: 2 }, types: { choice: ["tf"] }, weight: { choice: 2 } },

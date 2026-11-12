@@ -69,7 +69,7 @@ registerProofs([
       { label: "Your turn: is this a mapping reduction?", href: "#/c/reductions/details/mapping", key: "challenge:toc:turn:mapping" },
     ],
     puzzle: {
-      id: "box-mapping", name: "A_TM ≤m ALL_TM", type: "order",
+      id: "box-mapping", name: "A_TM ≤_m ALL_TM", type: "order",
       theorem: `${ATM} ≤${sb("m")} ALL${sb("TM")}, where ALL${sb("TM")} = { ⟨M⟩ | L(M) = Σ* }.`,
       steps: [
         `Define f(⟨M, w⟩) = ⟨${Mw}⟩, where ${Mw}(x) = “ignore x; run M on w; output what it outputs.”`,
@@ -232,7 +232,7 @@ registerProofs([
   {
     id: "unrecognizable", title: "Prove a language is unrecognizable", topic: "recognizability", minutes: 10,
     hints: [
-      { label: "Recognizable or not lesson (coming next)", href: "#/c/recognizability", key: "challenge:toc:turn:corec" },
+      { label: "Your turn: prove a language is unrecognizable", href: "#/c/recognizability/details/co-recognizable", key: "challenge:toc:turn:corec" },
     ],
     puzzle: {
       id: "box-cohalt", name: "Complement of HALT", type: "order",

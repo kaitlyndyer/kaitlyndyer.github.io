@@ -9,6 +9,8 @@
     const buddy = CRAMLET.buddy;
     const progress = CRAMLET.progress;
     const COURSE = S.course.id;
+    // Titles may use math shorthand (A_TM, ≤_m) when the course opts in with settings.mathTitles.
+    const tt = s => (S.settings && S.settings.mathTitles && CRAMLET.mathText ? CRAMLET.mathText.format(s) : esc(s));
     CRAMLET.theme.mountToggle(document.getElementById("theme-toggle"));
     buddy.mountChip(document.getElementById("buddy-chip"));
     document.getElementById("brand").innerHTML = CRAMLET.logo();
@@ -466,7 +468,7 @@
                     </div>
                 </div>
 
-                ${(() => { const m = examMiss(id); return m ? `<div class="callout warn done exam-banner">${icon("warning", "callout-ic")}<div class="callout-body"><span class="callout-label">From your last practice exam</span>You got ${m.earned} of ${m.max} points here (${m.missed} question${m.missed > 1 ? "s" : ""} missed).${m.secs.length ? ` Review: ${m.secs.map(s => { const sec = d.details.find(x => x.id === s); return sec ? `<a href="#/c/${id}/details/${s}">${esc(sec.title)}</a>` : ""; }).filter(Boolean).join(", ")}.` : ""} Then try the <a href="#/c/${id}/practice">Practice</a> tab.</div></div>` : ""; })()}
+                ${(() => { const m = examMiss(id); return m ? `<div class="callout warn done exam-banner">${icon("warning", "callout-ic")}<div class="callout-body"><span class="callout-label">From your last practice exam</span>You got ${m.earned} of ${m.max} points here (${m.missed} question${m.missed > 1 ? "s" : ""} missed).${m.secs.length ? ` Review: ${m.secs.map(s => { const sec = d.details.find(x => x.id === s); return sec ? `<a href="#/c/${id}/details/${s}">${tt(sec.title)}</a>` : ""; }).filter(Boolean).join(", ")}.` : ""} Then try the <a href="#/c/${id}/practice">Practice</a> tab.</div></div>` : ""; })()}
                 <div class="one-liner"><span class="one-liner-label">In one sentence</span>${d.oneLiner}</div>
                 ${CRAMLET.plan ? CRAMLET.plan.watchChips(id, null, icon, esc) : ""}
 
@@ -537,11 +539,11 @@
         panel.innerHTML = `
             <div class="toc">
                 <span class="toc-label">Jump to</span>
-                ${d.details.map(s => `<a href="#/c/${c.id}/details/${s.id}">${esc(s.title)}</a>`).join("")}
+                ${d.details.map(s => `<a href="#/c/${c.id}/details/${s.id}">${tt(s.title)}</a>`).join("")}
             </div>
             ${d.details.map(s => `
                 <section class="detail" id="sec-${s.id}">
-                    <h3>${esc(s.title)} ${lectureChips(s.lec, true)}</h3>
+                    <h3><span>${tt(s.title)}</span> ${lectureChips(s.lec, true)}</h3>
                     ${CRAMLET.plan ? CRAMLET.plan.watchChips(c.id, s.id, icon, esc) : ""}
                     <div class="prose">${s.html}</div>
                     ${s.widget === "hierarchy" ? `<div class="hierarchy" id="hierarchy"></div>` : ""}
@@ -582,11 +584,11 @@
         panel.innerHTML = `
             ${d.playground.length > 1 ? `<div class="toc">
                 <span class="toc-label">Jump to</span>
-                ${d.playground.map(p => `<a href="#/c/${c.id}/playground/${p.id}">${esc(p.title)}</a>`).join("")}
+                ${d.playground.map(p => `<a href="#/c/${c.id}/playground/${p.id}">${tt(p.title)}</a>`).join("")}
             </div>` : ""}
             ${d.playground.map(p => `
                 <section class="detail play" id="sec-${p.id}">
-                    <h3>${esc(p.title)} ${lectureChips(p.lec || [], true)}</h3>
+                    <h3><span>${tt(p.title)}</span> ${lectureChips(p.lec || [], true)}</h3>
                     ${p.intro ? `<div class="prose">${p.intro}</div>` : ""}
                     <div class="widget" data-widget="${p.widget}" data-play="${p.id}"></div>
                 </section>`).join("")}`;
@@ -976,7 +978,7 @@
         searchResults.innerHTML = hits.length
             ? hits.map(({ e }, k) => `
                 <a class="result${k === 0 ? " active" : ""}" role="option" href="${e.href}" style="--c:${e.concept.color}">
-                    <span class="r-top"><span class="r-icon">${icon(e.concept.icon)}</span><b>${esc(e.title)}</b><span class="r-where">${e.where}</span></span>
+                    <span class="r-top"><span class="r-icon">${icon(e.concept.icon)}</span><b><span>${tt(e.title)}</span></b><span class="r-where">${e.where}</span></span>
                     <span class="r-snip">${e.where === "Concept" ? esc(e.concept.group.title) + (hasContent(e.concept.id) ? "" : " · coming soon") : snippet(e.text, words)}</span>
                 </a>`).join("")
             : `<div class="no-results">No matches for “${esc(q)}”. Try a different word.</div>`;
