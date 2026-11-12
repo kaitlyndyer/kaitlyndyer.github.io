@@ -556,3 +556,28 @@ button.dg-cell.star.guess.right { background: var(--good); border-color: var(--g
 .rc-why { margin-top: 6px; font-size: 14px; color: var(--ink-2, var(--muted)); }
 .rc-final { margin: 8px 0 0; }
 @media (max-width: 700px) { .rc-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Recognizability: the language map ---------- */
+/* Complement bar: one line over the whole symbol, subscript included (text-decoration breaks at the <sub>). */
+.ovl { display: inline-block; border-top: 0.075em solid currentColor; padding-top: 0.04em; line-height: 1.1; text-decoration: none; }
+.ovl sub { line-height: 0; }
+.lm-bar { stroke: var(--ink); stroke-width: 1.4; }
+.lm-fig { margin: 12px 0; }
+.lm-fig figcaption { font-size: 14px; margin-top: 6px; color: var(--muted); }
+.lm-svg { width: 100%; max-width: 620px; height: auto; display: block; margin: 0 auto; }
+.lm-all { fill: var(--paper); stroke: var(--diagram-line); stroke-width: 1.5; }
+.lm-rec { fill: color-mix(in srgb, #3f8cff 12%, transparent); stroke: #3f8cff; stroke-width: 2; }
+.lm-co { fill: color-mix(in srgb, #e08a00 12%, transparent); stroke: #e08a00; stroke-width: 2; }
+.lm-title { font: 700 13px var(--font-body); fill: var(--muted); }
+.lm-zl { font: 800 12px var(--font-body); fill: var(--diagram-ink); text-anchor: middle; text-transform: uppercase; letter-spacing: .4px; }
+.lm-zl.dec { fill: var(--good); }
+.lm-chip { font: 700 14px var(--font-body); fill: var(--ink); text-anchor: middle; }
+.lm-sub { font-size: 10px; }
+.lm { display: grid; gap: 12px; }
+.lm-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.lm-side { display: grid; gap: 10px; min-width: 0; }
+.lm-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lm-btns .btn { justify-content: center; text-align: center; white-space: normal; }
+.lm-btns .btn.wrong { border-color: var(--bad); color: var(--bad); }
+@media (max-width: 760px) { .lm-grid { grid-template-columns: minmax(0, 1fr); } }
+.lm-zl.rec { fill: #3f8cff; } .lm-zl.co { fill: #e08a00; }

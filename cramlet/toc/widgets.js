@@ -1351,7 +1351,7 @@
         function drawPicks() {
             const sv = solvedList();
             $(".pick-row").innerHTML = config.puzzles.map((x, i) =>
-                `<button type="button" class="pick" data-p="${i}" aria-pressed="${i === pi}">${sv.includes("proof-" + x.id) ? `<span class="done">${icon("check")}</span>` : ""}${esc(x.name)}</button>`).join("");
+                `<button type="button" class="pick" data-p="${i}" aria-pressed="${i === pi}">${sv.includes("proof-" + x.id) ? `<span class="done">${icon("check")}</span>` : ""}<span>${CRAMLET.mathText ? CRAMLET.mathText.format(x.name) : esc(x.name)}</span></button>`).join("");
         }
         function load(i) {
             pi = i; checked = null; hint = null; mine = [];
@@ -2473,6 +2473,62 @@
             node = next(node, want);
             if (!node.startsWith("q")) { path.push(node); done++; if (firstTry) score++; }
             draw();
+        });
+        draw();
+    };
+
+    // ======================================================================
+    // "The language map": place languages in Decidable / Recognizable only / Co-recognizable only / Neither.
+    // The picture comes from CRAMLET.langMapSVG (toc/data/concepts/recognizability.js).
+    // config.items: [{ lang: html, chip: svg text, zone: "dec" | "rec" | "co" | "none", why: html }]
+    // ======================================================================
+    W["lang-map"] = function (el, config, ctx) {
+        const { icon, buddy, progress, course } = ctx;
+        const items = config.items;
+        const NAMES = { dec: "Decidable", rec: "Recognizable only", co: "Co-recognizable only", none: "Neither" };
+        const QS = { dec: ["yes", "yes"], rec: ["yes", "no"], co: ["no", "yes"], none: ["no", "no"] };
+        let i = 0, placed = [], score = 0, tried = false;
+        el.innerHTML = `
+            <div class="lm">
+                <div class="rc-top"><span class="lm-count"></span><span class="lm-score"></span></div>
+                <div class="challenge"><div class="ch-meta">Where does this language go?</div><div class="ch-lang lm-lang"></div></div>
+                <div class="lm-grid">
+                    <div class="lm-pic"></div>
+                    <div class="lm-side">
+                        <div class="lm-btns">${Object.keys(NAMES).map(z => `<button type="button" class="btn lm-z z-${z}" data-z="${z}">${NAMES[z]}</button>`).join("")}</div>
+                        <div class="verdict" aria-live="polite" hidden></div>
+                        <div class="build-actions lm-next"></div>
+                    </div>
+                </div>
+            </div>`;
+        const $ = s => el.querySelector(s);
+        const chips = () => { const c = { dec: [], rec: [], co: [], none: [] }; placed.forEach(it => c[it.zone].push(it.chip)); return c; };
+        function draw() {
+            const it = items[i];
+            $(".lm-count").textContent = it ? `Language ${i + 1} of ${items.length}` : "All placed";
+            $(".lm-score").textContent = placed.length ? `${score} of ${placed.length} right first time` : "";
+            $(".lm-lang").innerHTML = it ? it.lang : "The whole map";
+            $(".lm-pic").innerHTML = CRAMLET.langMapSVG ? CRAMLET.langMapSVG(chips(), "The language map with the languages placed so far") : "";
+            el.querySelectorAll(".lm-z").forEach(b => { b.disabled = !it; b.classList.remove("right", "wrong"); });
+        }
+        $(".lm-btns").addEventListener("click", e => {
+            const b = e.target.closest("[data-z]"); if (!b || b.disabled) return;
+            const it = items[i], z = b.dataset.z, ok = z === it.zone, v = $(".verdict");
+            const [r, c] = QS[it.zone];
+            v.hidden = false; v.className = "verdict " + (ok ? "yes" : "no");
+            v.innerHTML = `<span class="fb-av"></span><div><b>${ok ? "Yes" : "Not quite"}: ${NAMES[it.zone]}.</b> Recognizable? <b>${r}</b>. Complement recognizable? <b>${c}</b>.<div class="rc-why">${it.why}</div></div>`;
+            buddy.react(v.querySelector(".fb-av"), ok ? "happy" : "oops", ok ? "bounce" : "wobble");
+            if (!ok) { tried = true; b.classList.add("wrong"); return; }
+            if (!tried) score++;
+            placed.push(it); i++; tried = false;
+            const last = i === items.length;
+            draw();
+            $(".lm-next").innerHTML = last ? `<p class="rc-final"><b>${score} of ${items.length}</b> placed right first time.</p><button type="button" class="btn primary" data-again>${icon("arrow-clockwise")} Start over</button>` : "";
+            if (last && score === items.length) { ctx.celebrate($("[data-again]")); progress.award("challenge", `${course}:lang-map`, { at: $("[data-again]") }); }
+        });
+        $(".lm-next").addEventListener("click", e => {
+            if (!e.target.closest("[data-again]")) return;
+            i = 0; placed = []; score = 0; tried = false; $(".lm-next").innerHTML = ""; $(".verdict").hidden = true; draw();
         });
         draw();
     };

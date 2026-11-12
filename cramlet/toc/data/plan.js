@@ -61,11 +61,11 @@ registerPlan({
       links: [{ label: "Mapping reductions", href: "#/c/reductions/details/mapping" }],
       explain: [
         { q: "What makes a function f a mapping reduction from A to B?", a: "f is computable (always halts), and for every w: w ∈ A ⇔ f(w) ∈ B. Both directions." },
-        { q: "If A ≤ₘ B, what else is true?", a: "Ā ≤ₘ B̄ (same f). If B is decidable/recognizable, so is A. If A is undecidable/unrecognizable, so is B." },
+        { q: "If A ≤<sub>m</sub> B, what else is true?", a: "Ā ≤<sub>m</sub> B̄ (same f). If B is decidable/recognizable, so is A. If A is undecidable/unrecognizable, so is B." },
       ] },
     { id: "recognizability", title: "Unrecognizable languages", lec: "L9", concepts: ["recognizability"],
       videos: ["mit8-corec", "et-corec", "mit9-unrec", "et-eq-neither"], help: ["challenge:toc:turn:corec", "challenge:toc:proof:box-cohalt"], proofs: ["unrecognizable"],
-      links: [{ label: "Recognizable or not (lesson coming next)", href: "#/c/recognizability" }],
+      links: [{ label: "Recognizable & unrecognizable lesson", href: "#/c/recognizability" }, { label: "The language map", href: "#/c/recognizability/playground/lang-map" }],
       explain: [
         { q: `Why is the complement of ${ATM} not recognizable?`, a: `${ATM} is recognizable. If its complement were too, ${ATM} would be decidable (L and L̄ both recognizable ⇒ L decidable). It isn’t.` },
         { q: "Can a language be neither recognizable nor co-recognizable?", a: `Yes: EQ${sb("TM")}. (Countability also guarantees unrecognizable languages exist.)` },

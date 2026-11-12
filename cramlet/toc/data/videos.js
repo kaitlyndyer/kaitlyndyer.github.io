@@ -47,10 +47,10 @@ registerVideos([
 
   // ---------- Unrecognizability ----------
   { id: "mit8-corec", title: "The complement of A<sub>TM</sub> is unrecognizable", by: MIT, yt: "3PzuSPQPEU4", start: t(56, 0), end: t(61, 0),
-    concept: "recognizability", role: "main",
+    concept: "recognizability", secs: ["co-recognizable"], role: "main",
     why: "The theorem “A and its complement both recognizable ⇒ A decidable”, the picture of recognizable vs co-recognizable languages, and why the complement of A<sub>TM</sub> can’t be recognized. 5 minutes." },
   { id: "et-corec", title: "Decidable iff recognizable and co-recognizable", by: ET, yt: "4WtVdGxjVyE",
-    concept: "recognizability", role: "alt",
+    concept: "recognizability", secs: ["co-recognizable"], role: "alt",
     why: "An 8-minute walk through the same theorem, running the two recognizers side by side." },
 
   // ---------- Reductions ----------
@@ -87,21 +87,21 @@ registerVideos([
     concept: "reductions", secs: ["mapping"], role: "alt",
     why: "An 8-minute summary of mapping reductions and how they relate to ordinary ones." },
   { id: "mit9-unrec", title: "Proving languages unrecognizable with mapping reductions", by: MIT, yt: "N28g_YBXY8Y", start: t(54, 30), end: t(76, 0),
-    concept: "recognizability", role: "main", warn: SIPSER_ETM,
+    concept: "recognizability", secs: ["mapping-unrec"], role: "main", warn: SIPSER_ETM,
     why: "Why general reductions can’t prove unrecognizability but mapping reductions can, then E<sub>TM</sub> is unrecognizable and EQ<sub>TM</sub> is neither recognizable nor co-recognizable." },
   { id: "et-eq-neither", title: "EQ<sub>TM</sub> is neither recognizable nor co-recognizable", by: ET, yt: "Dj2sjiahYng",
-    concept: "recognizability", role: "alt",
+    concept: "recognizability", secs: ["mapping-unrec"], role: "alt",
     why: "12 minutes on the two mapping reductions behind it." },
 
   // ---------- Rice's theorem ----------
   { id: "et-rice-use", title: "How to use Rice’s theorem in 5 minutes", by: ET, yt: "kr7n_3LpWhc",
-    concept: "rice", role: "main",
+    concept: "rice", secs: ["using"], role: "main",
     why: "Sipser leaves Rice’s theorem as an exercise, so this comes from Easy Theory. Start here: it’s about <b>using</b> the theorem, which is what exam questions ask." },
   { id: "et-rice-proof", title: "Rice’s theorem: proof", by: ET, yt: "jIAEpYwJgbA",
-    concept: "rice", role: "main",
+    concept: "rice", secs: ["proof"], role: "main",
     why: "The proof, by reduction from A<sub>TM</sub>, the same shape as our lecture’s M<sub>w</sub>(x) = M(w) && M′(x)." },
   { id: "et-rice-examples", title: "Rice’s theorem: 5 proofs and examples", by: ET, yt: "n-kBE750AFc",
-    concept: "rice", role: "alt",
+    concept: "rice", secs: ["limits"], role: "alt",
     why: "Worked examples, including properties where Rice’s theorem does <b>not</b> apply." },
 ]);
 })();

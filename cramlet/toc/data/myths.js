@@ -359,7 +359,7 @@ const TOC_MYTHS = [
     why: "Each of the 4 inputs picks one of 3 outputs, independently: 3 · 3 · 3 · 3." },
   { id: "functions-count-flip", c: "languages", sec: "functions", fact: false,
     s: "There are 4³ = 64 different functions from a 4-element set to a 3-element set.",
-    why: "It’s (number of outputs)^(number of inputs) = 3⁴ = 81. Each input picks an output, not the other way around." },
+    why: "It’s (number of outputs)<sup>(number of inputs)</sup> = 3⁴ = 81. Each input picks an output, not the other way around." },
   { id: "powerset-empty", c: "languages", sec: "powerset", fact: false,
     s: "The power set of ∅ is ∅.",
     why: "∅ has one subset, itself. So the power set of ∅ is {∅}, which has 1 element (2⁰ = 1)." },
