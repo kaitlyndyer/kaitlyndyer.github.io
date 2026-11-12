@@ -190,7 +190,7 @@ registerProofs([
   {
     id: "rice", title: "Use Rice’s theorem", topic: "rice", minutes: 8,
     hints: [
-      { label: "Rice’s theorem lesson (coming next)", href: "#/c/rice", key: "challenge:toc:turn:rice" },
+      { label: "Your turn: write a Rice proof", href: "#/c/rice/details/using", key: "challenge:toc:turn:rice" },
     ],
     puzzle: {
       id: "box-rice", name: "Contains 0110", type: "order",
