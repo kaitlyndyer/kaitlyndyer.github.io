@@ -518,3 +518,41 @@ button.dg-cell.star.guess.right { background: var(--good); border-color: var(--g
 /* The watch-mode player and side boxes are wrapped together; keep the runner's spacing between them */
 .dg-watch-only { display: grid; gap: 14px; }
 .dg-watch-only[hidden] { display: none; }
+
+/* ---------- Rice's theorem ---------- */
+.rb-figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 12px 0 4px; }
+.rb-fig { margin: 0; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); min-width: 0; }
+.rb-fig svg { width: 100%; height: auto; display: block; }
+.rb-fig figcaption { font-size: 14px; margin-top: 4px; }
+.rb-ok { color: var(--good); } .rb-no { color: var(--bad); }
+.rb-bubble ellipse { fill: var(--paper); stroke: var(--diagram-line); stroke-width: 1.5; }
+.rb-bubble.on ellipse { fill: var(--good-bg); stroke: var(--good); stroke-width: 2.5; }
+.rb-bubble.off ellipse { stroke-dasharray: 5 4; }
+.rb-lab { font: 700 14px var(--font-body); fill: var(--diagram-ink); text-anchor: middle; }
+.rb-dot circle { fill: var(--track); stroke: var(--diagram-line); }
+.rb-dot text { font: 700 13px var(--font-body); fill: var(--muted); text-anchor: middle; }
+.rb-dot.on circle { fill: var(--good); stroke: var(--good); }
+.rb-dot.on text { fill: #fff; }
+.rb-key { font-size: 13.5px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rb-dot-key { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--track); font-weight: 700; font-size: 12px; }
+.rb-dot-key.on { background: var(--good); color: #fff; }
+
+.rc { display: grid; gap: 12px; }
+.rc-top { display: flex; justify-content: space-between; gap: 10px; font-weight: 700; font-size: 13.5px; color: var(--muted); }
+.rc-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.rc-flow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 10px;
+    grid-template-areas: "q1 q1" "a1 a2" "q2 q3" "a3 a4" "e1 e2"; }
+.rc-node { padding: 8px 10px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); font-weight: 700; font-size: 13px; text-align: center; color: var(--muted); transition: all .2s; min-width: 0; }
+.rc-node.q { border-style: solid; }
+.rc-node.end { border-style: dashed; font-size: 12.5px; }
+.rc-node.past { color: var(--ink); border-color: var(--brand-line); background: var(--brand-soft); }
+.rc-node.now { color: var(--ink); border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand); background: var(--surface); }
+.rc-node.end.now { background: var(--good-bg); border-color: var(--good); box-shadow: 0 0 0 2px var(--good); border-style: solid; }
+.rc-arrow { text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); }
+.rc-arrow.split { display: flex; justify-content: space-around; }
+.rc-ends { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.rc-side { display: grid; gap: 10px; min-width: 0; }
+.rc-ask { font-size: 16px; }
+.rc-why { margin-top: 6px; font-size: 14px; color: var(--ink-2, var(--muted)); }
+.rc-final { margin: 8px 0 0; }
+@media (max-width: 700px) { .rc-grid { grid-template-columns: minmax(0, 1fr); } }

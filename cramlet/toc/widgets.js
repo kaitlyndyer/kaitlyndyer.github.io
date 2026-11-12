@@ -2378,6 +2378,106 @@
     };
 
     // ======================================================================
+    // "Does Rice apply?": sort properties of TMs with a three-question flowchart.
+    // config.items: [{ prop, lang: bool (depends only on L(M)), trivial?: bool (if lang), decidable?: bool (if !lang),
+    //                  w1: html (the witness: two same-language TMs that disagree, or one TM in and one out), end: html }]
+    // ======================================================================
+    W["rice-check"] = function (el, config, ctx) {
+        const { icon, buddy, progress, course } = ctx;
+        const items = config.items;
+        let i = 0, node = "q1", path = [], firstTry = true, score = 0, done = 0;
+        const NODES = {
+            q1: "Depends only on L(M)?",
+            q2: "Non-trivial? (some TM in, some out)",
+            q3: "Rice can’t be used. Decidable anyway?",
+            rice: "Undecidable by Rice",
+            triv: "Trivial: decidable",
+            dec: "Decidable (another way)",
+            und: "Undecidable (by a reduction)",
+        };
+        const answerOf = (it, n) => (n === "q1" ? it.lang : n === "q2" ? !it.trivial : it.decidable);
+        const endOf = it => (it.lang ? (it.trivial ? "triv" : "rice") : it.decidable ? "dec" : "und");
+        const next = (n, yes) => (n === "q1" ? (yes ? "q2" : "q3") : n === "q2" ? (yes ? "rice" : "triv") : yes ? "dec" : "und");
+        el.innerHTML = `
+            <div class="rc">
+                <div class="rc-top"><span class="rc-count"></span><span class="rc-score"></span></div>
+                <div class="challenge"><div class="ch-meta">Property of a TM M:</div><div class="ch-lang rc-prop"></div></div>
+                <div class="rc-grid">
+                    <div class="rc-flow" aria-hidden="true">
+                        <div class="rc-node q" data-n="q1" style="grid-area:q1">${NODES.q1}</div>
+                        <div class="rc-arrow" style="grid-area:a1">yes ↓</div><div class="rc-arrow" style="grid-area:a2">no ↓</div>
+                        <div class="rc-node q" data-n="q2" style="grid-area:q2">${NODES.q2}</div>
+                        <div class="rc-node q" data-n="q3" style="grid-area:q3">${NODES.q3}</div>
+                        <div class="rc-arrow split" style="grid-area:a3"><span>yes ↓</span><span>no ↓</span></div><div class="rc-arrow split" style="grid-area:a4"><span>yes ↓</span><span>no ↓</span></div>
+                        <div class="rc-ends" style="grid-area:e1"><div class="rc-node end good" data-n="rice">${NODES.rice}</div><div class="rc-node end" data-n="triv">${NODES.triv}</div></div>
+                        <div class="rc-ends" style="grid-area:e2"><div class="rc-node end" data-n="dec">${NODES.dec}</div><div class="rc-node end" data-n="und">${NODES.und}</div></div>
+                    </div>
+                    <div class="rc-side">
+                        <div class="rc-ask" aria-live="polite"></div>
+                        <div class="build-actions rc-btns"></div>
+                        <div class="verdict" aria-live="polite" hidden></div>
+                    </div>
+                </div>
+            </div>`;
+        const $ = s => el.querySelector(s);
+        function paint() {
+            el.querySelectorAll(".rc-node").forEach(b => {
+                const n = b.dataset.n;
+                b.classList.toggle("now", n === node);
+                b.classList.toggle("past", path.includes(n) && n !== node);
+            });
+        }
+        function draw() {
+            const it = items[i];
+            $(".rc-count").textContent = `Property ${i + 1} of ${items.length}`;
+            $(".rc-score").textContent = done ? `${score} of ${done} right first time` : "";
+            $(".rc-prop").innerHTML = `“${it.prop}”`;
+            paint();
+            const v = $(".verdict");
+            if (node.startsWith("q")) {
+                $(".rc-ask").innerHTML = `<b>${NODES[node]}</b>`;
+                $(".rc-btns").innerHTML = `<button type="button" class="btn" data-a="yes">Yes</button><button type="button" class="btn" data-a="no">No</button>`;
+                return;
+            }
+            $(".rc-ask").innerHTML = "";
+            const last = i === items.length - 1;
+            $(".rc-btns").innerHTML = last
+                ? `<button type="button" class="btn primary" data-a="again">${icon("arrow-clockwise")} Sort them again</button>`
+                : `<button type="button" class="btn primary" data-a="next">Next property →</button>`;
+            v.hidden = false;
+            v.className = "verdict " + (firstTry ? "yes" : "no");
+            v.innerHTML = `<span class="fb-av"></span><div><b>${NODES[node]}.</b> ${it.end}<div class="rc-why">${it.w1}</div>
+                ${last ? `<p class="rc-final"><b>${score} of ${items.length}</b> sorted right first time.${score === items.length ? " Perfect!" : " Go again until it’s automatic."}</p>` : ""}</div>`;
+            buddy.react(v.querySelector(".fb-av"), firstTry ? "happy" : "oops", firstTry ? "bounce" : "wobble");
+            if (last && score === items.length) {
+                ctx.celebrate($(".rc-btns .btn"));
+                progress.award("challenge", `${course}:rice-check`, { at: $(".rc-btns .btn") });
+            }
+        }
+        $(".rc-btns").addEventListener("click", e => {
+            const b = e.target.closest("[data-a]"); if (!b) return;
+            const a = b.dataset.a, it = items[i], v = $(".verdict");
+            if (a === "next" || a === "again") {
+                i = a === "again" ? 0 : i + 1;
+                if (a === "again") { score = 0; done = 0; }
+                node = "q1"; path = []; firstTry = true; v.hidden = true; draw(); return;
+            }
+            const want = answerOf(it, node), got = a === "yes";
+            if (got !== want) {
+                firstTry = false;
+                v.hidden = false; v.className = "verdict no";
+                v.innerHTML = `<span class="fb-av"></span><div><b>Not this time.</b> The answer is <b>${want ? "yes" : "no"}</b>. ${node === "q1" || node === "q2" ? it.w1 : it.end}</div>`;
+                buddy.react(v.querySelector(".fb-av"), "oops", "wobble");
+            } else v.hidden = true;
+            path.push(node);
+            node = next(node, want);
+            if (!node.startsWith("q")) { path.push(node); done++; if (firstTry) score++; }
+            draw();
+        });
+        draw();
+    };
+
+    // ======================================================================
     // Reduction walkthrough picture (a figure for the shared stepper, ../course/stepper.js).
     // It shows the example machine M, the code the decider writes (with the current w filled in), a table of the
     // helper machine on a few inputs, and a case check that fills in as each case is answered.

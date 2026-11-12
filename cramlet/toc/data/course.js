@@ -21,6 +21,7 @@ window.STUDY = {
     6: "TM Variants & the Church–Turing Thesis",
     7: "Countability & Undecidability",
     8: "Reductions",
+    9: "Rice’s Theorem & Unrecognizability",
   },
 
   groups: [
@@ -79,6 +80,7 @@ window.STUDY = {
       concepts: [
         { id: "countability", title: "Countability & Diagonalization", icon: "infinity", color: "#7a5cc9", lectures: [7] },
         { id: "reductions", title: "Reductions & Undecidable Problems", icon: "shuffle", color: "#4a6fd1", lectures: [7, 8] },
+        { id: "rice", title: "Rice’s Theorem", icon: "magnifying-glass", color: "#2f8f9d", lectures: [9] },
       ],
     },
   ],

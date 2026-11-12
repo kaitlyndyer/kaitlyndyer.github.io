@@ -72,7 +72,7 @@ registerPlan({
       ] },
     { id: "rice", title: "Rice’s theorem", lec: "L9", concepts: ["rice"],
       videos: ["et-rice-use", "et-rice-proof", "et-rice-examples"], help: ["challenge:toc:turn:rice", "challenge:toc:proof:box-rice"], proofs: ["rice"],
-      links: [{ label: "Rice’s theorem (lesson coming next)", href: "#/c/rice" }],
+      links: [{ label: "Rice’s theorem lesson", href: "#/c/rice" }, { label: "Does Rice apply? (flowchart)", href: "#/c/rice/playground/rice-check" }],
       explain: [
         { q: "What two conditions does Rice’s theorem need?", a: "The property depends only on L(M) (machines with the same language agree), and it’s non-trivial (some TM has it, some TM doesn’t). Then { ⟨M⟩ | M has it } is undecidable." },
         { q: "Why doesn’t Rice’s theorem say “M has 10 states” is undecidable?", a: "That’s a property of the machine, not its language: two machines with the same language can have different numbers of states. (And it’s decidable: count them.)" },
