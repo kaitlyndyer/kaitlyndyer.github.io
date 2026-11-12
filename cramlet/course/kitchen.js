@@ -19,6 +19,8 @@
             line: "Rapid-fire statements built from the traps behind wrong answers. Decide fast, then learn why.", has: () => !!(CRAMLET.myths && CRAMLET.myths.count()) },
         { id: "recipes", name: "Recipe Box", icon: "scroll", href: "#/recipes", group: "practice",
             line: "How to think through each kind of problem: a quick card to follow, and a full walkthrough with a worked example.", has: () => !!(CRAMLET.recipes && CRAMLET.recipes.count()) },
+        { id: "proofs", name: "Proof Box", icon: "note-pencil", href: "#/proofs", group: "practice",
+            line: "The proofs you need to write, each climbing four levels: with hints, build from steps, on your own, then timed.", has: S => !!(CRAMLET.proofBox && CRAMLET.proofBox.has(S)) },
         { id: "run", name: "Crumb Run", icon: "hourglass-medium", href: "#/last-crumbs", group: "last",
             line: "A short recall session: Tonight before bed, then the Morning of to relearn the tricky ones.", has: S => !!CRAMLET.lastCrumbs && hasCards(S) },
         { id: "sheet", name: "Cookie Sheet", icon: "note", href: "#/last-crumbs/sheet", group: "last",
@@ -32,7 +34,7 @@
     const hasCards = S => !!(S.cast && S.cast.length) || Object.values(S.content || {}).some(d => (d.flashcards || []).length);
     const toolsFor = S => TOOLS.filter(t => t.has(S));
     // Which page of the course belongs to the Test Kitchen (for the sidebar).
-    const owns = parts => ["kitchen", "exam", "myths", "recipes", "last-crumbs", "review"].includes(parts[0]);
+    const owns = parts => ["kitchen", "exam", "myths", "recipes", "proofs", "last-crumbs", "review"].includes(parts[0]);
 
     function header(ctx, active, opts = {}) {
         const { S, esc, icon } = ctx;
@@ -84,6 +86,7 @@
             run: lcSession ? ["…", "session in progress"] : lastNight ? [String(lastNight.hard.length), "tricky cards for the morning"] : ["25", "minutes tonight"],
             sheet: [String((sheet.known || []).length), `of ${points} points stickered`],
             recipes: [String(CRAMLET.recipes ? CRAMLET.recipes.count() : 0), "problem types"],
+            proofs: CRAMLET.proofBox ? (() => { const L = CRAMLET.proofBox.list(); const ready = L.filter(p => CRAMLET.proofBox.level({ COURSE }, p.id) >= 4).length; return [String(ready), `of ${L.length} proofs exam-ready`]; })() : ["", ""],
         };
 
         // What to do right now: finish what's open, then go by the time of day.

@@ -178,7 +178,10 @@
         const current = nav.dataset.active || "";
         // Every exam-prep tool lives in the Test Kitchen (course/kitchen.js), so the sidebar needs one item.
         const deckN = CRAMLET.exam ? CRAMLET.exam.deckCount(COURSE) : 0;
-        nav.innerHTML = (CRAMLET.kitchen && CRAMLET.exam ? `
+        nav.innerHTML = (CRAMLET.plan && CRAMLET.plan.has(S) ? `
+            <a class="nav-item exam-link plan-link${current === "plan" ? " active" : ""}" href="#/plan" style="--c:var(--brand)"${current === "plan" ? ' aria-current="page"' : ""}>
+                <span class="nav-icon">${icon("calendar")}</span><span class="nav-label">Study Plan</span>
+            </a>` : "") + (CRAMLET.kitchen && CRAMLET.exam ? `
             <a class="nav-item exam-link kitchen-link${current === "kitchen" ? " active" : ""}" href="#/kitchen" style="--c:var(--brand)"${current === "kitchen" ? ' aria-current="page"' : ""}>
                 <span class="nav-icon">${icon("chef-hat")}</span><span class="nav-label">Test Kitchen</span>${deckN ? `<span class="deck-count" title="Cards in your missed deck">${deckN}</span>` : ""}
             </a>` : "") + S.groups.map(g => `
@@ -465,6 +468,7 @@
 
                 ${(() => { const m = examMiss(id); return m ? `<div class="callout warn done exam-banner">${icon("warning", "callout-ic")}<div class="callout-body"><span class="callout-label">From your last practice exam</span>You got ${m.earned} of ${m.max} points here (${m.missed} question${m.missed > 1 ? "s" : ""} missed).${m.secs.length ? ` Review: ${m.secs.map(s => { const sec = d.details.find(x => x.id === s); return sec ? `<a href="#/c/${id}/details/${s}">${esc(sec.title)}</a>` : ""; }).filter(Boolean).join(", ")}.` : ""} Then try the <a href="#/c/${id}/practice">Practice</a> tab.</div></div>` : ""; })()}
                 <div class="one-liner"><span class="one-liner-label">In one sentence</span>${d.oneLiner}</div>
+                ${CRAMLET.plan ? CRAMLET.plan.watchChips(id, null, icon, esc) : ""}
 
                 <div class="tabs" role="tablist" aria-label="${esc(c.title)} sections">
                     ${tabs.map(t => `
@@ -538,6 +542,7 @@
             ${d.details.map(s => `
                 <section class="detail" id="sec-${s.id}">
                     <h3>${esc(s.title)} ${lectureChips(s.lec, true)}</h3>
+                    ${CRAMLET.plan ? CRAMLET.plan.watchChips(c.id, s.id, icon, esc) : ""}
                     <div class="prose">${s.html}</div>
                     ${s.widget === "hierarchy" ? `<div class="hierarchy" id="hierarchy"></div>` : ""}
                     ${s.widget && s.widget !== "hierarchy" ? `<div class="widget" data-widget="${s.widget}" data-sec="${s.id}"></div>` : ""}
@@ -1024,7 +1029,17 @@
         setKeyHandler(null);
         const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
         if (parts[0] !== "exam") document.body.classList.remove("exam-focus");
-        if (parts[0] === "kitchen" && CRAMLET.kitchen && CRAMLET.exam) {
+        if (parts[0] === "plan" && CRAMLET.plan && CRAMLET.plan.has(S)) {
+            renderNav("plan");
+            CRAMLET.plan.render(main, { S, COURSE, esc, icon, allConcepts }, parts);
+            document.title = "Study Plan · " + S.course.title + " · cramlet";
+        } else if (parts[0] === "proofs" && CRAMLET.proofBox && CRAMLET.proofBox.has(S) && CRAMLET.kitchen) {
+            renderNav("kitchen");
+            const widgetCtx = { course: COURSE, concept: null, icon, esc, highlight, buddy, progress, celebrate, setKeyHandler };
+            CRAMLET.proofBox.render(main, { S, COURSE, esc, icon, allConcepts, widgetCtx }, parts);
+            const pf = parts[1] && CRAMLET.proofBox.byId(parts[1]);
+            document.title = (pf ? pf.title.replace(/<[^>]+>/g, "") + " · " : "") + "Proof Box · " + S.course.title + " · cramlet";
+        } else if (parts[0] === "kitchen" && CRAMLET.kitchen && CRAMLET.exam) {
             renderNav("kitchen");
             CRAMLET.kitchen.render(main, { S, COURSE, esc, icon, allConcepts });
             document.title = "Test Kitchen · " + S.course.title + " · cramlet";
