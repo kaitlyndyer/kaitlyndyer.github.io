@@ -274,7 +274,7 @@
                         <div class="side-box"><div class="side-title">Length</div>
                             <div class="exam-lengths">${Object.entries(LENGTHS).filter(([, L]) => !L.hidden).map(([id, L], i) => {
                                 const on = LENGTHS[prefs.length] && !LENGTHS[prefs.length].hidden ? prefs.length === id : i === 0;
-                                return `<label class="exam-len"><input type="radio" name="exam-len" value="${id}" ${on ? "checked" : ""}><span><b>${L.name}</b><small>${countOf(L)} questions · ${L.minutes ? `${L.minutes} minutes` : "no timer"}</small></span></label>`;
+                                return `<label class="exam-len"><input type="radio" name="exam-len" value="${id}" ${on ? "checked" : ""}><span><b>${L.name}</b><small>${L.note ? `${L.note} · ` : ""}${countOf(L)} questions · ${L.minutes ? `${L.minutes} minutes` : "no timer"}</small></span></label>`;
                             }).join("")}</div>
                             ${kinds.length > 1 ? `<div class="side-title exam-types-title">Question types</div>
                             <div class="exam-lengths">
@@ -304,7 +304,14 @@
                 const have = c.filter(([, n]) => n);
                 main.querySelector(".exam-bank").innerHTML = `<p class="muted">${total} questions in the bank for these lectures${have.length > 1 ? `: ${have.map(([s, n]) => `${n} ${lower(secLabel(s))}`).join(" · ")}` : ""}${total >= countOf(lengthOf(main.querySelector('[name="exam-len"]:checked').value)) * 2 ? `, enough for about ${Math.floor(total / countOf(lengthOf(main.querySelector('[name="exam-len"]:checked').value)))} exams without repeats` : ""}.</p>`;
             };
+            // A length can come with its own lectures (lecs), e.g. a midterm that covers only part of the course.
+            const applyLecs = () => {
+                const L = lengthOf(main.querySelector('[name="exam-len"]:checked').value);
+                main.querySelectorAll(".exam-lec input").forEach(x => { x.checked = !L.lecs || L.lecs.includes(+x.value); });
+            };
+            main.querySelectorAll("[name=exam-len]").forEach(x => x.addEventListener("change", applyLecs));
             main.querySelectorAll(".exam-lec input, [name=exam-mode], [name=exam-len]").forEach(x => x.addEventListener("change", drawBank));
+            applyLecs();
             drawBank();
             main.querySelector(".exam-start").addEventListener("click", e => {
                 const t = e.target.closest("button");
@@ -336,7 +343,9 @@
             const Q = byId(), qs = E.ids.map(id => Q[id]).filter(Boolean);
             const answered = i => { const a = E.answers[qs[i].id], T = TYPES[qs[i].type]; if (T && T.answered) return T.answered(a || {}); return !!a && Object.values(a).some(v => (Array.isArray(v) ? v.length : v !== "" && v !== undefined && v !== null)); };
             const mcMode = E.mode === "mc", plainMap = mcMode || E.length === "deck";
-            const secName = q => (mcMode ? "Multiple choice" : typeLabel(q.type));
+            // A length can rename its sections, e.g. a midterm whose "choice" part is all true/false.
+            const lenSec = sec => (lengthOf(E.length).sections || {})[sec.id];
+            const secName = q => (mcMode ? "Multiple choice" : lenSec(sectionOf(q.type)) || typeLabel(q.type));
             // Time spent on each question (for the results page). Time away from the page isn't counted on resume.
             const leaveQ = X => { const id = qs[X.cur] && qs[X.cur].id; if (!id) return; X.t = X.t || {}; X.t[id] = (X.t[id] || 0) + Math.min(Date.now() - (X.tAt || Date.now()), 20 * 60000); X.tAt = Date.now(); };
             E.tAt = Date.now(); saveExam(E);
@@ -362,7 +371,7 @@
                 let html = "", last = null;
                 qs.forEach((q, i) => {
                     const sec = sectionOf(q.type);
-                    if (!plainMap && sec !== last) { html += `<div class="map-sec">${esc(sec.name)}</div>`; last = sec; }
+                    if (!plainMap && sec !== last) { html += `<div class="map-sec">${esc(lenSec(sec) || sec.name)}</div>`; last = sec; }
                     html += `<button type="button" class="map-q${answered(i) ? " done" : ""}${E.flags.includes(i) ? " flag" : ""}${i === E.cur ? " cur" : ""}" data-go="${i}" aria-label="Question ${i + 1}">${i + 1}</button>`;
                 });
                 html += `<button type="button" class="map-review${E.review ? " cur" : ""}" data-act="review">${icon("list-checks")} Review</button>`;

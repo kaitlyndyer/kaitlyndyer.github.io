@@ -570,6 +570,63 @@
         answer: q => pumpModel(q),
     });
 
+    // ======================================================================
+    // Written answers checked against a model and a checklist, like "pump": Midterm 2's short answers and reductions.
+    // { q, model, checklist, explain } (data/exam/midterm2.js). One point per checklist item (times the exam's weight).
+    // ======================================================================
+    function writtenType(type, o) {
+        const model = q => `<div class="callout key done">${icon("push-pin", "callout-ic")}<div class="callout-body"><span class="callout-label">${o.model}</span>${q.model}</div></div>`;
+        const yours = a => (a && a.text && a.text.trim() ? proofText(a.text) : "<i>(empty)</i>");
+        window.registerQuestionType(type, {
+            section: o.section,
+            how: o.how,
+            points: q => q.checklist.length,
+            answered: a => !!(a.text && a.text.trim()),
+            brief: (q, a) => (a.text && a.text.trim() ? `${a.text.trim().split(/\s+/).length} words` : ""),
+            grade: (q, a, self) => ({ earned: a.text && a.text.trim() ? ticks(self, q.checklist.length).filter(Boolean).length : 0 }),
+            draw: (q, a) => `<div class="pq">
+                <p class="muted">${o.intro}</p>
+                <textarea class="pq-in" rows="${o.rows}" spellcheck="true" aria-label="${o.yours}" placeholder="${esc(o.placeholder)}">${esc((a && a.text) || "")}</textarea>
+            </div>`,
+            mount: pumpMount,
+            check: (q, a, self) => {
+                const on = ticks(self, q.checklist.length);
+                return `<div class="side-by-side">
+                        <div><div class="side-title">${o.yours}</div><div class="pq-yours">${yours(a)}</div></div>
+                        <div><div class="side-title">${o.model}</div>${model(q)}</div>
+                    </div>
+                    <div class="side-title">Checklist: tick only what your answer really does</div>
+                    ${q.checklist.map((c, k) => `<label class="self-item"><input type="checkbox" data-item="${esc(q.id)}" data-k="${k}" ${on[k] ? "checked" : ""}> <span>${c}</span></label>`).join("")}
+                    <p class="muted">${o.note}</p>`;
+            },
+            review: (q, a, self) => {
+                const on = ticks(self, q.checklist.length);
+                return `<div class="dq-review">
+                    <div class="side-by-side">
+                        <div><div class="side-title">${o.yours}</div><div class="pq-yours">${yours(a)}</div></div>
+                        <div><div class="side-title">${o.model}</div>${model(q)}</div>
+                    </div>
+                    <div class="side-title">Your checklist</div>
+                    <ul class="pq-list">${q.checklist.map((c, k) => `<li class="${on[k] ? "ok" : "miss"}">${icon(on[k] ? "check-circle" : "x-circle")} ${c}</li>`).join("")}</ul>
+                </div>`;
+            },
+            answer: q => model(q),
+        });
+    }
+    writtenType("short", {
+        section: { id: "short", name: "Short answers" }, how: "Answer it in your head, with a reason", rows: 7,
+        intro: "Answer yes or no (or countable / uncountable), then prove it or give a specific counterexample. After you submit, compare with a model answer and tick the checklist.",
+        placeholder: "No. Counterexample: let A = … and B = …", yours: "Your answer", model: "Model answer",
+        note: "A different counterexample is fine if it really works. Be strict, like a grader would.",
+    });
+    writtenType("reduce", {
+        section: { id: "reduce", name: "Reductions" }, how: "Plan the reduction: which machine does D_ATM build?", rows: 14,
+        intro: "No Rice’s theorem. Write it the way the solutions do: assume a decider D<sub>L</sub> for L, build a decider D<sub>ATM</sub> for A<sub>TM</sub> on input ⟨M, w⟩ (say exactly what any machine it constructs does), then prove D<sub>ATM</sub> decides A<sub>TM</sub>: the case where M accepts w, and the case where it doesn’t (rejects or loops).",
+        placeholder: "Assume there is a decider D_L for L. We build a decider D_ATM for A_TM:\nD_ATM = “On input ⟨M, w⟩:\n1. Construct a TM M_w that …\n2. Run D_L(⟨M_w⟩) …”\nIf M accepts w, …\nIf M does not accept w, …",
+        yours: "Your proof", model: "Model proof",
+        note: "A different helper machine is fine if both cases really work. Any case where M loops on w must still end with D<sub>ATM</sub> rejecting.",
+    });
+
     // For tests and the pumping playground.
     CRAMLET.tocQuestions = { compareLang, gradeRegex, nfaCompare, checkLen };
 })();
