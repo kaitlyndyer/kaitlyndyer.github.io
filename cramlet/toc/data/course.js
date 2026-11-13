@@ -92,7 +92,12 @@ window.STUDY = {
     mathTitles: true,
     exam: {
       lengths: {
-        midterm: { name: "Midterm 1", minutes: 75, mix: { choice: 10, build: 2, nfa: 2, pump: 2 }, types: { choice: ["tf"] }, weight: { choice: 2 } },
+        // Matches the Midterm 2 practice exam: 10 T/F (1 pt each), 2 short answers (5 pts), 3 reductions without Rice (10 pts) = 50.
+        midterm2: { name: "Midterm 2", minutes: 75, lecs: [5, 6, 7, 8, 9], mix: { choice: 10, short: 2, reduce: 3 }, types: { choice: ["tf"] }, weight: { reduce: 2 }, sections: { choice: "True or false" },
+          note: "10 true/false · 2 short answers · 3 reductions (no Rice) · 50 points, like the practice midterm" },
+        drill: { name: "Reductions drill", minutes: 45, lecs: [8], mix: { reduce: 3 }, weight: { reduce: 2 },
+          note: "3 reductions from A<sub>TM</sub>, no Rice · 30 points" },
+        midterm: { name: "Midterm 1", minutes: 75, lecs: [0, 1, 2, 3, 4], mix: { choice: 10, build: 2, nfa: 2, pump: 2 }, types: { choice: ["tf"] }, weight: { choice: 2 }, sections: { choice: "True or false" } },
         full: { name: "Full exam", minutes: 75, mix: { choice: 20, build: 2, nfa: 2, pump: 1 } },
         quick: { name: "Quick check", minutes: 0, mix: { choice: 8, build: 1, nfa: 1 } },
       },

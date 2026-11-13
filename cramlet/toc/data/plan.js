@@ -12,7 +12,7 @@ const sb = s => `<sub>${s}</sub>`;
 const ATM = `A${sb("TM")}`;
 
 registerPlan({
-  exam: { title: "Midterm 2", date: "2026-11-17", scope: "Countability through Rice’s theorem (lectures 7–9), plus the Turing machine basics they rest on" },
+  exam: { title: "Midterm 2", date: "2026-11-17", scope: "Everything up to and including reductions: countability, decidability, reductions, mapping reductions, unrecognizability, and Rice’s theorem (lectures 5–9).<span class=\"pl-format\">Format: 10 true/false (10 pts) · 2 short answers (10 pts) · 3 reductions from A<sub>TM</sub>, no Rice (30 pts).</span>" },
   topics: [
     { id: "tm", title: "Recognize vs decide (TM refresher)", lec: "L5–6", concepts: ["turing-machines", "church-turing"],
       videos: ["mit5-recdec", "mit5-tm"], help: ["quiz:toc:turing-machines", "quiz:toc:church-turing"],
@@ -42,14 +42,14 @@ registerPlan({
         { q: `Why can’t a decider D for SU${sb("TM")} exist?`, a: `D accepts ⟨D⟩ ⇔ ⟨D⟩ ∈ SU${sb("TM")} ⇔ D doesn’t accept ⟨D⟩. Both answers contradict themselves, and a decider can’t loop.` },
         { q: `How does that give ${ATM} undecidable?`, a: `A decider for ${ATM} would decide SA${sb("TM")} by asking about ⟨M, ⟨M⟩⟩, and SA${sb("TM")} is undecidable (it’s the complement of SU${sb("TM")}).` },
       ] },
-    { id: "reductions-halt", title: "Reductions: the idea, and HALT", lec: "L8", concepts: ["reductions"],
+    { id: "reductions-halt", badge: "Most points", title: "Reductions: the idea, and HALT", lec: "L8", concepts: ["reductions"],
       videos: ["mit8-halt", "mit9-direction", "lydia-reduce", "et-halt"], help: ["challenge:toc:walk:halt", "challenge:toc:turn:direction", "challenge:toc:turn:reject", "challenge:toc:proof:red-halt", "challenge:toc:proof:flaw-direction"], proofs: ["reduction"],
       links: [{ label: "Which way it goes", href: "#/c/reductions/details/reduction" }, { label: "The proof template", href: "#/c/reductions/details/template" }, { label: "Walk through HALT", href: "#/c/reductions/playground/walkthrough" }],
       explain: [
         { q: "To prove B is undecidable, which way does the reduction go, and why?", a: `Reduce ${ATM} <b>to</b> B: show a decider for B would give a decider for ${ATM}. Since ${ATM} has no decider, neither does B. Reducing B to ${ATM} proves nothing.` },
         { q: "Why does the HALT reduction ask the HALT decider before running M on w?", a: "So the new decider never runs M(w) when it might loop. It only runs M(w) after being told M halts, so it always halts." },
       ] },
-    { id: "reductions-mw", title: "Reductions with a helper machine (ε, REGULAR, EQ)", lec: "L8", concepts: ["reductions"],
+    { id: "reductions-mw", badge: "Most points", title: "Reductions with a helper machine (ε, REGULAR, EQ)", lec: "L8", concepts: ["reductions"],
       videos: ["mit9-etm", "et-etm", "et-regular", "et-eq"], help: ["challenge:toc:walk:eps", "challenge:toc:walk:reg", "challenge:toc:walk:eq", "challenge:toc:turn:all", "challenge:toc:turn:finite", "challenge:toc:turn:subset", "challenge:toc:proof:red-eps", "challenge:toc:proof:red-eq"], proofs: ["reduction"],
       links: [{ label: "Does M accept ε?", href: "#/c/reductions/details/empty-string" }, { label: "Is L(M) regular?", href: "#/c/reductions/details/regular" }, { label: "Same language?", href: "#/c/reductions/details/equivalence" }],
       explain: [
@@ -100,6 +100,7 @@ registerPlan({
       { id: "t9", kind: "review", title: "Myth or fact: a 15-statement round", href: "#/myths", min: 8 },
     ] },
     { date: "2026-11-13", focus: "Reductions", tasks: [
+      { id: "f0", kind: "exam", title: "Your professor’s practice midterm: try the 4 sample questions on paper (about 25 min), then compare with the solution. Notice how the reduction is written: assume D<sub>L</sub>, build D<sub>ATM</sub>, prove both cases.", href: "#/plan/mistakes", min: 30 },
       { id: "f1", kind: "watch", video: "mit8-halt", topic: "reductions-halt" },
       { id: "f2", kind: "watch", video: "mit9-direction", topic: "reductions-halt" },
       { id: "f3", kind: "practice", title: "Walk through a reduction: HALT", href: "#/c/reductions/playground/walkthrough", min: 10, key: "challenge:toc:walk:halt", topic: "reductions-halt" },
@@ -110,30 +111,31 @@ registerPlan({
       { id: "f8", kind: "prove", proof: "reduction", level: 3, min: 15, topic: "reductions-mw" },
       { id: "f9", kind: "explain", topic: "reductions-mw", min: 5 },
     ] },
-    { date: "2026-11-14", focus: "Mapping, unrecognizable, Rice", tasks: [
+    { date: "2026-11-14", focus: "Reductions drill + mapping, unrecognizable, Rice", tasks: [
+      { id: "s0", kind: "exam", title: "Reductions drill: 3 reductions, no Rice (Practice exam → Reductions drill), then check each against the model proof", href: "#/exam", min: 45, topic: "reductions-mw" },
       { id: "s1", kind: "watch", video: "mit9-mapping", topic: "mapping" },
       { id: "s2", kind: "practice", title: "Your turn: is this a mapping reduction?", href: "#/c/reductions/details/mapping", min: 10, key: "challenge:toc:turn:mapping", topic: "mapping" },
-      { id: "s3", kind: "prove", proof: "mapping", level: 3, min: 10, topic: "mapping" },
+      { id: "s3", kind: "explain", topic: "mapping", min: 5 },
       { id: "s4", kind: "watch", video: "mit8-corec", topic: "recognizability" },
-      { id: "s5", kind: "learn", title: "Lesson: Recognizable or not", href: "#/c/recognizability", min: 20, topic: "recognizability" },
+      { id: "s5", kind: "learn", title: "Lesson: Recognizable & Unrecognizable (map + co-recognizable sections)", href: "#/c/recognizability", min: 20, key: "challenge:toc:turn:corec", topic: "recognizability" },
       { id: "s6", kind: "prove", proof: "unrecognizable", level: 3, min: 10, topic: "recognizability" },
       { id: "s7", kind: "watch", video: "et-rice-use", topic: "rice" },
-      { id: "s8", kind: "learn", title: "Lesson: Rice’s theorem", href: "#/c/rice", min: 20, topic: "rice" },
-      { id: "s9", kind: "prove", proof: "rice", level: 3, min: 8, topic: "rice" },
+      { id: "s8", kind: "learn", title: "Lesson: Rice’s theorem, then sort 10 properties in “Does Rice apply?”", href: "#/c/rice/playground/rice-check", min: 20, key: "challenge:toc:rice-check", topic: "rice" },
+      { id: "s9", kind: "practice", title: "The language map: place all 10 languages", href: "#/c/recognizability/playground/lang-map", min: 10, key: "challenge:toc:lang-map", topic: "recognizability" },
     ] },
-    { date: "2026-11-15", focus: "Practice exam + fix mistakes", tasks: [
-      { id: "u1", kind: "exam", title: "Your professor’s practice exam: on paper, timed, closed notes", href: "#/plan/mistakes", min: 75 },
-      { id: "u2", kind: "review", title: "Log every lost point in the Mistake log (pick a reason)", href: "#/plan/mistakes", min: 20 },
+    { date: "2026-11-15", focus: "Full practice midterm + fix mistakes", tasks: [
+      { id: "u1", kind: "exam", title: "Cramlet practice exam: Midterm 2 (timed 75 min, closed notes, same format as the real one). Write the proofs on paper if you like, then type a short version.", href: "#/exam", min: 75 },
+      { id: "u2", kind: "review", title: "Grade your written answers honestly with the checklists, then log any lost points from paper work in the Mistake log", href: "#/plan/mistakes", min: 20 },
       { id: "u3", kind: "review", title: "Redo the mistakes that are due", href: "#/plan/mistakes", min: 30 },
       { id: "u4", kind: "prove", proof: "reduction", level: 4, min: 15, topic: "reductions-mw" },
-      { id: "u5", kind: "prove", proof: "uncountable", level: 4, min: 12, topic: "uncountable" },
+      { id: "u5", kind: "prove", proof: "uncountable", level: 3, min: 12, topic: "uncountable" },
     ] },
-    { date: "2026-11-16", focus: "Mixed practice, then rest", tasks: [
-      { id: "m1", kind: "exam", title: "Cramlet practice exam (Midterm 2)", href: "#/exam", min: 75 },
+    { date: "2026-11-16", focus: "Second practice midterm, then rest", tasks: [
+      { id: "m1", kind: "exam", title: "A second Cramlet Midterm 2 (it picks questions you haven’t seen)", href: "#/exam", min: 75 },
       { id: "m2", kind: "review", title: "Redo the mistakes that are due", href: "#/plan/mistakes", min: 30 },
-      { id: "m3", kind: "prove", proof: "rice", level: 4, min: 8, topic: "rice" },
-      { id: "m4", kind: "prove", proof: "mapping", level: 4, min: 10, topic: "mapping" },
-      { id: "m5", kind: "prove", proof: "unrecognizable", level: 4, min: 10, topic: "recognizability" },
+      { id: "m3", kind: "prove", proof: "reduction", level: 4, min: 15, topic: "reductions-mw" },
+      { id: "m4", kind: "review", title: "Myth or fact: one round on decidability, Rice and recognizability (true/false practice)", href: "#/myths", min: 8 },
+      { id: "m5", kind: "prove", proof: "unrecognizable", level: 3, min: 10, topic: "recognizability" },
       { id: "m6", kind: "review", title: "Crumb Run: Tonight (then lights out)", href: "#/last-crumbs", min: 25 },
     ] },
     { date: "2026-11-17", focus: "Exam day", exam: true, tasks: [

@@ -238,3 +238,6 @@
 .pl-late { color: var(--warn-ink); font-weight: 700; display: flex; align-items: center; gap: 4px; }
 .pl-late .ic { width: 13px; height: 13px; }
 .pl-tsub .pl-link { display: inline; padding: 0; }
+
+.pl-badge { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--warn-soft); color: var(--warn-ink); font: 800 11px var(--font-body); text-transform: uppercase; letter-spacing: .4px; }
+.pl-format { display: block; margin-top: 4px; font-weight: 700; color: var(--ink); }
