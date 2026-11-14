@@ -13,6 +13,51 @@ const sb = s => `<sub>${s}</sub>`;
 const ATM = `A${sb("TM")}`, Mw = `M${sb("w")}`;
 const D = x => `D${sb(x)}`;
 
+// ---------- The reduction proof, laid out the way the course's solutions write it ----------
+// One renderer makes the color-coded model answer, the worked examples and the fill-in-the-blanks version, so the
+// same structure shows up every time: Setup, Construction, the two cases, Conclusion.
+//   sc = { kind, helper: { name, lines }, fixed: [{ name, text }], arg, yes: { pre, val, alts, keys, why, in }, no: {…}, note }
+//   yes.in / no.in: is the constructed input in L in that case? (yes.in false means D_ATM flips D_L's answer)
+const DL = D("L"), DATM = D("ATM");
+const attr = s => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+const strip = s => String(s).replace(/<[^>]+>/g, "");
+const PLAIN = ["Run M(w).", "If M(w) accepts, accept.", "If M(w) rejects, reject.", "If M(w) loops, loop."];
+const LOOPY = ["Run M(w).", "If M(w) accepts, accept.", "If M(w) rejects, <b>loop forever</b>.", "If M(w) loops, loop."];
+const SIGMA = ["Σ*", "sigma*", "Σ^*", "all strings", "every string", "everything", "all inputs", "every input", "{0,1}*", "L(M₂) = Σ*"];
+const EMPTY = ["∅", "{}", "empty", "the empty set", "empty set", "emptyset", "nothing", "no strings", "none", "L(M₂) = ∅"];
+const HALTS = ["halts on every input", "halts on all inputs", "halts on everything", "halts", "accepts every input", "accepts all inputs", "accepts everything", "accepts all strings", "accepts every string"];
+const LOOPS = ["loops on every input", "loops on all inputs", "loops on everything", "loops", "loops forever", "never halts", "halts on no input", "doesn't halt", "does not halt"];
+const pick = (k, ans, opts, label) => `<select class="pb-pick" data-blank="${k}" data-ans="${attr(ans)}" aria-label="${attr(label)}"><option value="">choose</option>${opts.map(o => `<option>${o}</option>`).join("")}</select>`;
+const blank = (k, alts, show, label, keys) => `<span class="pb-bwrap"><input class="pb-blank" data-blank="${k}" data-alts="${attr(JSON.stringify(alts || [show]))}" data-show="${attr(show)}" aria-label="${attr(label)}" autocomplete="off" spellcheck="false">${(keys || []).map(x => `<button type="button" class="pb-ins" data-for="${k}" data-ins="${attr(x)}" title="Type ${attr(x)}">${x}</button>`).join("")}</span>`;
+const ul = lines => `<ul>${lines.map(l => `<li>${l}</li>`).join("")}</ul>`;
+function reduction(sc, fill) {
+  const h = sc.helper, flip = !sc.yes.in;
+  const helperLi = `<li>Construct a TM ${h.name} that ignores its input and behaves as follows:${fill
+    ? `<textarea class="pb-blank pb-free" data-blank="helper" data-free rows="4" aria-label="What ${h.name} does" data-show="${attr(ul(h.lines))}" placeholder="What does ${h.name} do? Say what happens when M(w) accepts, rejects, and loops."></textarea>`
+    : ul(h.lines)}</li>`;
+  const fixed = (sc.fixed || []).map(f => `<li>Construct a TM ${f.name} that ${f.text}.</li>`).join("");
+  const a1 = flip ? "reject" : "accept", a2 = flip ? "accept" : "reject";
+  const run = fill
+    ? `<li>Run ${DL}(${sc.arg}). If it accepts, ${pick("acc", a1, ["accept", "reject"], "Step 2: if D_L accepts")}. If it rejects, ${pick("rej", a2, ["accept", "reject"], "Step 2: if D_L rejects")}.”</li>`
+    : `<li>Run ${DL}(${sc.arg}). If it accepts, ${flip ? "<b>reject</b>" : "accept"}. If it rejects, ${flip ? "<b>accept</b>" : "reject"}.”</li>`;
+  const kase = which => {
+    const c = sc[which], yes = which === "yes", n = yes ? "Case 1" : "Case 2";
+    const head = yes ? "If M(w) accepts" : "If M(w) does not accept (it rejects or loops)";
+    const mem = c.in ? "∈" : "∉", out = yes ? "accepts" : "rejects";
+    if (!fill) return `${head}, then ${c.pre} ${c.val}${c.why ? `, ${c.why}` : ""}, so ${sc.arg} ${mem} L. Then ${DATM} ${out}.`;
+    return `${head}, then ${c.pre} ${blank(which + "v", c.alts, c.val, `${n}: ${strip(c.pre)} …`, c.keys)}, so ${sc.arg} ${pick(which + "m", mem, ["∈", "∉"], `${n}: ∈ or ∉ L`)} L. Then ${DATM} ${pick(which + "o", out, ["accepts", "rejects"], `${n}: what D_ATM does`)}.`;
+  };
+  return `<div class="rd">
+    <div class="rd-part rd-setup"><span class="rd-tag">Setup</span>Assume there exists a decider ${DL} for L. We will use ${DL} to build a decider ${DATM} for ${ATM} as follows.</div>
+    <div class="rd-part rd-build"><span class="rd-tag">Construction</span>${DATM} = “On input ⟨M, w⟩:<ol>${helperLi}${fixed}${run}</ol></div>
+    <div class="rd-part rd-cases"><span class="rd-tag">Prove that ${DATM} decides ${ATM} if ${DL} decides L</span>
+      <p class="rd-yes">${kase("yes")}</p>
+      <p class="rd-no">${kase("no")}</p></div>
+    <div class="rd-part rd-end"><span class="rd-tag">Conclusion</span>${DATM} always halts (it only constructs machines and runs the decider ${DL}), so it would decide ${ATM}. But ${ATM} is undecidable. Contradiction: L is undecidable. ∎</div>
+    ${!fill && sc.note ? `<p class="rd-note">${sc.note}</p>` : ""}
+  </div>`;
+}
+
 registerProofs([
   // ----------------------------------------------------------------------------------------------- Reductions
   {
@@ -23,42 +68,97 @@ registerProofs([
     ],
     puzzle: {
       id: "box-total", name: "Halts on everything", type: "order",
-      theorem: `TOTAL${sb("TM")} = { ⟨M⟩ | M halts on every input } is undecidable.`,
+      theorem: `L = { ⟨M⟩ | M is a TM that halts on every input } is undecidable.`,
       steps: [
-        `Assume, for contradiction, that a TM ${D("T")} decides TOTAL${sb("TM")}.`,
-        `Build ${D("A")}: on input ⟨M, w⟩, write the code of ${Mw}(x): “run M on w; if M accepts, accept; if M rejects, loop forever.”`,
-        `Then ${D("A")} outputs ${D("T")}(⟨${Mw}⟩). It always halts: it only writes code, and ${D("T")} always halts.`,
-        `If M accepts w, ${Mw} accepts (so halts on) every input. If M rejects or loops on w, ${Mw} loops on every input.`,
-        `So ${Mw} ∈ TOTAL${sb("TM")} ⇔ M accepts w, and ${D("A")} decides ${ATM}.`,
-        `But ${ATM} is undecidable. Contradiction, so TOTAL${sb("TM")} is undecidable. ∎`,
+        `Assume there exists a decider ${DL} for L. We will use ${DL} to build a decider ${DATM} for ${ATM}.`,
+        `${DATM} = “On input ⟨M, w⟩: construct a TM M₂ that ignores its input and runs M(w). If M(w) accepts, accept. If M(w) rejects, <b>loop forever</b>. If M(w) loops, loop.`,
+        `Then run ${DL}(⟨M₂⟩). If it accepts, accept. If it rejects, reject.”`,
+        `If M(w) accepts, then M₂ halts on every input, so ⟨M₂⟩ ∈ L. Then ${DATM} accepts.`,
+        `If M(w) does not accept (it rejects or loops), then M₂ loops on every input, so ⟨M₂⟩ ∉ L. Then ${DATM} rejects.`,
+        `${DATM} always halts, so it would decide ${ATM}. Contradiction: L is undecidable. ∎`,
       ],
-      groups: [[2, 3]],
+      groups: [[3, 4]],
       distractors: [
-        { html: `${Mw}(x): “run M on w and output what it outputs.”`, why: `Then if M rejects w, ${Mw} halts on everything (by rejecting), so it would be in TOTAL${sb("TM")} even though M didn’t accept w. Rejecting must turn into looping.` },
-        { html: `${D("A")} runs ${Mw} on a few inputs to see if it halts.`, why: `${Mw} might loop, and then ${D("A")} isn’t a decider. Only ${D("T")} looks at ${Mw}.` },
+        { html: `M₂ runs M(w) and does whatever M does: if M(w) rejects, reject.`, why: `Then if M rejects w, M₂ halts on everything (by rejecting), so ⟨M₂⟩ ∈ L even though M didn’t accept w. Rejecting must turn into looping.` },
+        { html: `${DATM} runs M₂ on a few inputs to see if it halts.`, why: `M₂ might loop, and then ${DATM} isn’t a decider. Only ${DL} looks at M₂.` },
       ],
       done: "The twist here: “halts” counts rejecting, so the helper turns a reject into a loop.",
     },
     checklist: [
-      { text: `Reduces <b>${ATM} to the new language</b>: assumes a decider for the new language and builds a decider for ${ATM}`, key: true },
-      { text: `${D("A")} only <b>writes code</b> (never runs M on w itself)`, key: true },
-      { text: `Defines the helper machine(s) precisely: what it does on an input x`, key: true },
-      { text: `States the key point: helper ∈ new language ⇔ M accepts w`, key: true },
-      { text: `Checks all three cases: M accepts w, rejects w, <b>loops on w</b>`, key: true },
-      { text: `Says why ${D("A")} always halts`, key: false },
-      { text: `Ends with the contradiction (${ATM} is undecidable)`, key: false },
+      { part: "setup", text: `Sets it up the right way round: assumes a decider ${DL} for L and uses it to build a decider ${DATM} for ${ATM}`, key: true },
+      { part: "build", text: `Says exactly what each constructed machine does on its input, including when M(w) <b>rejects</b> or <b>loops</b>`, key: true },
+      { part: "build", text: `${DATM} only <b>constructs</b> machines and runs ${DL} (never runs M on w itself), and says what it outputs for each answer of ${DL}`, key: true },
+      { part: "yes", text: `Case M(w) accepts: says what the machine’s language (or behavior) is, so it’s in L, so ${DATM} accepts`, key: true },
+      { part: "no", text: `Case M(w) does not accept (<b>rejects or loops</b>): says what it is then, so it’s not in L, so ${DATM} rejects`, key: true },
+      { part: "end", text: `Ends with the contradiction: ${DATM} would decide ${ATM}, so L is undecidable`, key: false },
     ],
+    scaffold: {
+      model: sc => reduction(sc, false),
+      fill: sc => reduction(sc, true),
+      outline: `Setup:\n\n\nD_ATM = "On input ⟨M, w⟩:\n  1. Construct a TM M₂ that\n\n  2. Run D_L(   ). If it accepts, ___. If it rejects, ___."\n\nProve that D_ATM decides A_TM if D_L decides L:\nIf M(w) accepts, then\n\nIf M(w) does not accept (it rejects or loops), then\n\nConclusion:\n`,
+      starters: [
+        "Assume there exists a decider D_L for L. We will use D_L to build a decider D_ATM for A_TM as follows.",
+        "Construct a TM M₂ that ignores its input and behaves as follows:",
+        "Run M(w).",
+        "Run D_L(⟨M₂⟩). If it accepts, accept. If it rejects, reject.",
+        "so ⟨M₂⟩ ∈ L. Then D_ATM accepts.",
+        "so ⟨M₂⟩ ∉ L. Then D_ATM rejects.",
+        "D_ATM always halts, so it would decide A_TM. But A_TM is undecidable. Contradiction: L is undecidable. ∎",
+      ],
+      examples: [
+        { id: "ex-even", kind: "plain", task: `L = { ⟨M⟩ | M is a TM that accepts some string of even length }`,
+          sc: { kind: "plain", helper: { name: "M₂", lines: PLAIN }, arg: "⟨M₂⟩",
+            yes: { pre: "L(M₂) =", val: "Σ*", why: "which contains 00, a string of even length", in: true },
+            no: { pre: "L(M₂) =", val: "∅", why: "which contains no strings at all", in: false } } },
+        { id: "ex-flip", kind: "flip", task: `L = { ⟨M⟩ | M is a TM that accepts no string starting with 0 }`,
+          sc: { kind: "flip", helper: { name: "M₂", lines: PLAIN }, arg: "⟨M₂⟩",
+            yes: { pre: "L(M₂) =", val: "Σ*", why: "which contains 0, a string starting with 0", in: false },
+            no: { pre: "L(M₂) =", val: "∅", why: "which has no strings, so none starting with 0", in: true },
+            note: "The twist: here ⟨M₂⟩ is in L exactly when M does <b>not</b> accept w, so step 2 flips D<sub>L</sub>’s answer." } },
+        { id: "ex-loop", kind: "loop", task: `L = { ⟨M⟩ | M is a TM that halts on ε }`,
+          sc: { kind: "loop", helper: { name: "M₂", lines: LOOPY }, arg: "⟨M₂⟩",
+            yes: { pre: "M₂", val: "halts on every input, including ε", in: true },
+            no: { pre: "M₂", val: "loops on every input, including ε", in: false },
+            note: "The twist: halting includes rejecting, so M₂ turns a reject into a loop. Otherwise a machine that rejects w would land in L." } },
+        { id: "ex-two", kind: "two", task: `L = { ⟨M₁, M₂⟩ | M₁, M₂ are TMs and L(M₁) ∩ L(M₂) = Σ* }`,
+          sc: { kind: "two", helper: { name: "M₂", lines: PLAIN }, fixed: [{ name: "M₁", text: "accepts all strings" }], arg: "⟨M₁, M₂⟩",
+            yes: { pre: "L(M₁) ∩ L(M₂) = Σ* ∩ Σ* =", val: "Σ*", in: true },
+            no: { pre: "L(M₁) ∩ L(M₂) = Σ* ∩ ∅ =", val: "∅", why: "which is not Σ*", in: false },
+            note: "With two machines, fix one (M₁ accepts everything) so the answer depends only on M₂." } },
+      ],
+    },
     prompts: [
-      { id: "both01", task: `Prove that { ⟨M⟩ | M accepts both 0 and 1 } is undecidable.`,
-        model: `Assume ${D("B")} decides it. Build ${D("A")}(⟨M, w⟩): write ${Mw}(x) = “ignore x; run M on w; output what it outputs”, then output ${D("B")}(⟨${Mw}⟩).<br><b>Halts:</b> ${D("A")} only writes code, and ${D("B")} always halts.<br><b>Key point:</b> if M accepts w, ${Mw} accepts everything, including 0 and 1. If M rejects or loops on w, ${Mw} accepts nothing. So ${Mw} accepts 0 and 1 ⇔ M accepts w.<br>So ${D("A")} decides ${ATM}, a contradiction. ∎` },
-      { id: "infinite", task: `Prove that INFINITE${sb("TM")} = { ⟨M⟩ | L(M) is infinite } is undecidable.`,
-        model: `Assume ${D("I")} decides it. ${D("A")}(⟨M, w⟩) writes ${Mw}(x) = “ignore x; run M on w; output what it outputs” and outputs ${D("I")}(⟨${Mw}⟩).<br><b>Halts:</b> it only writes code; ${D("I")} always halts.<br><b>Cases:</b> M accepts w ⇒ L(${Mw}) = Σ*, infinite, so ${D("I")} accepts. M rejects or loops on w ⇒ L(${Mw}) = ∅, finite, so ${D("I")} rejects.<br><b>Key point:</b> L(${Mw}) is infinite ⇔ M accepts w. So ${D("A")} decides ${ATM}: contradiction. ∎` },
-      { id: "intersect", task: `Prove that { ⟨M₁, M₂⟩ | L(M₁) ∩ L(M₂) ≠ ∅ } is undecidable.`,
-        model: `Assume ${D("X")} decides it. ${D("A")}(⟨M, w⟩) writes M₁ = “accept every input” and M₂ = ${Mw} = “ignore x; run M on w; output what it outputs”, and outputs ${D("X")}(⟨M₁, M₂⟩).<br><b>Halts:</b> only writes code; ${D("X")} always halts.<br><b>Key point:</b> L(M₁) ∩ L(M₂) = Σ* ∩ L(${Mw}) = L(${Mw}), which is Σ* (nonempty) if M accepts w and ∅ if M rejects or loops on w. So the intersection is nonempty ⇔ M accepts w.<br>So ${D("A")} decides ${ATM}: contradiction. ∎` },
-      { id: "ww", task: `Prove that { ⟨M, s⟩ | M accepts the string ss } is undecidable. (You get to choose the string s too.)`,
-        model: `Assume ${D("S")} decides it. ${D("A")}(⟨M, w⟩) writes ${Mw}(x) = “ignore x; run M on w; output what it outputs” and outputs ${D("S")}(⟨${Mw}, ε⟩). (Any s works, since ${Mw} ignores its input; with s = ε, ss = ε.)<br><b>Halts:</b> only writes code; ${D("S")} always halts.<br><b>Key point:</b> ${Mw} accepts εε = ε ⇔ M accepts w (if M loops on w, ${Mw} loops on ε, so it doesn’t accept).<br>So ${D("A")} decides ${ATM}: contradiction. ∎` },
-      { id: "total", task: `Prove that TOTAL${sb("TM")} = { ⟨M⟩ | M halts on every input } is undecidable.`,
-        model: `Assume ${D("T")} decides it. ${D("A")}(⟨M, w⟩) writes ${Mw}(x) = “run M on w; if M accepts, accept; if M rejects, <b>loop forever</b>”, and outputs ${D("T")}(⟨${Mw}⟩).<br><b>Halts:</b> only writes code; ${D("T")} always halts.<br><b>Cases:</b> M accepts w ⇒ ${Mw} halts (accepts) on every input. M rejects w ⇒ ${Mw} loops on every input. M loops on w ⇒ ${Mw} loops on every input.<br><b>Key point:</b> ${Mw} halts on every input ⇔ M accepts w. So ${D("A")} decides ${ATM}: contradiction. ∎<br><i>Trap:</i> with the plain helper, a reject would count as halting.` },
+      { id: "both01", task: `Let L = { ⟨M⟩ | M is a TM that accepts both 0 and 1 }. Show that L is undecidable by reducing ${ATM} to L.`,
+        sc: { kind: "plain", helper: { name: "M₂", lines: PLAIN }, arg: "⟨M₂⟩",
+          yes: { pre: "L(M₂) =", val: "Σ*", alts: SIGMA, keys: ["Σ*", "∅"], why: "so M₂ accepts both 0 and 1", in: true },
+          no: { pre: "L(M₂) =", val: "∅", alts: EMPTY, keys: ["Σ*", "∅"], why: "so M₂ accepts neither 0 nor 1", in: false } } },
+      { id: "infinite", task: `Let L = { ⟨M⟩ | M is a TM and L(M) is infinite }. Show that L is undecidable by reducing ${ATM} to L.`,
+        sc: { kind: "plain", helper: { name: "M₂", lines: PLAIN }, arg: "⟨M₂⟩",
+          yes: { pre: "L(M₂) =", val: "Σ*", alts: SIGMA, keys: ["Σ*", "∅"], why: "which is infinite", in: true },
+          no: { pre: "L(M₂) =", val: "∅", alts: EMPTY, keys: ["Σ*", "∅"], why: "which is finite", in: false } } },
+      { id: "empty", task: `Let L = { ⟨M⟩ | M is a TM and L(M) = ∅ }. Show that L is undecidable by reducing ${ATM} to L.`,
+        sc: { kind: "flip", helper: { name: "M₂", lines: PLAIN }, arg: "⟨M₂⟩",
+          yes: { pre: "L(M₂) =", val: "Σ*", alts: SIGMA, keys: ["Σ*", "∅"], why: "which is not empty", in: false },
+          no: { pre: "L(M₂) =", val: "∅", alts: EMPTY, keys: ["Σ*", "∅"], in: true },
+          note: "The twist: ⟨M₂⟩ ∈ L exactly when M does <b>not</b> accept w, so step 2 flips D<sub>L</sub>’s answer." } },
+      { id: "intersect", task: `Let L = { ⟨M₁, M₂⟩ | M₁, M₂ are TMs and L(M₁) ∩ L(M₂) ≠ ∅ }. Show that L is undecidable by reducing ${ATM} to L.`,
+        sc: { kind: "two", helper: { name: "M₂", lines: PLAIN }, fixed: [{ name: "M₁", text: "accepts all strings" }], arg: "⟨M₁, M₂⟩",
+          yes: { pre: "L(M₁) ∩ L(M₂) = Σ* ∩ L(M₂) =", val: "Σ*", alts: SIGMA, keys: ["Σ*", "∅"], why: "which is not empty", in: true },
+          no: { pre: "L(M₁) ∩ L(M₂) = Σ* ∩ L(M₂) =", val: "∅", alts: EMPTY, keys: ["Σ*", "∅"], in: false } } },
+      { id: "total", task: `Let L = { ⟨M⟩ | M is a TM that halts on every input }. Show that L is undecidable by reducing ${ATM} to L.`,
+        sc: { kind: "loop", helper: { name: "M₂", lines: LOOPY }, arg: "⟨M₂⟩",
+          yes: { pre: "M₂", val: "halts on every input", alts: HALTS, in: true },
+          no: { pre: "M₂", val: "loops on every input", alts: LOOPS, in: false },
+          note: "Trap: with the plain helper, a machine that rejects w would make M₂ halt (by rejecting) on everything." } },
+      { id: "short", task: `Let L = { ⟨M⟩ | M is a TM that accepts every string of length at most 2 }. Show that L is undecidable by reducing ${ATM} to L.`,
+        sc: { kind: "plain", helper: { name: "M₂", lines: PLAIN }, arg: "⟨M₂⟩",
+          yes: { pre: "L(M₂) =", val: "Σ*", alts: SIGMA, keys: ["Σ*", "∅"], why: "which contains every string of length at most 2", in: true },
+          no: { pre: "L(M₂) =", val: "∅", alts: EMPTY, keys: ["Σ*", "∅"], why: "which doesn’t even contain ε", in: false } } },
+      { id: "ww", task: `Let L = { ⟨M, s⟩ | M is a TM that accepts the string ss }. Show that L is undecidable by reducing ${ATM} to L. (You choose the string s that ${DATM} passes to ${DL}.)`,
+        sc: { kind: "plain", helper: { name: "M₂", lines: PLAIN }, arg: "⟨M₂, ε⟩",
+          yes: { pre: "L(M₂) =", val: "Σ*", alts: SIGMA, keys: ["Σ*", "∅"], why: "so M₂ accepts εε = ε", in: true },
+          no: { pre: "L(M₂) =", val: "∅", alts: EMPTY, keys: ["Σ*", "∅"], why: "so M₂ does not accept εε = ε", in: false },
+          note: "Any fixed s works here, because M₂ ignores its input. ε keeps it short." } },
     ],
   },
 
@@ -93,13 +193,13 @@ registerProofs([
       { text: "Doesn’t flip the answer (a mapping reduction can’t negate)", key: false },
     ],
     prompts: [
-      { id: "acc01", task: `Give a mapping reduction from ${ATM} to { ⟨M⟩ | M accepts 01 }.`,
+      { id: "acc01", task: `Let B = { ⟨M⟩ | M is a TM that accepts 01 }. Give a mapping reduction from ${ATM} to B.`,
         model: `f(⟨M, w⟩) = ⟨${Mw}⟩ with ${Mw}(x) = “ignore x; run M on w; output what it outputs.” Computable: it only writes code.<br>⟨M, w⟩ ∈ ${ATM} ⇒ ${Mw} accepts everything, including 01 ⇒ f(⟨M, w⟩) is in B.<br>⟨M, w⟩ ∉ ${ATM} (M rejects or loops on w) ⇒ ${Mw} accepts nothing, so not 01 ⇒ f(⟨M, w⟩) ∉ B. ∎` },
-      { id: "cofinite", task: `Give a mapping reduction from ${ATM} to the complement of FINITE${sb("TM")}, i.e. to { ⟨M⟩ | L(M) is infinite }.`,
+      { id: "cofinite", task: `Let B = { ⟨M⟩ | M is a TM and L(M) is infinite } (the complement of FINITE${sb("TM")}). Give a mapping reduction from ${ATM} to B.`,
         model: `f(⟨M, w⟩) = ⟨${Mw}⟩, the usual helper. Computable: only writes code.<br>M accepts w ⇒ L(${Mw}) = Σ*, infinite ⇒ in B.<br>M rejects or loops on w ⇒ L(${Mw}) = ∅, finite ⇒ not in B. ∎<br>(Notice this is <b>not</b> a mapping reduction to FINITE${sb("TM")} itself: it would land on the wrong side.)` },
-      { id: "complement", task: `Explain why, if f is a mapping reduction from A to B, the same f is a mapping reduction from Ā to B̄.`,
-        model: `f satisfies w ∈ A ⇔ f(w) ∈ B for every w. Negating both sides: w ∉ A ⇔ f(w) ∉ B, that is, w ∈ Ā ⇔ f(w) ∈ B̄. And f is still computable. ∎` },
-      { id: "eps-map", task: `Give a mapping reduction from ${ATM} to E${sb("TM")} = { ⟨M⟩ | M accepts ε } (this class’s meaning).`,
+      { id: "complement", task: `Explain why, if f is a mapping reduction from A to B, the same f is a mapping reduction from <span class='ovl'>A</span> to <span class='ovl'>B</span>.`,
+        model: `f satisfies w ∈ A ⇔ f(w) ∈ B for every w. Negating both sides: w ∉ A ⇔ f(w) ∉ B, that is, w ∈ <span class='ovl'>A</span> ⇔ f(w) ∈ <span class='ovl'>B</span>. And f is still computable. ∎` },
+      { id: "eps-map", task: `Let B = E${sb("TM")} = { ⟨M⟩ | M is a TM that accepts ε } (this class’s meaning). Give a mapping reduction from ${ATM} to B.`,
         model: `f(⟨M, w⟩) = ⟨${Mw}⟩, ${Mw}(x) = “ignore x; run M on w; output what it outputs.” Computable: only writes code.<br>M accepts w ⇒ ${Mw} accepts ε ⇒ in E${sb("TM")}.<br>M rejects w ⇒ ${Mw} rejects ε; M loops on w ⇒ ${Mw} loops on ε. Either way it doesn’t accept ε ⇒ not in E${sb("TM")}. ∎` },
     ],
   },
@@ -217,13 +317,13 @@ registerProofs([
       { text: "Doesn’t use Rice on a property of the machine itself (states, steps, code)", key: false },
     ],
     prompts: [
-      { id: "three", task: "Use Rice’s theorem to prove { ⟨M⟩ | L(M) has exactly 3 strings } is undecidable.",
+      { id: "three", task: "Let L = { ⟨M⟩ | M is a TM and L(M) has exactly 3 strings }. Use Rice’s theorem to prove L is undecidable.",
         model: "Only the language matters: if L(M) = L(M′), both have the same number of strings. Non-trivial: a TM that accepts exactly ε, 0 and 1 (and rejects everything else) is in it; a TM that rejects everything (L = ∅) is not. By Rice’s theorem, the language is undecidable. ∎" },
-      { id: "palin", task: "Use Rice’s theorem to prove { ⟨M⟩ | every string in L(M) is a palindrome } is undecidable.",
+      { id: "palin", task: "Let L = { ⟨M⟩ | M is a TM and every string in L(M) is a palindrome }. Use Rice’s theorem to prove L is undecidable.",
         model: "Depends only on L(M). Non-trivial: a TM that rejects everything has L = ∅, and every string in ∅ is a palindrome (vacuously), so it’s in. A TM that accepts everything has 01 ∈ L, not a palindrome, so it’s out. By Rice’s theorem, undecidable. ∎" },
-      { id: "regular", task: "Use Rice’s theorem to prove REGULAR" + sb("TM") + " = { ⟨M⟩ | L(M) is regular } is undecidable.",
+      { id: "regular", task: "Let L = REGULAR" + sb("TM") + " = { ⟨M⟩ | M is a TM and L(M) is regular }. Use Rice’s theorem to prove L is undecidable.",
         model: "Depends only on L(M). Non-trivial: a TM accepting everything has L = Σ*, regular, so it’s in; a TM deciding {0ⁿ1ⁿ} (cross off matching 0s and 1s) has a non-regular language, so it’s out. By Rice’s theorem, undecidable. ∎ (Same result as the lecture’s reduction, in three lines.)" },
-      { id: "notrice", task: "Is { ⟨M⟩ | M has at most 10 states } decidable? Can Rice’s theorem be used? Explain.",
+      { id: "notrice", task: "Let L = { ⟨M⟩ | M is a TM with at most 10 states }. Is L decidable? Can Rice’s theorem be used? Explain.",
         model: "Rice’s theorem doesn’t apply: two machines can have the same language and different numbers of states, so this isn’t a property of L(M). And it’s decidable: read ⟨M⟩ and count the states (always halts). ∎" },
     ],
   },
@@ -249,20 +349,20 @@ registerProofs([
         { html: "Recognize the complement by running M on w and accepting if it loops.", why: "You can never tell that M loops: it might halt one step later. That’s exactly why this fails." },
         { html: "HALT is undecidable, so its complement is unrecognizable.", why: "Undecidable alone isn’t enough (HALT itself is undecidable but recognizable). You also need HALT recognizable." },
       ],
-      done: "The recipe: L recognizable + L undecidable ⇒ L̄ unrecognizable.",
+      done: "The recipe: L recognizable + L undecidable ⇒ <span class='ovl'>L</span> unrecognizable.",
     },
     checklist: [
-      { text: "States the theorem being used (L and L̄ both recognizable ⇒ L decidable), or uses a mapping reduction from an unrecognizable language", key: true },
+      { text: "States the theorem being used (L and <span class='ovl'>L</span> both recognizable ⇒ L decidable), or uses a mapping reduction from an unrecognizable language", key: true },
       { text: "Shows the <b>other</b> language is recognizable, with a recognizer", key: true },
       { text: "Shows (or cites) that it’s undecidable", key: true },
       { text: "Concludes: if this one were recognizable too, that would be decidable, a contradiction", key: true },
     ],
     prompts: [
-      { id: "coeps", task: "Prove that { ⟨M⟩ | M does not accept ε } is not recognizable.",
+      { id: "coeps", task: "Let L = { ⟨M⟩ | M is a TM that does not accept ε }. Prove that L is not recognizable.",
         model: "Its complement is E" + sb("TM") + " = { ⟨M⟩ | M accepts ε }. E" + sb("TM") + " is recognizable: run M on ε and accept if it accepts. E" + sb("TM") + " is undecidable (by reduction from A" + sb("TM") + "). If its complement were also recognizable, E" + sb("TM") + " would be decidable by the theorem. Contradiction, so the language is not recognizable. ∎" },
       { id: "coatm", task: "Prove that the complement of A" + sb("TM") + " is not recognizable.",
         model: "A" + sb("TM") + " is recognizable (the universal TM runs M on w and accepts if M accepts) and undecidable. If its complement were recognizable, A" + sb("TM") + " would be decidable by the theorem. Contradiction. ∎" },
-      { id: "coboth", task: "Prove that { ⟨M⟩ | M accepts neither 0 nor 1 } is not recognizable. (Hint: its complement is { ⟨M⟩ | M accepts 0 or 1 }.)",
+      { id: "coboth", task: "Let L = { ⟨M⟩ | M is a TM that accepts neither 0 nor 1 }. Prove that L is not recognizable. (Hint: its complement is { ⟨M⟩ | M accepts 0 or 1 }.)",
         model: "The complement C = { ⟨M⟩ | M accepts 0 or 1 } is recognizable: run M on 0 and on 1 in parallel (alternating steps), and accept if either accepts. C is undecidable (Rice’s theorem: it depends only on L(M); accept-everything is in, reject-everything is out). If the given language were recognizable too, C would be decidable. Contradiction. ∎" },
     ],
   },

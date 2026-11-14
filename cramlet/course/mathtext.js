@@ -3,14 +3,18 @@
 //   format(text) → HTML: line breaks kept, and the usual typed shorthands shown as real math:
 //       0^p, 0^2p, 0^(p-k), 0^{p+1}  →  superscripts      q_0, q_{acc}  →  subscripts
 //       >=  <=  !=  =>  ->  →  ≥ ≤ ≠ ⇒ →
+//       ~L, ~A_TM  →  complement bar (L̄)                                << >>  →  ⟨ ⟩      <=>  →  ⇔
 //   mount(textarea, { onChange }) adds a symbol bar above the box and a live preview below it, and turns
-//   >= <= != => -> into ≥ ≤ ≠ ⇒ → as you type (so the box itself already reads well).
+//   the typed shorthands into real symbols as you type (so the box itself already reads well).
+//   A course can set its own keys and help line: STUDY.settings.mathKeys = [[labelHTML, textToInsert], …],
+//   STUDY.settings.mathHelp = "…". mount() returns { insert(text) } for buttons that type whole phrases.
 (function () {
     "use strict";
 
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     // Typed two-character shorthands, replaced as you type. Order matters: "<=" before "=>" so "<=>" isn't split oddly.
-    const TYPED = [[">=", "≥"], ["<=", "≤"], ["!=", "≠"], ["=>", "⇒"], ["->", "→"]];
+    // "≤>" is what "<=>" has become by the time the ">" is typed, so it turns into ⇔.
+    const TYPED = [[">=", "≥"], ["<=", "≤"], ["≤>", "⇔"], ["!=", "≠"], ["=>", "⇒"], ["->", "→"], ["<<", "⟨"], [">>", "⟩"]];
     const minus = s => s.replace(/-/g, "−");
 
     function format(text) {
@@ -20,6 +24,9 @@
         h = h.replace(/\^\{([^}]*)\}/g, (_, x) => `<sup>${minus(x)}</sup>`)
              .replace(/\^\(([^)]*)\)/g, (_, x) => `<sup>${minus(x)}</sup>`)
              .replace(/\^(\d+[pnkmij]?|[A-Za-z*+])/g, (_, x) => `<sup>${x}</sup>`);
+        // Complement: ~L, ~A_TM, ~{A ∪ B} → a bar over it.
+        h = h.replace(/~\{([^}]*)\}/g, '<span class="ovl">$1</span>')
+             .replace(/~([A-Za-z]+(?:_\{[^}]*\}|_[A-Za-z0-9]+)?)/g, '<span class="ovl">$1</span>');
         // Subscripts: q_0, q_{accept}
         h = h.replace(/_\{([^}]*)\}/g, "<sub>$1</sub>").replace(/_([A-Za-z0-9]+)/g, "<sub>$1</sub>");
         return h.replace(/\n/g, "<br>");
@@ -37,19 +44,22 @@
         t.dispatchEvent(new Event("input", { bubbles: true }));
     }
 
+    const setting = k => (window.STUDY && window.STUDY.settings && window.STUDY.settings[k]) || null;
+
     function mount(t, opts = {}) {
-        if (!t || t.dataset.mathText) return;
+        if (!t || t.dataset.mathText) return t && t._mathText;
         t.dataset.mathText = "1";
+        const keys = setting("mathKeys") || KEYS;
         const bar = document.createElement("div");
         bar.className = "mt-bar";
         bar.setAttribute("role", "toolbar");
         bar.setAttribute("aria-label", "Insert a math symbol");
-        bar.innerHTML = KEYS.map(([k, ins]) => `<button type="button" class="mt-key" data-ins="${esc(ins)}" title="Insert ${esc(k)}">${esc(k)}</button>`).join("")
+        bar.innerHTML = keys.map(([k, ins]) => k === "|" ? `<span class="mt-gap" aria-hidden="true"></span>` : `<button type="button" class="mt-key" data-ins="${esc(ins)}" title="Insert ${esc(ins)}">${k}</button>`).join("")
             + `<button type="button" class="mt-key wide" data-sup title="Superscript: type the exponent inside ^( )">x<sup>n</sup></button>`
             + `<button type="button" class="mt-key wide" data-sub title="Subscript, like q_0">x<sub>0</sub></button>`;
         const help = document.createElement("p");
         help.className = "mt-help muted";
-        help.innerHTML = "Shortcuts: <code>0^p</code> → 0<sup>p</sup>, <code>0^(p-k)</code> → 0<sup>p−k</sup>, <code>q_0</code> → q<sub>0</sub>, and <code>&gt;=</code> <code>&lt;=</code> <code>!=</code> <code>=&gt;</code> become ≥ ≤ ≠ ⇒ as you type.";
+        help.innerHTML = setting("mathHelp") || "Shortcuts: <code>0^p</code> → 0<sup>p</sup>, <code>0^(p-k)</code> → 0<sup>p−k</sup>, <code>q_0</code> → q<sub>0</sub>, and <code>&gt;=</code> <code>&lt;=</code> <code>!=</code> <code>=&gt;</code> become ≥ ≤ ≠ ⇒ as you type.";
         const prev = document.createElement("div");
         prev.className = "mt-preview";
         prev.innerHTML = `<div class="side-title">Preview</div><div class="mt-out"></div>`;
@@ -83,6 +93,8 @@
             if (opts.onChange) opts.onChange(t.value);
         });
         draw();
+        t._mathText = { insert: text => insert(t, text) };
+        return t._mathText;
     }
 
     window.CRAMLET = Object.assign(window.CRAMLET || {}, { mathText: { format, mount } });

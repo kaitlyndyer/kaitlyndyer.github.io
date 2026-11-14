@@ -206,6 +206,55 @@
 .pb-tag.ok { background: var(--good-bg); color: var(--good); } .pb-tag.no { background: var(--warn-soft); color: var(--warn-ink); }
 .pb-missed { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
 .pb-status .pb-lvls { justify-content: flex-end; }
+/* Reduction proofs: one color per part, shared by the model answer, the blanks and the checklist */
+.rd-setup { --rdc: #7c5ce6; } .rd-build { --rdc: #2f7fe0; } .rd-yes { --rdc: #1f9d55; } .rd-no { --rdc: #d9711c; } .rd-end, .rd-cases { --rdc: #7a7290; }
+.rd { display: grid; gap: 8px; }
+.rd-part { padding: 9px 12px; border-radius: 10px; background: color-mix(in srgb, var(--rdc) 9%, transparent); line-height: 1.6; }
+.rd-tag { display: block; font: 800 11px var(--font-body); text-transform: uppercase; letter-spacing: .5px; color: color-mix(in srgb, var(--rdc) 70%, var(--ink)); margin-bottom: 2px; }
+.rd-part ol { margin: 4px 0 0; padding-left: 22px; } .rd-part ul { margin: 2px 0; padding-left: 18px; }
+.rd-cases p { margin: 6px 0 0; padding-left: 16px; position: relative; }
+.rd-cases p::before, .rd-dot { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--rdc); }
+.rd-cases p::before { position: absolute; left: 0; top: .55em; }
+.rd-dot { margin-right: 6px; vertical-align: 1px; }
+.rd-note { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+.pb-model .rd-part { background: color-mix(in srgb, var(--rdc) 11%, var(--surface)); }
+/* Fill the blanks */
+.pb-fill { margin: 4px 0 8px; font-size: 15px; }
+.pb-blank, .pb-pick { font: 600 14.5px var(--font-body); color: var(--ink); background: var(--surface); border: 1.5px dashed var(--brand); border-radius: 8px; padding: 3px 8px; min-height: 32px; vertical-align: middle; }
+.pb-blank { width: 11em; max-width: 100%; }
+.pb-free { display: block; width: 100%; margin-top: 6px; resize: vertical; line-height: 1.5; box-sizing: border-box; }
+.pb-bwrap { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.pb-ins { font: 700 13px var(--font-body); min-width: 30px; min-height: 30px; padding: 0 6px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer; }
+.pb-bwrap:has(:disabled) .pb-ins { display: none; }
+.pb-ins:hover { border-color: var(--brand); color: var(--brand); }
+.pb-blank:focus, .pb-pick:focus { outline: 2px solid var(--brand); outline-offset: 1px; border-style: solid; }
+.pb-empty { border-color: var(--bad); background: var(--bad-bg); }
+.pb-ok { border: 1.5px solid var(--good-line); background: var(--good-bg); }
+.pb-miss { border: 1.5px solid var(--bad); background: var(--bad-bg); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--bad) 60%, transparent); }
+.pb-self { display: block; }
+.pb-want { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 4px; font-weight: 700; color: var(--good); }
+.pb-want.pb-self { display: block; margin: 8px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); color: var(--ink); font-weight: 500; }
+.pb-want.pb-self ul { margin: 4px 0 8px; padding-left: 18px; }
+.pb-selfbtns { display: flex; flex-wrap: wrap; gap: 8px; }
+.pb-count { font: 700 12px var(--font-body); padding: 3px 8px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); cursor: pointer; }
+.pb-fillsum { padding: 10px 12px; border-radius: 10px; background: var(--warn-soft); color: var(--warn-ink); font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.pb-fillsum.ok { background: var(--good-bg); color: var(--good); }
+.pb-fillsum .ic { width: 16px; height: 16px; }
+/* Worked example, starter phrases, peek */
+.pb-example { margin: 0 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); }
+.pb-example > summary { cursor: pointer; padding: 10px 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; list-style: none; }
+.pb-example > summary::-webkit-details-marker { display: none; }
+.pb-example > summary .ic { width: 18px; height: 18px; color: var(--brand); flex: none; }
+.pb-example > .pb-model { margin: 0 12px 12px; background: var(--surface); }
+.pb-starters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.pb-starters .pb-k { width: 100%; }
+.pb-starter { font: 600 13px var(--font-body); text-align: left; padding: 6px 10px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer; }
+.pb-starter:hover { border-color: var(--brand); }
+.pb-peeknote { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; background: var(--warn-soft); color: var(--warn-ink); font-weight: 600; font-size: 14px; }
+.pb-peeknote .ic { width: 16px; height: 16px; flex: none; }
+.pb-tag.peek { background: var(--surface-2); color: var(--ink-2); }
+.pb-yours { padding: 8px 10px; border-radius: 8px; background: var(--surface-2); font-size: 14px; line-height: 1.6; }
+
 
 @media (max-width: 900px) {
     .pl-dgrid, .pl-two, .pb-grade { grid-template-columns: minmax(0, 1fr); }

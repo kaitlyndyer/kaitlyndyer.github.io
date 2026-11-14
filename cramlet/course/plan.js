@@ -58,7 +58,7 @@
         const latest = CRAMLET.exam ? CRAMLET.exam.latest(COURSE) : null;
         const examBy = {};
         if (latest) latest.items.forEach(x => { const g = examBy[x.concept] = examBy[x.concept] || { earned: 0, max: 0 }; g.earned += x.earned; g.max += x.max; });
-        return { keys, visits, quizBest, latest, examBy, plan: state(COURSE), proofLevel: id => (CRAMLET.proofBox ? CRAMLET.proofBox.level(ctx, id) : 0) };
+        return { keys, visits, quizBest, latest, examBy, plan: state(COURSE), proofLevel: id => (CRAMLET.proofBox ? CRAMLET.proofBox.level(ctx, id) : 0), proofTask: (id, l) => (CRAMLET.proofBox ? CRAMLET.proofBox.taskDone(ctx, id, l) : false) };
     }
 
     // The five steps for one topic: each is 0 (not yet), 1 (you ticked it) or 2 (cramlet filled it in).
@@ -101,7 +101,7 @@
     }
     function autoDone(F, task) {
         if (task.kind === "watch") return !!F.plan.watched[task.video];
-        if (task.kind === "prove") return F.proofLevel(task.proof) >= task.level;
+        if (task.kind === "prove") return F.proofTask(task.proof, task.level);
         if (task.kind === "explain") return !!((F.plan.steps[task.topic] || {})[1]);
         if (task.key) return F.keys.has(task.key);
         return false;
@@ -198,7 +198,7 @@
         // A task's title, as a link to where you do it.
         function taskTitle(task) {
             if (task.kind === "watch") { const v = videoById(task.video); return v ? `Watch: ${v.title}` : "Watch"; }
-            if (task.kind === "prove") { const p = CRAMLET.proofBox && CRAMLET.proofBox.byId(task.proof); return p ? `${["", "With hints", "Build from steps", "On your own", "Timed"][task.level]}: ${p.title}` : "Proof Box"; }
+            if (task.kind === "prove") { const p = CRAMLET.proofBox && CRAMLET.proofBox.byId(task.proof); return p ? `${CRAMLET.proofBox.levelName(task.level)}: ${p.title}` : "Proof Box"; }
             if (task.kind === "explain") { const t = topicById[task.topic]; return `Explain it out loud: ${t ? t.title : ""}`; }
             return task.title;
         }
@@ -293,7 +293,7 @@
                     ${(t.explain || []).map((e, i) => `<div class="pl-ex"><div class="pl-exq">${e.q}</div>${revealed[i] ? `<div class="pl-exa">${e.a}</div>` : `<button type="button" class="btn small ghost" data-reveal="${t.id}:${i}">Reveal the model answer</button>`}</div>`).join("")}
                     ${(t.explain || []).length ? `<button type="button" class="btn small" data-step="${t.id}:1">${l[1] ? `${icon("check")} I explained it` : "I explained all of these"}</button>` : ""}
                 </div>
-                <div><h4>Prove it (steps 4–5)</h4>${proofs.length ? proofs.map(p => { const lv = CRAMLET.proofBox.level(ctx, p.id); return `<div class="pl-proof"><a href="#/proofs/${p.id}">${p.title}</a>${CRAMLET.proofBox.levelsHTML(lv, icon)}</div>`; }).join("") : `<p class="pl-tsub">No proof for this topic: it shows up as true/false and short answers. Step 4 fills in at 80%+ on its concept quiz.</p>`}
+                <div><h4>Prove it (steps 4–5)</h4>${proofs.length ? proofs.map(p => { return `<div class="pl-proof"><a href="#/proofs/${p.id}">${p.title}</a>${CRAMLET.proofBox.levelsHTML(ctx, p, icon)}</div>`; }).join("") : `<p class="pl-tsub">No proof for this topic: it shows up as true/false and short answers. Step 4 fills in at 80%+ on its concept quiz.</p>`}
                     ${nextStep >= 0 ? `<div class="pl-nexthint"><b>Next step: ${STEPS[nextStep]}.</b> ${STEP_HOW[nextStep]}</div>` : `<div class="pl-nexthint good">${icon("check")} Every step done. Come back to it in a couple of days to keep it fresh.</div>`}
                 </div>
             </div>`;
@@ -364,8 +364,8 @@
         function drawProofs() {
             const list = CRAMLET.proofBox ? CRAMLET.proofBox.list() : [];
             $("#pl-proofs").innerHTML = `
-                <div class="pl-h"><h2 id="pl-proofs-h">Proofs you should be able to write</h2><span class="pl-sub">Each one climbs four levels in the Proof Box. Only Timed counts as exam-ready.</span><span class="pl-grow"></span><a class="btn small" href="#/proofs">${icon("note-pencil")} Open the Proof Box</a></div>
-                <div class="pl-proofs">${list.map(p => { const lv = CRAMLET.proofBox.level(ctx, p.id); return `<a class="pl-pcard" href="#/proofs/${p.id}"><span class="pl-ptitle">${p.title}</span>${CRAMLET.proofBox.levelsHTML(lv, icon)}<span class="pl-pnext">${lv >= 4 ? `${icon("check")} Ready` : `Next: ${CRAMLET.proofBox.LEVELS[lv]}`}</span></a>`; }).join("")}</div>`;
+                <div class="pl-h"><h2 id="pl-proofs-h">Proofs you should be able to write</h2><span class="pl-sub">Each one climbs its levels in the Proof Box. Only Timed counts as exam-ready.</span><span class="pl-grow"></span><a class="btn small" href="#/proofs">${icon("note-pencil")} Open the Proof Box</a></div>
+                <div class="pl-proofs">${list.map(p => { const nx = CRAMLET.proofBox.nextName(ctx, p); return `<a class="pl-pcard" href="#/proofs/${p.id}"><span class="pl-ptitle">${p.title}</span>${CRAMLET.proofBox.levelsHTML(ctx, p, icon)}<span class="pl-pnext">${!nx ? `${icon("check")} Ready` : `Next: ${nx}`}</span></a>`; }).join("")}</div>`;
         }
 
         // ----- Scores + notes -----
