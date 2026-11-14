@@ -73,6 +73,8 @@
 
         const r0 = rec(COURSE, p.id);
         let session = r0.active || null; // { lvl, prompt, start, text, graded, ticks, peek, fill, marks }
+        // Drop a saved session this page can't show (an old level or a prompt that no longer exists).
+        if (session && (!steps.includes(session.lvl) || !p.prompts.some(x => x.id === session.prompt))) { session = null; delete r0.active; saveRec(COURSE, p.id, r0); }
         let timer = null;
         main.innerHTML = `${K.header(ctx, "proofs", { line: `${p.title}. Climb the levels in order; only Timed counts as exam-ready.` })}
             <div class="kh-slim"><a class="btn ghost small" href="#/proofs">${icon("note-pencil")} All proofs</a><span class="kh-grow"></span><span class="pb-status"></span></div>
@@ -134,7 +136,12 @@
 
         function sessionHTML(lvl) {
             if (!session || session.lvl !== lvl) {
-                return `<p>${INTRO[lvl]}</p><button type="button" class="btn primary" data-start="${lvl}" ${session ? "disabled" : ""}>${icon(lvl === 4 ? "hourglass-medium" : "note-pencil")} ${session ? "Finish the open proof first" : "Start"}</button>`;
+                if (!session) return `<p>${INTRO[lvl]}</p><button type="button" class="btn primary" data-start="${lvl}">${icon(lvl === 4 ? "hourglass-medium" : "note-pencil")} Start</button>`;
+                // Another level has a proof open: say where, and offer to jump there or start this one instead.
+                return `<p>${INTRO[lvl]}</p>
+                    <p class="pb-openhere">You have a proof open in <b>${NAMES[session.lvl]}</b>.</p>
+                    <div class="pb-acts"><button type="button" class="btn primary" data-goto="${session.lvl}">Go to it</button>
+                        <button type="button" class="btn ghost" data-switch="${lvl}">${icon(lvl === 4 ? "hourglass-medium" : "note-pencil")} Start this one instead</button></div>`;
             }
             const pr = p.prompts.find(x => x.id === session.prompt);
             const task = `<div class="pb-task"><span class="pb-k">Prove it</span>${pr.task}</div>`;
@@ -230,8 +237,12 @@
         function wire() {
             // Study tools inside a worked example (the course's scaffold.study / scaffold.mountStudy)
             if (SC && SC.mountStudy) main.querySelectorAll(".pb-study").forEach(el => { const e = (SC.examples || []).find(x => x.id === el.dataset.ex); if (e) SC.mountStudy(el, e.sc); });
-            main.querySelectorAll("[data-start]").forEach(b => b.addEventListener("click", () => {
-                const raw = b.dataset.start, lvl = /^\d$/.test(raw) ? +raw : raw, pr = pickPrompt(lvl);
+            main.querySelectorAll("[data-goto]").forEach(b => b.addEventListener("click", () => {
+                const sec = $(`#${sid(/^\d$/.test(b.dataset.goto) ? +b.dataset.goto : b.dataset.goto)}`); if (sec) sec.scrollIntoView({ block: "start", behavior: "smooth" });
+            }));
+            main.querySelectorAll("[data-start], [data-switch]").forEach(b => b.addEventListener("click", () => {
+                if (b.dataset.switch) clearInterval(timer); // the open one is closed without saving a grade
+                const raw = b.dataset.start || b.dataset.switch, lvl = /^\d$/.test(raw) ? +raw : raw, pr = pickPrompt(lvl);
                 session = { lvl, prompt: pr.id, start: Date.now(), text: lvl === "outline" ? SC.outline : "", graded: false };
                 persistSession(); draw();
                 const sec = $(`#${sid(lvl)}`); if (sec) sec.scrollIntoView({ block: "start", behavior: "smooth" });
