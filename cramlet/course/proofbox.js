@@ -12,7 +12,8 @@
 // Misses go into the Study Plan's mistake log. Saved in cramlet.proofs.<course> (this browser only).
 //   registerProofs([{ id, title, topic, minutes, hints: [{ label, href, key }], puzzle, checklist: [{ text, key, part }],
 //                     prompts: [{ id, task, model | sc }],
-//                     scaffold: { model(sc), fill(sc), outline, starters: [..], examples: [{ id, task, sc, kind }] } }])
+//                     scaffold: { model(sc), fill(sc), outline, starters: [..], examples: [{ id, task, sc, kind }],
+//                                 study(sc) → HTML shown under a worked example, mountStudy(el, sc) to make it work } }])
 //   A fill template marks its blanks: <input data-blank="k" data-alts="[json]" data-show="html">,
 //   <select data-blank="k" data-ans="value">, and <textarea data-blank="k" data-free data-show="html"> (self-checked).
 (function () {
@@ -120,7 +121,7 @@
         function exampleHTML(pr, open) {
             const e = exampleFor(pr);
             if (!e) return "";
-            return `<details class="pb-example"${open ? " open" : ""}><summary>${icon("lightbulb")} Worked example: ${e.task}</summary><div class="pb-model">${SC.model(e.sc)}</div></details>`;
+            return `<details class="pb-example"${open ? " open" : ""}><summary>${icon("lightbulb")} Worked example: ${e.task}</summary><div class="pb-model">${SC.model(e.sc)}</div>${SC.study ? `<div class="pb-study" data-ex="${e.id}">${SC.study(e.sc)}</div>` : ""}</details>`;
         }
 
         const INTRO = {
@@ -227,6 +228,8 @@
         }
 
         function wire() {
+            // Study tools inside a worked example (the course's scaffold.study / scaffold.mountStudy)
+            if (SC && SC.mountStudy) main.querySelectorAll(".pb-study").forEach(el => { const e = (SC.examples || []).find(x => x.id === el.dataset.ex); if (e) SC.mountStudy(el, e.sc); });
             main.querySelectorAll("[data-start]").forEach(b => b.addEventListener("click", () => {
                 const raw = b.dataset.start, lvl = /^\d$/.test(raw) ? +raw : raw, pr = pickPrompt(lvl);
                 session = { lvl, prompt: pr.id, start: Date.now(), text: lvl === "outline" ? SC.outline : "", graded: false };
