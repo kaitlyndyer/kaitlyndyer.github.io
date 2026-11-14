@@ -108,10 +108,12 @@ registerPlan({
       { id: "f5", kind: "watch", video: "mit9-etm", topic: "reductions-mw" },
       { id: "f6", kind: "practice", title: "Walkthroughs: accepts ε, EQ, REGULAR", href: "#/c/reductions/playground/walkthrough", min: 25, key: "challenge:toc:walk:eps", topic: "reductions-mw" },
       { id: "f7", kind: "prove", proof: "reduction", level: 2, min: 10, topic: "reductions-mw" },
-      { id: "f8", kind: "prove", proof: "reduction", level: 3, min: 15, topic: "reductions-mw" },
+      { id: "f8", kind: "prove", proof: "reduction", level: "fill", min: 15, topic: "reductions-mw" },
       { id: "f9", kind: "explain", topic: "reductions-mw", min: 5 },
     ] },
     { date: "2026-11-14", focus: "Reductions drill + mapping, unrecognizable, Rice", tasks: [
+      { id: "sa", kind: "prove", proof: "reduction", level: "outline", min: 15, topic: "reductions-mw" },
+      { id: "sb", kind: "prove", proof: "reduction", level: 3, min: 15, topic: "reductions-mw" },
       { id: "s0", kind: "exam", title: "Reductions drill: 3 reductions, no Rice (Practice exam → Reductions drill), then check each against the model proof", href: "#/exam", min: 45, topic: "reductions-mw" },
       { id: "s1", kind: "watch", video: "mit9-mapping", topic: "mapping" },
       { id: "s2", kind: "practice", title: "Your turn: is this a mapping reduction?", href: "#/c/reductions/details/mapping", min: 10, key: "challenge:toc:turn:mapping", topic: "mapping" },

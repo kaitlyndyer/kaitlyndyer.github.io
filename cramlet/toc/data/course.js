@@ -90,6 +90,14 @@ window.STUDY = {
   // What the shared pages say and do for this course (see course/settings.js for every option).
   settings: {
     mathTitles: true,
+    // The symbol bar on every box where you write a proof (course/mathtext.js). "|" is a small gap between groups.
+    mathKeys: [
+      ["⟨", "⟨"], ["⟩", "⟩"], ["|", ""],
+      ["∈", "∈"], ["∉", "∉"], ["⊆", "⊆"], ["⊈", "⊈"], ["∪", "∪"], ["∩", "∩"], ["∅", "∅"], ["ε", "ε"], ["Σ*", "Σ*"], ["|", ""],
+      ["≠", "≠"], ["⇒", "⇒"], ["⇔", "⇔"], ["¬", "¬"], ["≤<sub>m</sub>", "≤_m"], ["|", ""],
+      ["M₁", "M₁"], ["M₂", "M₂"], ["A<sub>TM</sub>", "A_TM"], ["D<sub>L</sub>", "D_L"], ["D<sub>ATM</sub>", "D_ATM"], ["<span class=\"ovl\">L</span>", "~L"],
+    ],
+    mathHelp: "Shortcuts: <code>&lt;&lt;</code> <code>&gt;&gt;</code> → ⟨ ⟩, <code>A_TM</code> → A<sub>TM</sub>, <code>~L</code> → <span class=\"ovl\">L</span>, <code>0^n</code> → 0<sup>n</sup>, and <code>!=</code> <code>=&gt;</code> <code>&lt;=&gt;</code> become ≠ ⇒ ⇔ as you type.",
     exam: {
       lengths: {
         // Matches the Midterm 2 practice exam: 10 T/F (1 pt each), 2 short answers (5 pts), 3 reductions without Rice (10 pts) = 50.
