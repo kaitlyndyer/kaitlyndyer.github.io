@@ -271,6 +271,7 @@
 .wy-q { border-top: 1px solid var(--line); }
 .wy-q > summary { cursor: pointer; padding: 9px 2px; font-weight: 700; font-size: 14.5px; }
 .wy-a { padding: 0 2px 10px; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+.pb-openhere { margin: 0 0 4px; padding: 8px 12px; border-radius: 10px; background: var(--brand-soft); font-size: 14px; }
 .pb-yours { padding: 8px 10px; border-radius: 8px; background: var(--surface-2); font-size: 14px; line-height: 1.6; }
 
 
