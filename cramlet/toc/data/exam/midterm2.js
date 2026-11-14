@@ -7,19 +7,20 @@
 (function () {
 "use strict";
 const sb = s => `<sub>${s}</sub>`;
-const ATM = `A${sb("TM")}`, DA = `D${sb("ATM")}`, Mw = `M${sb("w")}`;
+const ATM = `A${sb("TM")}`, DA = `D${sb("ATM")}`, Mw = "M₂";
 const D = x => `D${sb(x)}`;
 
 // ---------------------------------------------------------------------------------------------- Reductions
 // A model answer in the solution's shape. machines: [[name, [lines]]], call: how D_ATM uses D_L,
 // yes / no: the two cases (M accepts w; M rejects or loops on w).
 function model({ L, dl, machines, call, yes, no, note }) {
-  const mach = machines.map(([name, lines], k) => `<li>Construct a TM ${name} that ${lines.length > 1 ? `works as follows on input x:<ul>${lines.map(l => `<li>${l}</li>`).join("")}</ul>` : lines[0]}</li>`).join("");
+  const std = machines.some(([, l]) => l === RUN);
+  const mach = machines.map(([name, lines], k) => `<li>Construct a TM ${name} that ${lines.length > 1 ? `${lines === RUN ? "ignores its input and behaves as follows" : "works as follows on input x"}:<ul>${lines.map(l => `<li>${l}</li>`).join("")}</ul>` : lines[0]}</li>`).join("");
   return `<p>Assume there is a decider ${dl} for ${L}. We use it to build a decider ${DA} for ${ATM}.</p>
     <p>${DA} = “On input ⟨M, w⟩:<ol>${mach}<li>${call}</li></ol>”</p>
     <p>${DA} always halts: it only <b>writes</b> machine descriptions (it never runs M on w itself), and ${dl} always halts.</p>
     <p><b>${DA} decides ${ATM} if ${dl} decides ${L}:</b></p>
-    <ul><li><b>If M accepts w:</b> ${yes}</li><li><b>If M does not accept w</b> (it rejects or loops): ${no}</li></ul>
+    <ul><li><b>If M(w) accepts:</b> ${yes}</li><li><b>If M(w) does not accept</b>, there are two ways: ${std ? "if M(w) rejects, M₂ rejects every input; if M(w) loops, M₂ is stuck running M(w) and loops on every input. Either way M₂ accepts no input. " : "M(w) rejects or M(w) loops (check both). "}${no}</li></ul>
     <p>So ${DA} decides ${ATM}, which is undecidable. Contradiction: ${L} is undecidable. ∎</p>${note ? `<p class="muted">${note}</p>` : ""}`;
 }
 const CHECK = (helper, key) => [
@@ -29,12 +30,12 @@ const CHECK = (helper, key) => [
   `Case M accepts w: shows ${key.yes}, so ${DA} accepts.`,
   `Case M does not accept w (<b>rejects or loops</b>): shows ${key.no}, so ${DA} rejects. Concludes L is undecidable without using Rice’s theorem.`,
 ];
-const RUN = `ignores x; runs M on w; if M accepts, accepts (if M rejects, rejects; if M loops, loops)`;
+const RUN = ["Run M(w).", "If M(w) accepts, accept.", "If M(w) rejects, reject.", "If M(w) loops, loop."];
 
 const REDUCE = [
   {
     id: "len3", L: `L = { ⟨M⟩ | M accepts at least one string of length exactly 3 }`,
-    m: { L: "L", dl: D("L"), machines: [[Mw, [RUN]]], call: `Run ${D("L")}(⟨${Mw}⟩). If it accepts, accept. If it rejects, reject.`,
+    m: { L: "L", dl: D("L"), machines: [[Mw, RUN]], call: `Run ${D("L")}(⟨${Mw}⟩). If it accepts, accept. If it rejects, reject.`,
       yes: `${Mw} accepts every input, including 000, so ⟨${Mw}⟩ ∈ L and ${DA} accepts.`,
       no: `${Mw} accepts nothing, so it accepts no string of length 3. ⟨${Mw}⟩ ∉ L and ${DA} rejects.` },
     helper: `e.g. ${Mw}: ignore x, run M on w`, key: { yes: `⟨${Mw}⟩ ∈ L (it accepts every string, so some of length 3)`, no: `⟨${Mw}⟩ ∉ L (it accepts nothing)` },
@@ -42,7 +43,7 @@ const REDUCE = [
   },
   {
     id: "two", L: `L = { ⟨M⟩ | L(M) contains at least two strings }`,
-    m: { L: "L", dl: D("L"), machines: [[Mw, [RUN]]], call: `Run ${D("L")}(⟨${Mw}⟩) and output its answer.`,
+    m: { L: "L", dl: D("L"), machines: [[Mw, RUN]], call: `Run ${D("L")}(⟨${Mw}⟩) and output its answer.`,
       yes: `L(${Mw}) = Σ*, which has (infinitely) many strings, so ⟨${Mw}⟩ ∈ L and ${DA} accepts.`,
       no: `L(${Mw}) = ∅, which has no strings, so ⟨${Mw}⟩ ∉ L and ${DA} rejects.` },
     helper: `e.g. ${Mw}: ignore x, run M on w`, key: { yes: `L(${Mw}) = Σ*, so ⟨${Mw}⟩ ∈ L`, no: `L(${Mw}) = ∅, so ⟨${Mw}⟩ ∉ L` },
@@ -50,7 +51,7 @@ const REDUCE = [
   },
   {
     id: "starts1", L: `L = { ⟨M⟩ | M accepts some string that starts with 1 }`,
-    m: { L: "L", dl: D("L"), machines: [[Mw, [RUN]]], call: `Run ${D("L")}(⟨${Mw}⟩) and output its answer.`,
+    m: { L: "L", dl: D("L"), machines: [[Mw, RUN]], call: `Run ${D("L")}(⟨${Mw}⟩) and output its answer.`,
       yes: `${Mw} accepts every string, including 1, so ⟨${Mw}⟩ ∈ L and ${DA} accepts.`,
       no: `${Mw} accepts no string at all, so none starting with 1. ⟨${Mw}⟩ ∉ L and ${DA} rejects.` },
     helper: `e.g. ${Mw}: ignore x, run M on w`, key: { yes: `${Mw} accepts 1, so ⟨${Mw}⟩ ∈ L`, no: `${Mw} accepts nothing, so ⟨${Mw}⟩ ∉ L` },
@@ -58,7 +59,7 @@ const REDUCE = [
   },
   {
     id: "union-all", L: `L = { ⟨M₁, M₂⟩ | L(M₁) ∪ L(M₂) = Σ* }`,
-    m: { L: "L", dl: D("L"), machines: [["M₁", ["rejects every input (so L(M₁) = ∅)."]], ["M₂", [RUN]]],
+    m: { L: "L", dl: D("L"), machines: [["M₁", ["rejects every input (so L(M₁) = ∅)."]], ["M₂", RUN]],
       call: `Run ${D("L")}(⟨M₁, M₂⟩) and output its answer.`,
       yes: `L(M₂) = Σ*, so L(M₁) ∪ L(M₂) = Σ*. ⟨M₁, M₂⟩ ∈ L and ${DA} accepts.`,
       no: `L(M₂) = ∅, so L(M₁) ∪ L(M₂) = ∅ ≠ Σ*. ⟨M₁, M₂⟩ ∉ L and ${DA} rejects.` },
@@ -67,7 +68,7 @@ const REDUCE = [
   },
   {
     id: "neq", L: `L = { ⟨M₁, M₂⟩ | L(M₁) ≠ L(M₂) }`,
-    m: { L: "L", dl: D("L"), machines: [["M₁", ["rejects every input (so L(M₁) = ∅)."]], ["M₂", [RUN]]],
+    m: { L: "L", dl: D("L"), machines: [["M₁", ["rejects every input (so L(M₁) = ∅)."]], ["M₂", RUN]],
       call: `Run ${D("L")}(⟨M₁, M₂⟩) and output its answer.`,
       yes: `L(M₂) = Σ* ≠ ∅ = L(M₁), so ⟨M₁, M₂⟩ ∈ L and ${DA} accepts.`,
       no: `L(M₂) = ∅ = L(M₁), so ⟨M₁, M₂⟩ ∉ L and ${DA} rejects.` },
@@ -85,7 +86,7 @@ const REDUCE = [
   },
   {
     id: "no-eps", L: `L = { ⟨M⟩ | M does not accept ε }`,
-    m: { L: "L", dl: D("L"), machines: [[Mw, [RUN]]],
+    m: { L: "L", dl: D("L"), machines: [[Mw, RUN]],
       call: `Run ${D("L")}(⟨${Mw}⟩). If it accepts, <b>reject</b>. If it rejects, <b>accept</b>. (Flip the answer.)`,
       yes: `${Mw} accepts ε, so ⟨${Mw}⟩ ∉ L. ${D("L")} rejects, and ${DA} flips that to accept.`,
       no: `${Mw} accepts nothing, so it doesn’t accept ε: ⟨${Mw}⟩ ∈ L. ${D("L")} accepts, and ${DA} flips that to reject.`,

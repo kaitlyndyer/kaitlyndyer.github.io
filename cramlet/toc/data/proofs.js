@@ -40,22 +40,105 @@ function reduction(sc, fill) {
   const run = fill
     ? `<li>Run ${DL}(${sc.arg}). If it accepts, ${pick("acc", a1, ["accept", "reject"], "Step 2: if D_L accepts")}. If it rejects, ${pick("rej", a2, ["accept", "reject"], "Step 2: if D_L rejects")}.”</li>`
     : `<li>Run ${DL}(${sc.arg}). If it accepts, ${flip ? "<b>reject</b>" : "accept"}. If it rejects, ${flip ? "<b>accept</b>" : "reject"}.”</li>`;
+  // What M₂ does on every input in each situation (the "loop" helper turns a reject into a loop).
+  const loopy = sc.kind === "loop";
+  const beh = { acc: "accepts", rej: loopy ? "loops on" : "rejects", loop: "loops on" };
+  const bpick = (k, ans, label) => pick(k, ans, ["accepts", "rejects", "loops on"], label);
   const kase = which => {
     const c = sc[which], yes = which === "yes", n = yes ? "Case 1" : "Case 2";
-    const head = yes ? "If M(w) accepts" : "If M(w) does not accept (it rejects or loops)";
     const mem = c.in ? "∈" : "∉", out = yes ? "accepts" : "rejects";
-    if (!fill) return `${head}, then ${c.pre} ${c.val}${c.why ? `, ${c.why}` : ""}, so ${sc.arg} ${mem} L. Then ${DATM} ${out}.`;
-    return `${head}, then ${c.pre} ${blank(which + "v", c.alts, c.val, `${n}: ${strip(c.pre)} …`, c.keys)}, so ${sc.arg} ${pick(which + "m", mem, ["∈", "∉"], `${n}: ∈ or ∉ L`)} L. Then ${DATM} ${pick(which + "o", out, ["accepts", "rejects"], `${n}: what D_ATM does`)}.`;
+    const tail = fill
+      ? `So ${c.pre} ${blank(which + "v", c.alts, c.val, `${n}: ${strip(c.pre)} …`, c.keys)}, and ${sc.arg} ${pick(which + "m", mem, ["∈", "∉"], `${n}: ∈ or ∉ L`)} L. Then ${DATM} ${pick(which + "o", out, ["accepts", "rejects"], `${n}: what D_ATM does`)}.`
+      : `So ${c.pre} ${c.val}${c.why ? `, ${c.why}` : ""}, and ${sc.arg} ${mem} L. Then ${DATM} ${out}.`;
+    if (yes) return `<div class="rd-yes"><p>If M(w) accepts, then M₂ ${fill ? bpick("b1", beh.acc, "Case 1: what M₂ does") : beh.acc} every input. ${tail}</p></div>`;
+    return `<div class="rd-no"><p>If M(w) does not accept, there are two ways this can happen:</p><ul>
+        <li>M(w) rejects: then M₂ ${fill ? bpick("b2", beh.rej, "Case 2: what M₂ does when M(w) rejects") : beh.rej} every input${!fill && loopy ? " (that’s the twist)" : ""}.</li>
+        <li>M(w) loops: then M₂ is stuck running M(w), so it ${fill ? bpick("b3", beh.loop, "Case 2: what M₂ does when M(w) loops") : beh.loop} every input.</li></ul>
+      <p>Either way, M₂ ${loopy ? "never halts" : "accepts no input"}. ${tail}</p></div>`;
   };
+  const aside = fill ? "" : `<p class="rd-aside">${loopy ? `“If M(w) rejects, loop forever” is something M₂ can really do: it just enters an infinite loop. ` : ""}“If M(w) loops, loop” is not a check M₂ can make (no TM can tell that M(w) will run forever). It just says what happens: M₂ is stuck running M(w), so it never halts either. Your lecture writes this kind of machine in one line: M′<sub>w</sub>(x) = “Run M(w) and output what it outputs.”</p>`;
   return `<div class="rd">
     <div class="rd-part rd-setup"><span class="rd-tag">Setup</span>Assume there exists a decider ${DL} for L. We will use ${DL} to build a decider ${DATM} for ${ATM} as follows.</div>
-    <div class="rd-part rd-build"><span class="rd-tag">Construction</span>${DATM} = “On input ⟨M, w⟩:<ol>${helperLi}${fixed}${run}</ol></div>
+    <div class="rd-part rd-build"><span class="rd-tag">Construction</span>${DATM} = “On input ⟨M, w⟩:<ol>${helperLi}${fixed}${run}</ol>${aside}</div>
     <div class="rd-part rd-cases"><span class="rd-tag">Prove that ${DATM} decides ${ATM} if ${DL} decides L</span>
-      <p class="rd-yes">${kase("yes")}</p>
-      <p class="rd-no">${kase("no")}</p></div>
-    <div class="rd-part rd-end"><span class="rd-tag">Conclusion</span>${DATM} always halts (it only constructs machines and runs the decider ${DL}), so it would decide ${ATM}. But ${ATM} is undecidable. Contradiction: L is undecidable. ∎</div>
+      ${kase("yes")}
+      ${kase("no")}</div>
+    <div class="rd-part rd-end"><span class="rd-tag">Conclusion</span>${fill ? "" : `<b>Key point:</b> ${sc.arg} ∈ L ⇔ M(w) ${flip ? "does <b>not</b> accept" : "accepts"}. `}${DATM} always halts (it only constructs machines and runs the decider ${DL}), so it would decide ${ATM}. But ${ATM} is undecidable. Contradiction: L is undecidable. ∎</div>
     ${!fill && sc.note ? `<p class="rd-note">${sc.note}</p>` : ""}
   </div>`;
+}
+
+// ---------- Study tools under each worked example ----------
+// Trace it: pick what M does on w (accepts / rejects / loops), predict each step of the proof, then check.
+// Why is this line here?: self-explanation questions, answered in your head before opening.
+const SCEN = { acc: "M accepts w", rej: "M rejects w", loop: "M loops on w" };
+function traceFacts(sc, scen) {
+  const loopy = sc.kind === "loop";
+  const m2 = scen === "acc" ? "accepts" : scen === "rej" ? (loopy ? "loops" : "rejects") : "loops";
+  const c = scen === "acc" ? sc.yes : sc.no;
+  const dl = c.in ? "accepts" : "rejects", out = scen === "acc" ? "accepts" : "rejects";
+  const why = scen === "acc" ? "M accepts w, so M₂ accepts."
+    : scen === "rej" ? (loopy ? "M rejects w, so M₂ <b>loops forever</b> (that’s this proof’s twist)." : "M rejects w, so M₂ rejects.")
+    : "M loops on w, so M₂ never gets past “Run M(w)”: it loops.";
+  return { m2, c, dl, out, why };
+}
+function whyQs(sc) {
+  const qs = [[`Why does M₂ ignore its input?`, `So M₂ does the same thing on every input: everything depends on what M does on w. Then there are only two possibilities, ${sc.yes.pre} ${sc.yes.val} or ${sc.no.pre} ${sc.no.val}, one for each case, and ${DL} can tell them apart.`]];
+  if (sc.kind === "flip") qs.push([`Why does step 2 swap the answers (accept when ${DL} rejects)?`, `Here ${sc.arg} ∈ L exactly when M does <b>not</b> accept w. ${DATM} must accept when M accepts w, so it outputs the opposite of ${DL}. A decider can always flip its answer.`]);
+  if (sc.kind === "loop") qs.push([`Why does M₂ loop when M(w) rejects, instead of rejecting?`, `L is about <b>halting</b>, and rejecting counts as halting. If M₂ rejected, then when M rejects w, M₂ would halt on every input and land in L, so ${DATM} would accept even though M doesn’t accept w. Looping keeps the “no” case out of L.`]);
+  if (sc.kind === "two") qs.push([`Why is M₁ fixed to accept all strings?`, `With M₁ fixed, the answer depends only on M₂ (intersecting with Σ* changes nothing). So M₂’s all-or-nothing behavior decides membership.`]);
+  qs.splice(1, 0, [`Why does M₂ say “If M(w) loops, loop” instead of rejecting?`, `M₂ can’t tell that M(w) is looping: all it can do is keep running M(w) and wait. (If a TM could spot loops, it could decide the halting problem.) So that line just says what happens: M₂ is stuck too. It doesn’t hurt the proof, because rejecting and looping both mean M₂ doesn’t accept.`]);
+  qs.push(
+    [`Why does ${DATM} only <i>construct</i> M₂ instead of running M on w itself?`, `M might loop on w. If ${DATM} ran it, ${DATM} could loop too, and a decider must always halt. Writing down M₂’s code always finishes. Only ${DL} ever looks at M₂, and ${DL} always halts.`],
+    [`Why does case 2 say “does not accept” instead of “rejects”?`, `There are two ways not to accept: M rejects w, or M loops on w. ${DATM} must reject in both, so case 2 checks both (the two bullets). Here both make M₂ accept no input, so ${sc.no.pre} ${sc.no.val}.`],
+    [`Which way does the reduction go, and why?`, `From ${ATM} to L: we use a decider for L to build a decider for ${ATM}. Going the other way (using ${ATM} to decide L) proves nothing, because ${ATM} is already known to be hard.`],
+    [`Why is this a contradiction?`, `We already know no TM decides ${ATM}. If ${DL} existed, ${DATM} would be one. So ${DL} can’t exist: L is undecidable.`],
+  );
+  return qs;
+}
+function studyHTML(sc) {
+  return `<div class="rt">
+      <span class="pb-k">Trace it</span>
+      <p class="rt-lead">Make it concrete: pick what M does on w, predict each step, then check. Do all three.</p>
+      <div class="rt-scen" role="group" aria-label="What M does on w">${Object.keys(SCEN).map(k => `<button type="button" class="rt-pick" data-scen="${k}"><span class="rt-st"></span>${SCEN[k]}</button>`).join("")}</div>
+      <div class="rt-body"></div>
+    </div>
+    <div class="wy"><span class="pb-k">Why is this line here?</span>
+      <p class="rt-lead">Answer each one in your head (or out loud) before you open it.</p>
+      ${whyQs(sc).map(([q, a]) => `<details class="wy-q"><summary>${q}</summary><div class="wy-a">${a}</div></details>`).join("")}
+    </div>`;
+}
+function mountStudy(el, sc) {
+  const body = el.querySelector(".rt-body"), done = {};
+  let scen = null;
+  const sel = (k, opts, label) => `<select class="pb-pick" data-q="${k}" aria-label="${attr(label)}"><option value="">choose</option>${opts.map(o => `<option>${o}</option>`).join("")}</select>`;
+  function show() {
+    el.querySelectorAll(".rt-pick").forEach(b => { b.classList.toggle("on", b.dataset.scen === scen); b.classList.toggle("ok", !!done[b.dataset.scen]); b.querySelector(".rt-st").textContent = done[b.dataset.scen] ? "✓ " : ""; });
+    if (!scen) { body.innerHTML = ""; return; }
+    const f = traceFacts(sc, scen);
+    const opt2 = [`${sc.yes.pre} ${sc.yes.val}`, `${sc.no.pre} ${sc.no.val}`].map(strip);
+    const rows = [
+      ["m2", `On any input x, M₂ runs M(w). What does M₂ do?`, ["accepts", "rejects", "loops"], f.m2],
+      ["lang", `So which is true?`, opt2, strip(`${f.c.pre} ${f.c.val}`)],
+      ["mem", `Is ${sc.arg} in L?`, ["∈ L", "∉ L"], f.c.in ? "∈ L" : "∉ L"],
+      ["dl", `So ${DL}(${sc.arg})…`, ["accepts", "rejects"], f.dl],
+      ["out", `And ${DATM} (step 2) outputs…`, ["accepts", "rejects"], f.out],
+    ];
+    body.innerHTML = `<ol class="rt-steps">${rows.map(([k, q, o]) => `<li><span>${q}</span> ${sel(k, o, strip(q))}</li>`).join("")}</ol>
+      <div class="pb-acts"><button type="button" class="btn small primary" data-rtcheck>Check</button></div><div class="rt-res" aria-live="polite"></div>`;
+    body.querySelector("[data-rtcheck]").addEventListener("click", () => {
+      let right = 0;
+      rows.forEach(([k, , , ans]) => { const s = body.querySelector(`[data-q="${k}"]`); const ok = s.value === ans; right += ok; s.classList.remove("pb-ok", "pb-miss"); s.classList.add(ok ? "pb-ok" : "pb-miss"); });
+      const all = right === rows.length;
+      if (all) done[scen] = true;
+      const correct = scen === "acc" ? "accepts" : "does not accept";
+      body.querySelector(".rt-res").innerHTML = `<div class="rt-why ${all ? "ok" : ""}"><b>${all ? "All right." : `${right} of ${rows.length} right.`}</b> ${f.why} That happens on <b>every</b> input x, so ${f.c.pre} ${f.c.val}. Then ${sc.arg} ${f.c.in ? "∈" : "∉"} L, so ${DL} ${f.dl}, and ${DATM} ${f.out}${sc.kind === "flip" ? " (it flips the answer)" : ""}. <b>That’s correct:</b> M ${correct} w, and ${DATM} ${f.out}.${Object.keys(SCEN).every(k => done[k]) ? `<br>${"✓"} All three cases traced. That’s the whole proof: in every case ${DATM} gives the right answer.` : all ? " Now try another case." : ""}</div>`;
+      show2();
+    });
+  }
+  // Refresh only the scenario buttons (keep the checked answers on screen).
+  function show2() { el.querySelectorAll(".rt-pick").forEach(b => { b.classList.toggle("ok", !!done[b.dataset.scen]); b.querySelector(".rt-st").textContent = done[b.dataset.scen] ? "✓ " : ""; }); }
+  el.querySelectorAll(".rt-pick").forEach(b => b.addEventListener("click", () => { scen = b.dataset.scen; show(); }));
 }
 
 registerProofs([
@@ -95,6 +178,8 @@ registerProofs([
     scaffold: {
       model: sc => reduction(sc, false),
       fill: sc => reduction(sc, true),
+      study: studyHTML,
+      mountStudy,
       outline: `Setup:\n\n\nD_ATM = "On input ⟨M, w⟩:\n  1. Construct a TM M₂ that\n\n  2. Run D_L(   ). If it accepts, ___. If it rejects, ___."\n\nProve that D_ATM decides A_TM if D_L decides L:\nIf M(w) accepts, then\n\nIf M(w) does not accept (it rejects or loops), then\n\nConclusion:\n`,
       starters: [
         "Assume there exists a decider D_L for L. We will use D_L to build a decider D_ATM for A_TM as follows.",
