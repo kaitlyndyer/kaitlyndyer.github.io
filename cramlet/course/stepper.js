@@ -15,7 +15,7 @@
 // award: when every step is finished, the visitor earns a "challenge" award with this id (once per day, like the others).
 // Several walkthroughs in one widget: config = { walks: [{ id, name, intro?, config }, …] } shows a picker.
 // Answers are compared as numbers when they look like numbers (so 2, 2.0, and 4/2 all match), otherwise as text
-// with spaces removed and − treated as -.
+// with spaces removed and − treated as -. A step's tol (e.g. 0.002) accepts numbers within ± tol (rounded decimals).
 (function () {
     "use strict";
 
@@ -28,9 +28,10 @@
         const m = /^(-?\d+(?:\.\d+)?)(?:\/(-?\d+(?:\.\d+)?))?$/.exec(clean(s));
         return m ? Number(m[1]) / (m[2] === undefined ? 1 : Number(m[2])) : null;
     };
-    const same = (given, want) => [].concat(want).some(w => {
+    // tol (optional, per step): accept numbers within ±tol, for rounded decimals like 0.1587 vs 0.159.
+    const same = (given, want, tol = 0) => [].concat(want).some(w => {
         const a = asNum(given), b = asNum(w);
-        return a !== null && b !== null ? Math.abs(a - b) < 1e-9 : clean(given) === clean(w) && clean(given) !== "";
+        return a !== null && b !== null ? Math.abs(a - b) <= Math.max(1e-9, tol) : clean(given) === clean(w) && clean(given) !== "";
     });
     const pretty = w => String([].concat(w)[0]).replace(/-/g, "−");
     const kindOf = s => (s.answers ? "fill" : s.choices ? "choice" : "read");
@@ -173,7 +174,7 @@
                 const check = () => {
                     let all = true;
                     inputs.forEach(inp => {
-                        const ok = same(inp.value, s.answers[+inp.dataset.b]);
+                        const ok = same(inp.value, s.answers[+inp.dataset.b], s.tol);
                         inp.classList.toggle("ok", ok); inp.classList.toggle("bad", !ok && inp.value.trim() !== "");
                         if (!ok) all = false;
                     });

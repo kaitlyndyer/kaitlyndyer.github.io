@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Printable Practice Quizzes · Probability &amp; Statistics · cramlet</title>
+    <meta name="description" content="Printable practice quizzes on the normal curve, the CLT, the normal approximation, maximum likelihood, and confidence intervals, with full written solutions.">
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="ps.css?v=1128">
+    <style>
+        /* Paper first: black on white, wide margins, room to write. */
+        :root { --ink: #1d1a17; --muted: #6b625a; --line: #cfc6ba; --surface: #f6f2ec; --brand: #e0567c; --brand-soft: #fdeef3; --font-body: "Nunito", system-ui, sans-serif; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #eee7dd; color: var(--ink); font: 15px/1.5 var(--font-body); }
+        .bar { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 10px max(16px, env(safe-area-inset-left)); background: #fff; border-bottom: 1px solid var(--line); }
+        .bar a { color: var(--brand); font-weight: 800; text-decoration: none; }
+        .bar .pick { display: flex; flex-wrap: wrap; gap: 6px; }
+        .bar button { font: 800 13px var(--font-body); border: 1.5px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+        .bar button[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); }
+        .bar button.print { background: var(--brand); color: #fff; border-color: var(--brand); }
+        .sheet { background: #fff; max-width: 8.5in; margin: 20px auto; padding: 0.7in 0.75in; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+        .hdr { display: grid; grid-template-columns: 1fr auto; gap: 4px 20px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; margin-bottom: 10px; }
+        .hdr b { font: 600 20px "Fredoka", var(--font-body); }
+        .hdr .r { text-align: right; }
+        .rules { font-weight: 800; margin: 8px 0 18px; }
+        .rules span { border: 1.5px solid var(--ink); padding: 0 6px; }
+        .prob { break-inside: avoid; margin: 0 0 16px; }
+        .prob .n { font-weight: 800; }
+        .space { height: 2.6in; border-bottom: 1px dashed var(--line); margin-bottom: 18px; }
+        .sol { break-inside: avoid; border-left: 4px solid var(--brand); padding: 4px 0 4px 14px; margin: 0 0 18px; }
+        .sol h3 { margin: 0 0 4px; font: 600 16px "Fredoka", var(--font-body); }
+        .sol .chk { font-size: 13px; color: var(--muted); }
+        .sol .chk li { margin: 2px 0; }
+        h2.solh { font: 600 22px "Fredoka", var(--font-body); margin: 0 0 12px; }
+        .pb { break-before: page; }
+        .note { max-width: 8.5in; margin: 14px auto 0; padding: 0 16px; color: var(--muted); font-size: 13px; }
+        @media print {
+            body { background: #fff; }
+            .bar, .note { display: none; }
+            .sheet { box-shadow: none; margin: 0; padding: 0; max-width: none; }
+            @page { margin: 0.6in; }
+        }
+        @media (max-width: 640px) { .sheet { padding: 24px 18px; } .space { height: 1.6in; } }
+    </style>
+</head>
+<body>
+    <div class="bar">
+        <a href="./">← Probability &amp; Statistics</a>
+        <div class="pick" id="pick" role="group" aria-label="Choose a quiz"></div>
+        <button type="button" class="print" id="print">Print / save as PDF</button>
+    </div>
+    <p class="note">Each quiz: 5 problems, 30 minutes, calculator allowed, no formula sheet. Print it (or open it in Notability), set a timer, then grade yourself with the solutions page. Every point on the checklist is one point.</p>
+    <div id="out"></div>
+
+    <script src="ps.js?v=1128"></script>
+    <script>
+        // Collect the exam bank without loading the whole course app.
+        window.BANK = {};
+        window.registerExam = (concept, list) => list.forEach(q => { window.BANK[q.id] = { concept, ...q }; });
+    </script>
+    <script src="data/exam/work.js?v=1128"></script>
+    <script>
+    (function () {
+        "use strict";
+        const QUIZZES = {
+            C: { name: "Practice Quiz C", ids: ["clt-battery", "na-clicks", "mle-gamma", "mle-geometric", "ci-prop"] },
+            D: { name: "Practice Quiz D", ids: ["clt-cutoff", "na-dice", "mle-gamma2", "mle-counts", "ci-mean"] },
+            E: { name: "Practice Quiz E (mixed)", ids: ["clt-tacos", "na-dice", "mle-geometric", "mle-gamma", "ci-mean"] },
+        };
+        const $ = s => document.querySelector(s);
+        let cur = "C";
+        try { cur = localStorage.getItem("cramlet.ps.paper") || "C"; } catch (e) {}
+        if (!QUIZZES[cur]) cur = "C";
+        function render() {
+            const Q = QUIZZES[cur], probs = Q.ids.map(id => window.BANK[id]).filter(Boolean);
+            const pts = q => q.checklist.length, total = probs.reduce((a, q) => a + pts(q), 0);
+            $("#pick").innerHTML = Object.entries(QUIZZES).map(([k, v]) => `<button type="button" data-q="${k}" aria-pressed="${k === cur}">${v.name}</button>`).join("");
+            $("#out").innerHTML = `<section class="sheet">
+                <div class="hdr"><b>Probability &amp; Statistics · ${Q.name}</b><span class="r">Normal &amp; Estimation</span>
+                    <span>Name: ________________________________</span><span class="r">Score: ______ / ${total}</span></div>
+                <p class="rules">Show all the steps of your work. A number answer with no work gets no credit. If you use a calculator, write the function you used. <span>Box your answer.</span></p>
+                ${probs.map((q, i) => `<div class="prob"><span class="n">${i + 1}. (${pts(q)} pts)</span> ${q.q}</div><div class="space"></div>`).join("")}
+            </section>
+            <section class="sheet pb">
+                <h2 class="solh">${Q.name}: solutions and grading checklist</h2>
+                ${probs.map((q, i) => `<div class="sol"><h3>Problem ${i + 1}</h3>${q.model}<ul class="chk">${q.checklist.map(c => `<li>☐ ${c}</li>`).join("")}</ul></div>`).join("")}
+            </section>`;
+        }
+        document.addEventListener("click", e => {
+            const b = e.target.closest("[data-q]");
+            if (b) { cur = b.dataset.q; try { localStorage.setItem("cramlet.ps.paper", cur); } catch (err) {} render(); }
+        });
+        $("#print").addEventListener("click", () => window.print());
+        render();
+    })();
+    </script>
+</body>
+</html>
