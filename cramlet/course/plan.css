@@ -1,4 +1,5 @@
-/* Study Plan (course/plan.js), Proof Box (course/proofbox.js) and "Watch" links on concept pages.
+/* Proof Box (course/proofbox.js) and "Watch" links on concept pages. The Study Plan rules below are unused leftovers
+   (the Study Plan was removed 2026-11-20); some Proof Box selectors share lines with them, so trim carefully.
    Colors come from ../brand.css tokens, so both themes work. */
 
 /* ---------- Watch links ---------- */
