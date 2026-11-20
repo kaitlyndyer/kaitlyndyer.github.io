@@ -8,8 +8,8 @@
 //   4 Timed             the same against the clock, for a prompt you haven't written up yet
 // Each scaffolded level shows a worked example of a *different* language first (open on Fill, folded on Outline,
 // gone after that), so every attempt starts right after seeing the format done correctly.
-// level() stays on the 0–4 scale (hints, steps, own, timed) that the Study Plan and Test Kitchen count.
-// Misses go into the Study Plan's mistake log. Saved in cramlet.proofs.<course> (this browser only).
+// level() stays on the 0–4 scale (hints, steps, own, timed) that the Test Kitchen counts.
+// Saved in cramlet.proofs.<course> (this browser only).
 //   registerProofs([{ id, title, topic, minutes, hints: [{ label, href, key }], puzzle, checklist: [{ text, key, part }],
 //                     prompts: [{ id, task, model | sc }],
 //                     scaffold: { model(sc), fill(sc), outline, starters: [..], examples: [{ id, task, sc, kind }],
@@ -324,18 +324,11 @@
                 const overtime = lvl === 4 && session.secs > p.minutes * 60;
                 const peek = !!session.peek;
                 const pass = !missedItems.length && !overtime && !peek;
-                if (!pass && !(peek && !missedItems.length)) {
-                    // Into the Study Plan's mistake log, so it comes back.
-                    const plan = read(`cramlet.plan.${COURSE}`, {}); plan.mistakes = plan.mistakes || [];
-                    const pr = p.prompts.find(x => x.id === session.prompt);
-                    plan.mistakes.unshift({ q: `${pr.task.replace(/<[^>]+>/g, "")}: missed ${missedItems.length ? missedItems.join("; ") : "the time limit"}`, src: `Proof Box · ${NAMES[lvl]}`, topic: p.topic, why: overtime && !missedItems.length ? "time" : "setup", at: Date.now(), right: [], tries: [] });
-                    write(`cramlet.plan.${COURSE}`, plan);
-                }
                 finish(lvl, pass, missedItems.concat(overtime ? ["finished over time"] : []), peek ? { peek: true } : {});
                 const nxt = steps[steps.indexOf(lvl) + 1];
                 if (pass) callout(lvl, "tip", "Passed", lvl === 4 ? "That’s exam-ready. Come back in a couple of days and do another prompt to keep it there." : `Nice. When you feel ready, try ${NAMES[nxt]}.`);
                 else if (peek && !missedItems.length) callout(lvl, "tip", "Good practice", "Everything’s there. Since you peeked, do one more without the outline to pass this level.");
-                else callout(lvl, "warn", "Not yet", "It’s in your Study Plan’s mistake log. Reread the model answer, then try another prompt (tomorrow is even better).");
+                else callout(lvl, "warn", "Not yet", "Reread the model answer, then try another prompt (tomorrow is even better).");
             });
         }
 
@@ -347,7 +340,7 @@
         const { icon } = ctx;
         const K = CRAMLET.kitchen;
         main.innerHTML = `${K.header(ctx, "proofs")}
-            <div class="kh-slim"><span class="kh-grow">Each proof climbs from <b>with hints</b> to <b>timed</b>. The reduction proof has two extra steps in between, <b>fill the blanks</b> and <b>outline only</b>, so the jump to a blank page is smaller. Only Timed counts as exam-ready.</span>${CRAMLET.plan && CRAMLET.plan.has(ctx.S) ? `<a class="btn ghost small" href="#/plan/proofs">${icon("calendar")} Study Plan</a>` : ""}</div>
+            <div class="kh-slim"><span class="kh-grow">Each proof climbs from <b>with hints</b> to <b>timed</b>. The reduction proof has two extra steps in between, <b>fill the blanks</b> and <b>outline only</b>, so the jump to a blank page is smaller. Only Timed counts as exam-ready.</span></div>
             <div class="pb-list">${list().map(p => {
                 const nx = nextName(ctx, p);
                 return `<a class="pb-card" href="#/proofs/${p.id}"><span class="pb-ctitle">${p.title}</span>${levelsHTML(ctx, p, icon)}<span class="pb-cnext">${!nx ? `${icon("check")} Exam-ready` : `Next: ${nx} →`}</span></a>`;
